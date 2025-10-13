@@ -1,9 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException, UnauthorizedException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  UnauthorizedException,
+  Logger,
+} from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { 
-  NotificationQueryDto, 
-  NotificationResponseDto, 
-  NotificationsListResponseDto, 
+import {
+  NotificationQueryDto,
+  NotificationResponseDto,
+  NotificationsListResponseDto,
   UnreadCountResponseDto,
   MarkAsReadResponseDto,
   MarkAllAsReadResponseDto,
@@ -11,9 +17,14 @@ import {
   NotificationStatsResponseDto,
   CreateNotificationWithPushDto,
   BulkNotificationDto,
-  BulkNotificationResponseDto
+  BulkNotificationResponseDto,
 } from './dto/notification.dto';
-import { NotificationType, LogAction, LogLevel, PrismaClient } from '@prisma/client';
+import {
+  NotificationType,
+  LogAction,
+  LogLevel,
+  PrismaClient,
+} from '@prisma/client';
 import * as admin from 'firebase-admin';
 
 // FCM Interfaces
@@ -41,8 +52,14 @@ export class NotificationService {
       // Check if Firebase is already initialized
       if (admin.apps.length === 0) {
         // Check if Firebase environment variables are set
-        if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_PRIVATE_KEY || !process.env.FIREBASE_CLIENT_EMAIL) {
-          this.logger.warn('Firebase environment variables not set. FCM features will be disabled.');
+        if (
+          !process.env.FIREBASE_PROJECT_ID ||
+          !process.env.FIREBASE_PRIVATE_KEY ||
+          !process.env.FIREBASE_CLIENT_EMAIL
+        ) {
+          this.logger.warn(
+            'Firebase environment variables not set. FCM features will be disabled.',
+          );
           return;
         }
 
@@ -55,12 +72,15 @@ export class NotificationService {
           client_id: process.env.FIREBASE_CLIENT_ID || '',
           auth_uri: 'https://accounts.google.com/o/oauth2/auth',
           token_uri: 'https://oauth2.googleapis.com/token',
-          auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+          auth_provider_x509_cert_url:
+            'https://www.googleapis.com/oauth2/v1/certs',
           client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${process.env.FIREBASE_CLIENT_EMAIL}`,
         };
 
         this.firebaseApp = admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+          credential: admin.credential.cert(
+            serviceAccount as admin.ServiceAccount,
+          ),
           projectId: process.env.FIREBASE_PROJECT_ID,
         });
 
@@ -71,13 +91,15 @@ export class NotificationService {
     } catch (error) {
       this.logger.error('Failed to initialize Firebase Admin SDK:', error);
       // Don't throw error during initialization, just log it
-      this.logger.warn('FCM features will be disabled due to initialization failure');
+      this.logger.warn(
+        'FCM features will be disabled due to initialization failure',
+      );
     }
   }
 
   async getUserNotifications(
-    userId: string, 
-    query: NotificationQueryDto
+    userId: string,
+    query: NotificationQueryDto,
   ): Promise<NotificationsListResponseDto> {
     try {
       const page = parseInt(query.page || '1');
@@ -105,10 +127,7 @@ export class NotificationService {
       }
 
       // Filter out expired notifications
-      where.OR = [
-        { expiresAt: null },
-        { expiresAt: { gt: new Date() } },
-      ];
+      where.OR = [{ expiresAt: null }, { expiresAt: { gt: new Date() } }];
 
       // Build order by
       const orderBy: any = {};
@@ -130,10 +149,7 @@ export class NotificationService {
           where: {
             userId,
             isRead: false,
-            OR: [
-              { expiresAt: null },
-              { expiresAt: { gt: new Date() } },
-            ],
+            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
           },
         }),
       ]);
@@ -141,7 +157,7 @@ export class NotificationService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        notifications: notifications.map(notification => ({
+        notifications: notifications.map((notification) => ({
           id: notification.id,
           userId: notification.userId,
           type: notification.type,
@@ -166,7 +182,10 @@ export class NotificationService {
     }
   }
 
-  async getNotificationById(notificationId: string, userId: string): Promise<NotificationResponseDto> {
+  async getNotificationById(
+    notificationId: string,
+    userId: string,
+  ): Promise<NotificationResponseDto> {
     try {
       const notification = await this.prisma.notification.findFirst({
         where: {
@@ -199,7 +218,10 @@ export class NotificationService {
     }
   }
 
-  async markAsRead(notificationId: string, userId: string): Promise<MarkAsReadResponseDto> {
+  async markAsRead(
+    notificationId: string,
+    userId: string,
+  ): Promise<MarkAsReadResponseDto> {
     try {
       const notification = await this.prisma.notification.findFirst({
         where: {
@@ -234,7 +256,7 @@ export class NotificationService {
         LogLevel.INFO,
         'Notification',
         notificationId,
-        'Notification marked as read'
+        'Notification marked as read',
       );
 
       return {
@@ -269,7 +291,7 @@ export class NotificationService {
         LogLevel.INFO,
         'Notification',
         null,
-        `Marked ${result.count} notifications as read`
+        `Marked ${result.count} notifications as read`,
       );
 
       return {
@@ -288,10 +310,7 @@ export class NotificationService {
         where: {
           userId,
           isRead: false,
-          OR: [
-            { expiresAt: null },
-            { expiresAt: { gt: new Date() } },
-          ],
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
         },
       });
 
@@ -303,7 +322,9 @@ export class NotificationService {
     }
   }
 
-  async createNotification(createDto: CreateNotificationDto): Promise<NotificationResponseDto> {
+  async createNotification(
+    createDto: CreateNotificationDto,
+  ): Promise<NotificationResponseDto> {
     try {
       const notification = await this.prisma.notification.create({
         data: {
@@ -333,45 +354,39 @@ export class NotificationService {
     }
   }
 
-  async getNotificationStats(userId: string): Promise<NotificationStatsResponseDto> {
+  async getNotificationStats(
+    userId: string,
+  ): Promise<NotificationStatsResponseDto> {
     try {
-      const [
-        total,
-        unread,
-        byType,
-        recentNotifications,
-        averageReadTime,
-      ] = await Promise.all([
-        this.prisma.notification.count({
-          where: { userId },
-        }),
-        this.prisma.notification.count({
-          where: {
-            userId,
-            isRead: false,
-            OR: [
-              { expiresAt: null },
-              { expiresAt: { gt: new Date() } },
-            ],
-          },
-        }),
-        this.prisma.notification.groupBy({
-          by: ['type'],
-          where: { userId },
-          _count: true,
-        }),
-        this.prisma.notification.count({
-          where: {
-            userId,
-            createdAt: {
-              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+      const [total, unread, byType, recentNotifications, averageReadTime] =
+        await Promise.all([
+          this.prisma.notification.count({
+            where: { userId },
+          }),
+          this.prisma.notification.count({
+            where: {
+              userId,
+              isRead: false,
+              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
             },
-          },
-        }),
-        // Note: This is a simplified calculation
-        // In reality, you'd need to calculate the difference between createdAt and readAt
-        Promise.resolve({ _avg: { fileSize: 0 } }),
-      ]);
+          }),
+          this.prisma.notification.groupBy({
+            by: ['type'],
+            where: { userId },
+            _count: true,
+          }),
+          this.prisma.notification.count({
+            where: {
+              userId,
+              createdAt: {
+                gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+              },
+            },
+          }),
+          // Note: This is a simplified calculation
+          // In reality, you'd need to calculate the difference between createdAt and readAt
+          Promise.resolve({ _avg: { fileSize: 0 } }),
+        ]);
 
       // Process type statistics
       const typeStats = {
@@ -401,7 +416,10 @@ export class NotificationService {
     }
   }
 
-  async deleteNotification(notificationId: string, userId: string): Promise<{ success: boolean; message: string }> {
+  async deleteNotification(
+    notificationId: string,
+    userId: string,
+  ): Promise<{ success: boolean; message: string }> {
     try {
       const notification = await this.prisma.notification.findFirst({
         where: {
@@ -425,7 +443,7 @@ export class NotificationService {
         LogLevel.INFO,
         'Notification',
         notificationId,
-        'Notification deleted'
+        'Notification deleted',
       );
 
       return {
@@ -443,7 +461,9 @@ export class NotificationService {
   /**
    * Create notification with push notification support
    */
-  async createNotificationWithPush(createDto: CreateNotificationWithPushDto): Promise<NotificationResponseDto> {
+  async createNotificationWithPush(
+    createDto: CreateNotificationWithPushDto,
+  ): Promise<NotificationResponseDto> {
     try {
       // Create notification in database
       const notification = await this.prisma.notification.create({
@@ -503,7 +523,9 @@ export class NotificationService {
   /**
    * Send bulk notifications with push support
    */
-  async sendBulkNotifications(bulkDto: BulkNotificationDto): Promise<BulkNotificationResponseDto> {
+  async sendBulkNotifications(
+    bulkDto: BulkNotificationDto,
+  ): Promise<BulkNotificationResponseDto> {
     const results: Array<{
       userId: string;
       success: boolean;
@@ -555,7 +577,7 @@ export class NotificationService {
       imageUrl?: string;
       clickAction?: string;
       expiresAt?: Date;
-    }
+    },
   ): Promise<{ success: boolean; message: string }> {
     try {
       const payload: FCMNotificationPayload = {
@@ -589,7 +611,7 @@ export class NotificationService {
       imageUrl?: string;
       clickAction?: string;
       expiresAt?: Date;
-    }
+    },
   ): Promise<{ success: boolean; message: string }> {
     try {
       const payload: FCMNotificationPayload = {
@@ -602,7 +624,9 @@ export class NotificationService {
 
       // For conditions, we'll need to implement a custom method in FCMService
       // This is a placeholder for now
-      throw new BadRequestException('Condition-based notifications not yet implemented');
+      throw new BadRequestException(
+        'Condition-based notifications not yet implemented',
+      );
 
       return {
         success: true,
@@ -620,11 +644,16 @@ export class NotificationService {
   /**
    * Send notification to a single device
    */
-  async sendToDevice(token: string, payload: FCMNotificationPayload): Promise<string> {
+  async sendToDevice(
+    token: string,
+    payload: FCMNotificationPayload,
+  ): Promise<string> {
     if (!this.firebaseApp) {
-      throw new BadRequestException('Firebase not initialized. Please check your environment variables.');
+      throw new BadRequestException(
+        'Firebase not initialized. Please check your environment variables.',
+      );
     }
-    
+
     try {
       const message = {
         notification: {
@@ -635,7 +664,7 @@ export class NotificationService {
         data: payload.data,
         token,
         android: {
-          priority: 'high',
+          priority: 'high' as const,
           notification: {
             sound: 'default',
             clickAction: payload.clickAction,
@@ -681,11 +710,16 @@ export class NotificationService {
   /**
    * Send notification to multiple devices
    */
-  async sendToMultipleDevices(tokens: string[], payload: FCMNotificationPayload): Promise<admin.messaging.BatchResponse> {
+  async sendToMultipleDevices(
+    tokens: string[],
+    payload: FCMNotificationPayload,
+  ): Promise<admin.messaging.BatchResponse> {
     if (!this.firebaseApp) {
-      throw new BadRequestException('Firebase not initialized. Please check your environment variables.');
+      throw new BadRequestException(
+        'Firebase not initialized. Please check your environment variables.',
+      );
     }
-    
+
     try {
       const message = {
         notification: {
@@ -696,7 +730,7 @@ export class NotificationService {
         data: payload.data,
         tokens,
         android: {
-          priority: 'high',
+          priority: 'high' as const,
           notification: {
             sound: 'default',
             clickAction: payload.clickAction,
@@ -731,24 +765,28 @@ export class NotificationService {
       };
 
       const response = await admin.messaging().sendMulticast(message);
-      this.logger.log(`FCM multicast sent successfully. Success: ${response.successCount}, Failed: ${response.failureCount}`);
-      
+      this.logger.log(
+        `FCM multicast sent successfully. Success: ${response.successCount}, Failed: ${response.failureCount}`,
+      );
+
       // Handle failed tokens
       if (response.failureCount > 0) {
         const failedTokens: string[] = [];
         response.responses.forEach((resp, idx) => {
           if (!resp.success) {
             failedTokens.push(tokens[idx]);
-            this.logger.warn(`Failed to send to token ${tokens[idx]}: ${resp.error?.message}`);
+            this.logger.warn(
+              `Failed to send to token ${tokens[idx]}: ${resp.error?.message}`,
+            );
           }
         });
-        
+
         // Remove invalid tokens from database
         if (failedTokens.length > 0) {
           await this.removeInvalidTokens(failedTokens);
         }
       }
-      
+
       return response;
     } catch (error) {
       this.logger.error('Failed to send FCM multicast:', error);
@@ -759,11 +797,16 @@ export class NotificationService {
   /**
    * Send notification to a topic
    */
-  async sendToTopic(topic: string, payload: FCMNotificationPayload): Promise<string> {
+  async sendToTopic(
+    topic: string,
+    payload: FCMNotificationPayload,
+  ): Promise<string> {
     if (!this.firebaseApp) {
-      throw new BadRequestException('Firebase not initialized. Please check your environment variables.');
+      throw new BadRequestException(
+        'Firebase not initialized. Please check your environment variables.',
+      );
     }
-    
+
     try {
       const message = {
         notification: {
@@ -774,7 +817,7 @@ export class NotificationService {
         data: payload.data,
         topic,
         android: {
-          priority: 'high',
+          priority: 'high' as const,
           notification: {
             sound: 'default',
             clickAction: payload.clickAction,
@@ -820,11 +863,14 @@ export class NotificationService {
   /**
    * Send notification to a user (all their devices)
    */
-  async sendToUser(userId: string, payload: FCMNotificationPayload): Promise<admin.messaging.BatchResponse> {
+  async sendToUser(
+    userId: string,
+    payload: FCMNotificationPayload,
+  ): Promise<admin.messaging.BatchResponse> {
     try {
       // Get all device tokens for the user
       const deviceTokens = await this.getUserDeviceTokens(userId);
-      
+
       if (deviceTokens.length === 0) {
         this.logger.warn(`No device tokens found for user ${userId}`);
         return {
@@ -836,7 +882,10 @@ export class NotificationService {
 
       return await this.sendToMultipleDevices(deviceTokens, payload);
     } catch (error) {
-      this.logger.error(`Failed to send notification to user ${userId}:`, error);
+      this.logger.error(
+        `Failed to send notification to user ${userId}:`,
+        error,
+      );
       throw new BadRequestException('Failed to send user notification');
     }
   }
@@ -846,7 +895,7 @@ export class NotificationService {
    */
   async getUserDeviceTokens(userId: string): Promise<string[]> {
     try {
-      const tokens = await this.prisma.fcmToken.findMany({
+      const tokens = await this.prisma.fCMToken.findMany({
         where: {
           userId,
           isActive: true,
@@ -856,7 +905,7 @@ export class NotificationService {
         },
       });
 
-      return tokens.map(t => t.token);
+      return tokens.map((t) => t.token);
     } catch (error) {
       this.logger.error('Failed to get user device tokens:', error);
       return [];
@@ -866,10 +915,14 @@ export class NotificationService {
   /**
    * Register a device token for a user
    */
-  async registerDeviceToken(userId: string, token: string, deviceInfo?: any): Promise<void> {
+  async registerDeviceToken(
+    userId: string,
+    token: string,
+    deviceInfo?: any,
+  ): Promise<void> {
     try {
       // Check if token already exists
-      const existingToken = await this.prisma.fcmToken.findFirst({
+      const existingToken = await this.prisma.fCMToken.findFirst({
         where: {
           token,
           userId,
@@ -878,7 +931,7 @@ export class NotificationService {
 
       if (existingToken) {
         // Update existing token
-        await this.prisma.fcmToken.update({
+        await this.prisma.fCMToken.update({
           where: { id: existingToken.id },
           data: {
             isActive: true,
@@ -888,7 +941,7 @@ export class NotificationService {
         });
       } else {
         // Create new token
-        await this.prisma.fcmToken.create({
+        await this.prisma.fCMToken.create({
           data: {
             userId,
             token,
@@ -911,7 +964,7 @@ export class NotificationService {
    */
   async unregisterDeviceToken(userId: string, token: string): Promise<void> {
     try {
-      await this.prisma.fcmToken.updateMany({
+      await this.prisma.fCMToken.updateMany({
         where: {
           userId,
           token,
@@ -933,7 +986,7 @@ export class NotificationService {
    */
   private async removeInvalidTokens(tokens: string[]): Promise<void> {
     try {
-      await this.prisma.fcmToken.updateMany({
+      await this.prisma.fCMToken.updateMany({
         where: {
           token: {
             in: tokens,
@@ -956,10 +1009,13 @@ export class NotificationService {
   async validateToken(token: string): Promise<boolean> {
     try {
       // Send a test message to validate the token
-      await admin.messaging().send({
-        token,
-        data: { test: 'true' },
-      }, true); // dry run
+      await admin.messaging().send(
+        {
+          token,
+          data: { test: 'true' },
+        },
+        true,
+      ); // dry run
       return true;
     } catch (error) {
       this.logger.warn(`Invalid FCM token: ${token}`, error);
@@ -970,10 +1026,15 @@ export class NotificationService {
   /**
    * Subscribe user to a topic
    */
-  async subscribeToTopic(tokens: string[], topic: string): Promise<admin.messaging.TopicManagementResponse> {
+  async subscribeToTopic(
+    tokens: string[],
+    topic: string,
+  ): Promise<admin.messaging.MessagingTopicManagementResponse> {
     try {
       const response = await admin.messaging().subscribeToTopic(tokens, topic);
-      this.logger.log(`Subscribed ${response.successCount} tokens to topic ${topic}`);
+      this.logger.log(
+        `Subscribed ${response.successCount} tokens to topic ${topic}`,
+      );
       return response;
     } catch (error) {
       this.logger.error(`Failed to subscribe to topic ${topic}:`, error);
@@ -984,10 +1045,17 @@ export class NotificationService {
   /**
    * Unsubscribe user from a topic
    */
-  async unsubscribeFromTopic(tokens: string[], topic: string): Promise<admin.messaging.TopicManagementResponse> {
+  async unsubscribeFromTopic(
+    tokens: string[],
+    topic: string,
+  ): Promise<admin.messaging.MessagingTopicManagementResponse> {
     try {
-      const response = await admin.messaging().unsubscribeFromTopic(tokens, topic);
-      this.logger.log(`Unsubscribed ${response.successCount} tokens from topic ${topic}`);
+      const response = await admin
+        .messaging()
+        .unsubscribeFromTopic(tokens, topic);
+      this.logger.log(
+        `Unsubscribed ${response.successCount} tokens from topic ${topic}`,
+      );
       return response;
     } catch (error) {
       this.logger.error(`Failed to unsubscribe from topic ${topic}:`, error);
@@ -1009,7 +1077,11 @@ export class NotificationService {
   /**
    * Register FCM token for user
    */
-  async registerFCMToken(userId: string, token: string, deviceInfo?: any): Promise<{ success: boolean; message: string }> {
+  async registerFCMToken(
+    userId: string,
+    token: string,
+    deviceInfo?: any,
+  ): Promise<{ success: boolean; message: string }> {
     try {
       await this.registerDeviceToken(userId, token, deviceInfo);
       return {
@@ -1024,7 +1096,10 @@ export class NotificationService {
   /**
    * Unregister FCM token for user
    */
-  async unregisterFCMToken(userId: string, token: string): Promise<{ success: boolean; message: string }> {
+  async unregisterFCMToken(
+    userId: string,
+    token: string,
+  ): Promise<{ success: boolean; message: string }> {
     try {
       await this.unregisterDeviceToken(userId, token);
       return {
@@ -1039,7 +1114,9 @@ export class NotificationService {
   /**
    * Validate FCM token
    */
-  async validateFCMToken(token: string): Promise<{ isValid: boolean; message: string }> {
+  async validateFCMToken(
+    token: string,
+  ): Promise<{ isValid: boolean; message: string }> {
     try {
       const isValid = await this.validateToken(token);
       return {

@@ -51,8 +51,12 @@ let JobService = class JobService {
                     ...(where.OR || []),
                     {
                         AND: [
-                            salary_min !== undefined ? { minSalary: { gte: salary_min } } : {},
-                            salary_max !== undefined ? { maxSalary: { lte: salary_max } } : {},
+                            salary_min !== undefined
+                                ? { minSalary: { gte: salary_min } }
+                                : {},
+                            salary_max !== undefined
+                                ? { maxSalary: { lte: salary_max } }
+                                : {},
                         ],
                     },
                 ];
@@ -110,7 +114,7 @@ let JobService = class JobService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                jobs: jobs.map(job => this.mapJobToResponse(job)),
+                jobs: jobs.map((job) => this.mapJobToResponse(job)),
                 total,
                 page,
                 limit,
@@ -216,7 +220,7 @@ let JobService = class JobService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                jobs: jobs.map(job => this.mapJobToResponse(job)),
+                jobs: jobs.map((job) => this.mapJobToResponse(job)),
                 total,
                 page,
                 limit,
@@ -261,7 +265,7 @@ let JobService = class JobService {
                 orderBy: { publishedAt: 'desc' },
                 take: 10,
             });
-            return jobs.map(job => this.mapJobToResponse(job));
+            return jobs.map((job) => this.mapJobToResponse(job));
         }
         catch (error) {
             this.handleException(error);
@@ -423,15 +427,15 @@ let JobService = class JobService {
             ]);
             return {
                 companies,
-                locations: locations.map(location => ({
+                locations: locations.map((location) => ({
                     id: location.id,
                     name: location.name,
                     state: location.state.name,
                     country: location.state.country.name,
                 })),
-                jobTypes: jobTypes.map(job => job.jobType),
-                experienceLevels: experienceLevels.map(job => job.experienceLevel),
-                workModes: workModes.map(job => job.workMode),
+                jobTypes: jobTypes.map((job) => job.jobType),
+                experienceLevels: experienceLevels.map((job) => job.experienceLevel),
+                workModes: workModes.map((job) => job.workMode),
                 skills: [],
                 salaryRanges: {
                     min: Number(salaryRanges._min.minSalary) || 0,
@@ -559,22 +563,24 @@ let JobService = class JobService {
             createdAt: job.createdAt,
             updatedAt: job.updatedAt,
             company: job.company,
-            location: job.city ? {
-                city: {
-                    id: job.city.id,
-                    name: job.city.name,
-                    state: {
-                        id: job.city.state.id,
-                        name: job.city.state.name,
-                        code: job.city.state.code,
-                        country: {
-                            id: job.city.state.country.id,
-                            name: job.city.state.country.name,
-                            code: job.city.state.country.code,
+            location: job.city
+                ? {
+                    city: {
+                        id: job.city.id,
+                        name: job.city.name,
+                        state: {
+                            id: job.city.state.id,
+                            name: job.city.state.name,
+                            code: job.city.state.code,
+                            country: {
+                                id: job.city.state.country.id,
+                                name: job.city.state.country.name,
+                                code: job.city.state.country.code,
+                            },
                         },
                     },
-                },
-            } : null,
+                }
+                : null,
             skillsRequired: job.skillsRequired || [],
             tags: job.tags || [],
         };
@@ -686,33 +692,38 @@ let JobService = class JobService {
                         name: application.job.company.name,
                         logo: application.job.company.logo || undefined,
                     },
-                    location: application.job.city ? {
-                        city: {
-                            id: application.job.city.id,
-                            name: application.job.city.name,
-                            state: {
-                                id: application.job.city.state.id,
-                                name: application.job.city.state.name,
-                                code: application.job.city.state.code || undefined,
-                                country: {
-                                    id: application.job.city.state.country.id,
-                                    name: application.job.city.state.country.name,
-                                    code: application.job.city.state.country.code,
+                    location: application.job.city
+                        ? {
+                            city: {
+                                id: application.job.city.id,
+                                name: application.job.city.name,
+                                state: {
+                                    id: application.job.city.state.id,
+                                    name: application.job.city.state.name,
+                                    code: application.job.city.state.code || undefined,
+                                    country: {
+                                        id: application.job.city.state.country.id,
+                                        name: application.job.city.state.country.name,
+                                        code: application.job.city.state.country.code,
+                                    },
                                 },
                             },
-                        },
-                    } : undefined,
+                        }
+                        : undefined,
                 },
-                resume: application.resume ? {
-                    id: application.resume.id,
-                    title: application.resume.title,
-                    fileName: application.resume.fileName,
-                    uploadedAt: application.resume.uploadedAt,
-                } : undefined,
+                resume: application.resume
+                    ? {
+                        id: application.resume.id,
+                        title: application.resume.title,
+                        fileName: application.resume.fileName,
+                        uploadedAt: application.resume.uploadedAt,
+                    }
+                    : undefined,
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.BadRequestException) {
                 throw error;
             }
             this.handleException(error);
