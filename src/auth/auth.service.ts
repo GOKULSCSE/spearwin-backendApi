@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { DatabaseService } from '../database/database.service';
 import { LoginDto } from './dto/login.dto';
@@ -19,14 +14,14 @@ import { Enable2FaDto } from './dto/2fa-enable.dto';
 import { Disable2FaDto } from './dto/2fa-disable.dto';
 import { Verify2FaDto } from './dto/2fa-verify.dto';
 import { GenerateBackupCodesDto } from './dto/backup-codes.dto';
-import {
-  LoginResponseDto,
-  RefreshResponseDto,
-  ForgotPasswordResponseDto,
-  ResetPasswordResponseDto,
+import { 
+  LoginResponseDto, 
+  RefreshResponseDto, 
+  ForgotPasswordResponseDto, 
+  ResetPasswordResponseDto, 
   LogoutResponseDto,
   AuthResponseDto,
-  RegisterResponseDto,
+  RegisterResponseDto
 } from './dto/auth-response.dto';
 import { UserRole, UserStatus, OTPType } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
@@ -56,10 +51,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(
-      loginDto.password,
-      user.password,
-    );
+    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -207,9 +199,7 @@ export class AuthService {
     }
   }
 
-  async refreshToken(
-    refreshTokenDto: RefreshTokenDto,
-  ): Promise<RefreshResponseDto> {
+  async refreshToken(refreshTokenDto: RefreshTokenDto): Promise<RefreshResponseDto> {
     try {
       const payload = this.jwtService.verify(refreshTokenDto.refreshToken);
       const user = await this.prisma.user.findUnique({
@@ -236,12 +226,8 @@ export class AuthService {
         status: user.status,
       };
 
-      const accessToken = this.jwtService.sign(newPayload, {
-        expiresIn: '15m',
-      });
-      const newRefreshToken = this.jwtService.sign(newPayload, {
-        expiresIn: '7d',
-      });
+      const accessToken = this.jwtService.sign(newPayload, { expiresIn: '15m' });
+      const newRefreshToken = this.jwtService.sign(newPayload, { expiresIn: '7d' });
 
       return {
         success: true,
@@ -256,9 +242,7 @@ export class AuthService {
     }
   }
 
-  async forgotPassword(
-    forgotPasswordDto: ForgotPasswordDto,
-  ): Promise<ForgotPasswordResponseDto> {
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<ForgotPasswordResponseDto> {
     const user = await this.prisma.user.findUnique({
       where: { email: forgotPasswordDto.email },
     });
@@ -267,8 +251,7 @@ export class AuthService {
       // Don't reveal if user exists or not for security
       return {
         success: true,
-        message:
-          'If an account with that email exists, a password reset link has been sent.',
+        message: 'If an account with that email exists, a password reset link has been sent.',
       };
     }
 
@@ -305,8 +288,7 @@ export class AuthService {
 
     return {
       success: true,
-      message:
-        'If an account with that email exists, a password reset link has been sent.',
+      message: 'If an account with that email exists, a password reset link has been sent.',
     };
   }
 
@@ -330,9 +312,7 @@ export class AuthService {
     return result;
   }
 
-  async resetPassword(
-    resetPasswordDto: ResetPasswordDto,
-  ): Promise<ResetPasswordResponseDto> {
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<ResetPasswordResponseDto> {
     // Find valid OTP
     const otp = await this.prisma.oTP.findFirst({
       where: {
@@ -364,7 +344,7 @@ export class AuthService {
     // Mark OTP as used
     await this.prisma.oTP.update({
       where: { id: otp.id },
-      data: {
+      data: { 
         used: true,
         usedAt: new Date(),
       },
@@ -399,9 +379,7 @@ export class AuthService {
     };
   }
 
-  async candidateRegister(
-    candidateRegisterDto: CandidateRegisterDto,
-  ): Promise<RegisterResponseDto> {
+  async candidateRegister(candidateRegisterDto: CandidateRegisterDto): Promise<RegisterResponseDto> {
     try {
       // Check if user already exists
       const existingUser = await this.prisma.user.findUnique({
@@ -419,17 +397,31 @@ export class AuthService {
         });
 
         if (existingPhoneUser) {
-          throw new BadRequestException(
-            'User with this phone number already exists',
-          );
+          throw new BadRequestException('User with this phone number already exists');
         }
       }
 
+      // Convert cityName to cityId if provided
+      let cityId: string | undefined = candidateRegisterDto.cityId;
+      if (candidateRegisterDto.cityName && !cityId) {
+        const city = await this.prisma.city.findFirst({
+          where: {
+            name: {
+              contains: candidateRegisterDto.cityName,
+              mode: 'insensitive',
+            },
+            isActive: true,
+          },
+        });
+
+        if (!city) {
+          throw new BadRequestException(`City '${candidateRegisterDto.cityName}' not found`);
+        }
+        cityId = city.id;
+      }
+
       // Hash password
-      const hashedPassword = await bcrypt.hash(
-        candidateRegisterDto.password,
-        10,
-      );
+      const hashedPassword = await bcrypt.hash(candidateRegisterDto.password, 10);
 
       // Create user and candidate in a transaction
       const result = await this.prisma.$transaction(async (prisma) => {
@@ -454,9 +446,7 @@ export class AuthService {
             userId: user.id,
             firstName: candidateRegisterDto.firstName,
             lastName: candidateRegisterDto.lastName,
-            dateOfBirth: candidateRegisterDto.dateOfBirth
-              ? new Date(candidateRegisterDto.dateOfBirth)
-              : null,
+            dateOfBirth: candidateRegisterDto.dateOfBirth ? new Date(candidateRegisterDto.dateOfBirth) : null,
             gender: candidateRegisterDto.gender,
             bio: candidateRegisterDto.bio,
             currentTitle: candidateRegisterDto.currentTitle,
@@ -464,7 +454,7 @@ export class AuthService {
             linkedinUrl: candidateRegisterDto.linkedinUrl,
             githubUrl: candidateRegisterDto.githubUrl,
             portfolioUrl: candidateRegisterDto.portfolioUrl,
-            cityId: candidateRegisterDto.cityId,
+            cityId: cityId,
             isAvailable: candidateRegisterDto.isAvailable ?? true,
           },
         });
@@ -503,8 +493,7 @@ export class AuthService {
 
       return {
         success: true,
-        message:
-          'Candidate registered successfully. Please check your email for verification.',
+        message: 'Candidate registered successfully. Please check your email for verification.',
         data: {
           user: {
             id: result.user.id,
@@ -534,9 +523,7 @@ export class AuthService {
     }
   }
 
-  async companyRegister(
-    companyRegisterDto: CompanyRegisterDto,
-  ): Promise<RegisterResponseDto> {
+  async companyRegister(companyRegisterDto: CompanyRegisterDto): Promise<RegisterResponseDto> {
     try {
       // Check if user already exists
       const existingUser = await this.prisma.user.findUnique({
@@ -551,13 +538,10 @@ export class AuthService {
       const hashedPassword = await bcrypt.hash(companyRegisterDto.password, 10);
 
       // Generate unique slug for company
-      const slug =
-        companyRegisterDto.name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, '') +
-        '-' +
-        Date.now();
+      const slug = companyRegisterDto.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '') + '-' + Date.now();
 
       // Create user and company in a transaction
       const result = await this.prisma.$transaction(async (prisma) => {
@@ -631,8 +615,7 @@ export class AuthService {
 
       return {
         success: true,
-        message:
-          'Company registered successfully. Please check your email for verification.',
+        message: 'Company registered successfully. Please check your email for verification.',
         data: {
           user: {
             id: result.user.id,
@@ -663,9 +646,7 @@ export class AuthService {
     }
   }
 
-  async verifyEmail(
-    verifyEmailDto: VerifyEmailDto,
-  ): Promise<{ success: boolean; message: string }> {
+  async verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<{ success: boolean; message: string }> {
     try {
       // Find valid OTP for email verification
       const otp = await this.prisma.oTP.findFirst({
@@ -730,9 +711,7 @@ export class AuthService {
     }
   }
 
-  async verifyPhone(
-    verifyPhoneDto: VerifyPhoneDto,
-  ): Promise<{ success: boolean; message: string }> {
+  async verifyPhone(verifyPhoneDto: VerifyPhoneDto): Promise<{ success: boolean; message: string }> {
     try {
       // Find valid OTP for phone verification
       const otp = await this.prisma.oTP.findFirst({
@@ -796,9 +775,7 @@ export class AuthService {
     }
   }
 
-  async resendOtp(
-    resendOtpDto: ResendOtpDto,
-  ): Promise<{ success: boolean; message: string }> {
+  async resendOtp(resendOtpDto: ResendOtpDto): Promise<{ success: boolean; message: string }> {
     try {
       // Find user by email
       const user = await this.prisma.user.findUnique({
@@ -809,8 +786,7 @@ export class AuthService {
         // Don't reveal if user exists for security
         return {
           success: true,
-          message:
-            'If an account with that email exists, a new verification code has been sent.',
+          message: 'If an account with that email exists, a new verification code has been sent.',
         };
       }
 
@@ -830,7 +806,7 @@ export class AuthService {
       // Generate new OTP
       const newOtpCode = uuidv4();
       const expiresAt = new Date();
-
+      
       // Set expiry based on OTP type
       if (resendOtpDto.type === OTPType.EMAIL_VERIFICATION) {
         expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours for email
@@ -869,22 +845,14 @@ export class AuthService {
 
       return {
         success: true,
-        message:
-          'If an account with that email exists, a new verification code has been sent.',
+        message: 'If an account with that email exists, a new verification code has been sent.',
       };
     } catch (error) {
       throw new BadRequestException('Failed to resend OTP');
     }
   }
 
-  async enable2Fa(
-    userId: string,
-    enable2FaDto: Enable2FaDto,
-  ): Promise<{
-    success: boolean;
-    message: string;
-    data: { secret: string; qrCode: string; backupCodes: string[] };
-  }> {
+  async enable2Fa(userId: string, enable2FaDto: Enable2FaDto): Promise<{ success: boolean; message: string; data: { secret: string; qrCode: string; backupCodes: string[] } }> {
     try {
       // Verify user password
       const user = await this.prisma.user.findUnique({
@@ -895,10 +863,7 @@ export class AuthService {
         throw new BadRequestException('User not found');
       }
 
-      const isPasswordValid = await bcrypt.compare(
-        enable2FaDto.password,
-        user.password,
-      );
+      const isPasswordValid = await bcrypt.compare(enable2FaDto.password, user.password);
       if (!isPasswordValid) {
         throw new BadRequestException('Invalid password');
       }
@@ -915,8 +880,8 @@ export class AuthService {
       });
 
       // Generate backup codes
-      const backupCodes = Array.from({ length: 10 }, () =>
-        Math.random().toString(36).substring(2, 8).toUpperCase(),
+      const backupCodes = Array.from({ length: 10 }, () => 
+        Math.random().toString(36).substring(2, 8).toUpperCase()
       );
 
       // Generate QR code
@@ -934,24 +899,14 @@ export class AuthService {
         await prisma.userSetting.upsert({
           where: { userId_key: { userId, key: '2fa_secret' } },
           update: { value: secret.base32 },
-          create: {
-            userId,
-            key: '2fa_secret',
-            value: secret.base32,
-            category: 'security',
-          },
+          create: { userId, key: '2fa_secret', value: secret.base32, category: 'security' },
         });
 
         // Store backup codes
         await prisma.userSetting.upsert({
           where: { userId_key: { userId, key: '2fa_backup_codes' } },
           update: { value: JSON.stringify(backupCodes) },
-          create: {
-            userId,
-            key: '2fa_backup_codes',
-            value: JSON.stringify(backupCodes),
-            category: 'security',
-          },
+          create: { userId, key: '2fa_backup_codes', value: JSON.stringify(backupCodes), category: 'security' },
         });
       });
 
@@ -969,8 +924,7 @@ export class AuthService {
 
       return {
         success: true,
-        message:
-          '2FA enabled successfully. Please scan the QR code with your authenticator app.',
+        message: '2FA enabled successfully. Please scan the QR code with your authenticator app.',
         data: {
           secret: secret.base32,
           qrCode,
@@ -985,10 +939,7 @@ export class AuthService {
     }
   }
 
-  async disable2Fa(
-    userId: string,
-    disable2FaDto: Disable2FaDto,
-  ): Promise<{ success: boolean; message: string }> {
+  async disable2Fa(userId: string, disable2FaDto: Disable2FaDto): Promise<{ success: boolean; message: string }> {
     try {
       // Verify user password
       const user = await this.prisma.user.findUnique({
@@ -999,10 +950,7 @@ export class AuthService {
         throw new BadRequestException('User not found');
       }
 
-      const isPasswordValid = await bcrypt.compare(
-        disable2FaDto.password,
-        user.password,
-      );
+      const isPasswordValid = await bcrypt.compare(disable2FaDto.password, user.password);
       if (!isPasswordValid) {
         throw new BadRequestException('Invalid password');
       }
@@ -1052,9 +1000,7 @@ export class AuthService {
     }
   }
 
-  async verify2Fa(
-    verify2FaDto: Verify2FaDto,
-  ): Promise<{ success: boolean; message: string }> {
+  async verify2Fa(verify2FaDto: Verify2FaDto): Promise<{ success: boolean; message: string }> {
     try {
       // Get user and 2FA secret
       const user = await this.prisma.user.findUnique({
@@ -1074,7 +1020,7 @@ export class AuthService {
         throw new BadRequestException('2FA is not enabled');
       }
 
-      const secretSetting = user.settings.find((s) => s.key === '2fa_secret');
+      const secretSetting = user.settings.find(s => s.key === '2fa_secret');
       if (!secretSetting) {
         throw new BadRequestException('2FA secret not found');
       }
@@ -1090,28 +1036,18 @@ export class AuthService {
       if (!verified) {
         // Check if it's a backup code
         const backupCodesSetting = await this.prisma.userSetting.findUnique({
-          where: {
-            userId_key: {
-              userId: verify2FaDto.userId,
-              key: '2fa_backup_codes',
-            },
-          },
+          where: { userId_key: { userId: verify2FaDto.userId, key: '2fa_backup_codes' } },
         });
 
         if (backupCodesSetting) {
           const backupCodes = JSON.parse(backupCodesSetting.value);
           const codeIndex = backupCodes.indexOf(verify2FaDto.code);
-
+          
           if (codeIndex !== -1) {
             // Remove used backup code
             backupCodes.splice(codeIndex, 1);
             await this.prisma.userSetting.update({
-              where: {
-                userId_key: {
-                  userId: verify2FaDto.userId,
-                  key: '2fa_backup_codes',
-                },
-              },
+              where: { userId_key: { userId: verify2FaDto.userId, key: '2fa_backup_codes' } },
               data: { value: JSON.stringify(backupCodes) },
             });
 
@@ -1161,13 +1097,7 @@ export class AuthService {
     }
   }
 
-  async generateBackupCodes(
-    generateBackupCodesDto: GenerateBackupCodesDto,
-  ): Promise<{
-    success: boolean;
-    message: string;
-    data: { backupCodes: string[] };
-  }> {
+  async generateBackupCodes(generateBackupCodesDto: GenerateBackupCodesDto): Promise<{ success: boolean; message: string; data: { backupCodes: string[] } }> {
     try {
       // Verify user password
       const user = await this.prisma.user.findUnique({
@@ -1178,10 +1108,7 @@ export class AuthService {
         throw new BadRequestException('User not found');
       }
 
-      const isPasswordValid = await bcrypt.compare(
-        generateBackupCodesDto.password,
-        user.password,
-      );
+      const isPasswordValid = await bcrypt.compare(generateBackupCodesDto.password, user.password);
       if (!isPasswordValid) {
         throw new BadRequestException('Invalid password');
       }
@@ -1191,24 +1118,19 @@ export class AuthService {
       }
 
       // Generate new backup codes
-      const backupCodes = Array.from({ length: 10 }, () =>
-        Math.random().toString(36).substring(2, 8).toUpperCase(),
+      const backupCodes = Array.from({ length: 10 }, () => 
+        Math.random().toString(36).substring(2, 8).toUpperCase()
       );
 
       // Update backup codes
       await this.prisma.userSetting.upsert({
-        where: {
-          userId_key: {
-            userId: generateBackupCodesDto.userId,
-            key: '2fa_backup_codes',
-          },
-        },
+        where: { userId_key: { userId: generateBackupCodesDto.userId, key: '2fa_backup_codes' } },
         update: { value: JSON.stringify(backupCodes) },
-        create: {
-          userId: generateBackupCodesDto.userId,
-          key: '2fa_backup_codes',
-          value: JSON.stringify(backupCodes),
-          category: 'security',
+        create: { 
+          userId: generateBackupCodesDto.userId, 
+          key: '2fa_backup_codes', 
+          value: JSON.stringify(backupCodes), 
+          category: 'security' 
         },
       });
 

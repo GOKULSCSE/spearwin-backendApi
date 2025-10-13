@@ -67,7 +67,7 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(['DAILY', 'WEEKLY', 'MONTHLY'], {
-        message: 'Frequency must be one of: DAILY, WEEKLY, MONTHLY',
+        message: 'Frequency must be one of: DAILY, WEEKLY, MONTHLY'
     }),
     __metadata("design:type", String)
 ], CreateJobAlertDto.prototype, "frequency", void 0);
@@ -128,7 +128,7 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(['DAILY', 'WEEKLY', 'MONTHLY'], {
-        message: 'Frequency must be one of: DAILY, WEEKLY, MONTHLY',
+        message: 'Frequency must be one of: DAILY, WEEKLY, MONTHLY'
     }),
     __metadata("design:type", String)
 ], UpdateJobAlertDto.prototype, "frequency", void 0);

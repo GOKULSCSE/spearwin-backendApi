@@ -5,13 +5,13 @@ import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
-
+  
   // Enable CORS
   app.enableCors(true);
-
+  
   // Security middleware
   app.use(helmet());
-
+  
   // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
@@ -23,7 +23,7 @@ async function bootstrap() {
       },
     }),
   );
-
+  
   await app.listen(process.env.PORT ?? 5000);
 }
 bootstrap();

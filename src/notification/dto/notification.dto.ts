@@ -1,13 +1,4 @@
-import {
-  IsString,
-  IsOptional,
-  IsBoolean,
-  IsEnum,
-  IsDateString,
-  IsInt,
-  IsArray,
-  IsObject,
-} from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsEnum, IsDateString, IsInt, IsArray } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { NotificationType } from '@prisma/client';
 
@@ -123,74 +114,4 @@ export class NotificationStatsResponseDto {
   };
   recentNotifications: number; // Notifications in last 7 days
   averageReadTime: number; // Average time to read in hours
-}
-
-// =================================================================
-// FCM INTEGRATION DTOs
-// =================================================================
-
-export class CreateNotificationWithPushDto {
-  @IsString({ message: 'User ID must be a string' })
-  userId: string;
-
-  @IsOptional()
-  @IsArray({ message: 'User IDs must be an array' })
-  @IsString({ each: true, message: 'Each user ID must be a string' })
-  userIds?: string[];
-
-  @IsEnum(NotificationType, { message: 'Invalid notification type' })
-  type: NotificationType;
-
-  @IsString({ message: 'Title must be a string' })
-  title: string;
-
-  @IsString({ message: 'Message must be a string' })
-  message: string;
-
-  @IsOptional()
-  @IsObject({ message: 'Data must be an object' })
-  data?: any;
-
-  @IsOptional()
-  @IsString({ message: 'Image URL must be a string' })
-  imageUrl?: string;
-
-  @IsOptional()
-  @IsString({ message: 'Click action must be a string' })
-  clickAction?: string;
-
-  @IsOptional()
-  @IsDateString({}, { message: 'Expires at must be a valid date' })
-  expiresAt?: string;
-
-  @IsOptional()
-  @IsBoolean({ message: 'Send push must be a boolean' })
-  sendPush?: boolean;
-
-  @IsOptional()
-  @IsString({ message: 'Topic must be a string' })
-  topic?: string;
-
-  @IsOptional()
-  @IsString({ message: 'Condition must be a string' })
-  condition?: string;
-}
-
-export class BulkNotificationDto {
-  @IsArray({ message: 'Notifications must be an array' })
-  notifications: CreateNotificationWithPushDto[];
-}
-
-export class BulkNotificationResponseDto {
-  success: boolean;
-  message: string;
-  totalNotifications: number;
-  successfulNotifications: number;
-  failedNotifications: number;
-  results: Array<{
-    userId: string;
-    success: boolean;
-    message?: string;
-    notificationId?: string;
-  }>;
 }

@@ -65,7 +65,7 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsInt)({ message: 'Founded year must be a number' }),
-    (0, class_transformer_1.Transform)(({ value }) => (value ? parseInt(value) : undefined)),
+    (0, class_transformer_1.Transform)(({ value }) => value ? parseInt(value) : undefined),
     __metadata("design:type", Number)
 ], CompanyRegisterDto.prototype, "foundedYear", void 0);
 __decorate([
