@@ -45,7 +45,7 @@ export class CreateJobAlertDto {
 
   @IsOptional()
   @IsEnum(['DAILY', 'WEEKLY', 'MONTHLY'], {
-    message: 'Frequency must be one of: DAILY, WEEKLY, MONTHLY',
+    message: 'Frequency must be one of: DAILY, WEEKLY, MONTHLY'
   })
   frequency?: string = 'WEEKLY';
 }
@@ -87,7 +87,7 @@ export class UpdateJobAlertDto {
 
   @IsOptional()
   @IsEnum(['DAILY', 'WEEKLY', 'MONTHLY'], {
-    message: 'Frequency must be one of: DAILY, WEEKLY, MONTHLY',
+    message: 'Frequency must be one of: DAILY, WEEKLY, MONTHLY'
   })
   frequency?: string;
 }

@@ -1,16 +1,4 @@
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsString,
-  MinLength,
-  IsOptional,
-  IsDateString,
-  IsBoolean,
-  IsUrl,
-  IsInt,
-  IsDecimal,
-  IsNumber,
-} from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional, IsDateString, IsBoolean, IsUrl, IsInt, IsDecimal, IsNumber } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 export class CandidateRegisterDto {
@@ -32,13 +20,8 @@ export class CandidateRegisterDto {
   lastName: string;
 
   @IsOptional()
-  @IsDateString(
-    {},
-    { message: 'Date of birth must be a valid date (YYYY-MM-DD format)' },
-  )
-  @Transform(({ value }) =>
-    value ? new Date(value).toISOString().split('T')[0] : undefined,
-  )
+  @IsDateString({}, { message: 'Date of birth must be a valid date (YYYY-MM-DD format)' })
+  @Transform(({ value }) => value ? new Date(value).toISOString().split('T')[0] : undefined)
   dateOfBirth?: string;
 
   @IsOptional()
@@ -64,7 +47,7 @@ export class CandidateRegisterDto {
 
   @IsOptional()
   @IsNumber({}, { message: 'Expected salary must be a valid number' })
-  @Type(() => Number)
+   @Type(() => Number)
   expectedSalary?: number;
 
   @IsOptional()
@@ -86,6 +69,10 @@ export class CandidateRegisterDto {
   @IsOptional()
   @IsString({ message: 'City ID must be a string' })
   cityId?: string;
+
+  @IsOptional()
+  @IsString({ message: 'City name must be a string' })
+  cityName?: string;
 
   @IsOptional()
   @IsBoolean({ message: 'Is available must be a boolean' })

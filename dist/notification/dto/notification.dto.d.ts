@@ -63,33 +63,3 @@ export declare class NotificationStatsResponseDto {
     recentNotifications: number;
     averageReadTime: number;
 }
-export declare class CreateNotificationWithPushDto {
-    userId: string;
-    userIds?: string[];
-    type: NotificationType;
-    title: string;
-    message: string;
-    data?: any;
-    imageUrl?: string;
-    clickAction?: string;
-    expiresAt?: string;
-    sendPush?: boolean;
-    topic?: string;
-    condition?: string;
-}
-export declare class BulkNotificationDto {
-    notifications: CreateNotificationWithPushDto[];
-}
-export declare class BulkNotificationResponseDto {
-    success: boolean;
-    message: string;
-    totalNotifications: number;
-    successfulNotifications: number;
-    failedNotifications: number;
-    results: Array<{
-        userId: string;
-        success: boolean;
-        message?: string;
-        notificationId?: string;
-    }>;
-}

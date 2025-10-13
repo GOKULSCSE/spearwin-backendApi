@@ -42,33 +42,25 @@ __decorate([
 ], CreateJobDto.prototype, "title", void 0);
 __decorate([
     (0, class_validator_1.IsString)({ message: 'Description must be a string' }),
-    (0, class_validator_1.Length)(10, 5000, {
-        message: 'Description must be between 10 and 5000 characters',
-    }),
+    (0, class_validator_1.Length)(10, 5000, { message: 'Description must be between 10 and 5000 characters' }),
     __metadata("design:type", String)
 ], CreateJobDto.prototype, "description", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Requirements must be a string' }),
-    (0, class_validator_1.Length)(10, 2000, {
-        message: 'Requirements must be between 10 and 2000 characters',
-    }),
+    (0, class_validator_1.Length)(10, 2000, { message: 'Requirements must be between 10 and 2000 characters' }),
     __metadata("design:type", String)
 ], CreateJobDto.prototype, "requirements", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Responsibilities must be a string' }),
-    (0, class_validator_1.Length)(10, 2000, {
-        message: 'Responsibilities must be between 10 and 2000 characters',
-    }),
+    (0, class_validator_1.Length)(10, 2000, { message: 'Responsibilities must be between 10 and 2000 characters' }),
     __metadata("design:type", String)
 ], CreateJobDto.prototype, "responsibilities", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Benefits must be a string' }),
-    (0, class_validator_1.Length)(10, 1000, {
-        message: 'Benefits must be between 10 and 1000 characters',
-    }),
+    (0, class_validator_1.Length)(10, 1000, { message: 'Benefits must be between 10 and 1000 characters' }),
     __metadata("design:type", String)
 ], CreateJobDto.prototype, "benefits", void 0);
 __decorate([
@@ -87,19 +79,19 @@ __decorate([
 ], CreateJobDto.prototype, "address", void 0);
 __decorate([
     (0, class_validator_1.IsEnum)(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'FREELANCE'], {
-        message: 'Job type must be one of: FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP, FREELANCE',
+        message: 'Job type must be one of: FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP, FREELANCE'
     }),
     __metadata("design:type", String)
 ], CreateJobDto.prototype, "jobType", void 0);
 __decorate([
     (0, class_validator_1.IsEnum)(['REMOTE', 'ONSITE', 'HYBRID'], {
-        message: 'Work mode must be one of: REMOTE, ONSITE, HYBRID',
+        message: 'Work mode must be one of: REMOTE, ONSITE, HYBRID'
     }),
     __metadata("design:type", String)
 ], CreateJobDto.prototype, "workMode", void 0);
 __decorate([
     (0, class_validator_1.IsEnum)(['ENTRY_LEVEL', 'MID_LEVEL', 'SENIOR_LEVEL', 'EXECUTIVE'], {
-        message: 'Experience level must be one of: ENTRY_LEVEL, MID_LEVEL, SENIOR_LEVEL, EXECUTIVE',
+        message: 'Experience level must be one of: ENTRY_LEVEL, MID_LEVEL, SENIOR_LEVEL, EXECUTIVE'
     }),
     __metadata("design:type", String)
 ], CreateJobDto.prototype, "experienceLevel", void 0);
@@ -144,15 +136,8 @@ __decorate([
 ], CreateJobDto.prototype, "skillsRequired", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsEnum)([
-        'HIGH_SCHOOL',
-        'DIPLOMA',
-        'BACHELOR',
-        'MASTER',
-        'DOCTORATE',
-        'PROFESSIONAL',
-    ], {
-        message: 'Education level must be one of: HIGH_SCHOOL, DIPLOMA, BACHELOR, MASTER, DOCTORATE, PROFESSIONAL',
+    (0, class_validator_1.IsEnum)(['HIGH_SCHOOL', 'DIPLOMA', 'BACHELOR', 'MASTER', 'DOCTORATE', 'PROFESSIONAL'], {
+        message: 'Education level must be one of: HIGH_SCHOOL, DIPLOMA, BACHELOR, MASTER, DOCTORATE, PROFESSIONAL'
     }),
     __metadata("design:type", String)
 ], CreateJobDto.prototype, "educationLevel", void 0);
@@ -164,7 +149,7 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(['DRAFT', 'PUBLISHED', 'CLOSED', 'ARCHIVED'], {
-        message: 'Status must be one of: DRAFT, PUBLISHED, CLOSED, ARCHIVED',
+        message: 'Status must be one of: DRAFT, PUBLISHED, CLOSED, ARCHIVED'
     }),
     __metadata("design:type", String)
 ], CreateJobDto.prototype, "status", void 0);
@@ -200,33 +185,25 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Description must be a string' }),
-    (0, class_validator_1.Length)(10, 5000, {
-        message: 'Description must be between 10 and 5000 characters',
-    }),
+    (0, class_validator_1.Length)(10, 5000, { message: 'Description must be between 10 and 5000 characters' }),
     __metadata("design:type", String)
 ], UpdateJobDto.prototype, "description", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Requirements must be a string' }),
-    (0, class_validator_1.Length)(10, 2000, {
-        message: 'Requirements must be between 10 and 2000 characters',
-    }),
+    (0, class_validator_1.Length)(10, 2000, { message: 'Requirements must be between 10 and 2000 characters' }),
     __metadata("design:type", String)
 ], UpdateJobDto.prototype, "requirements", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Responsibilities must be a string' }),
-    (0, class_validator_1.Length)(10, 2000, {
-        message: 'Responsibilities must be between 10 and 2000 characters',
-    }),
+    (0, class_validator_1.Length)(10, 2000, { message: 'Responsibilities must be between 10 and 2000 characters' }),
     __metadata("design:type", String)
 ], UpdateJobDto.prototype, "responsibilities", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Benefits must be a string' }),
-    (0, class_validator_1.Length)(10, 1000, {
-        message: 'Benefits must be between 10 and 1000 characters',
-    }),
+    (0, class_validator_1.Length)(10, 1000, { message: 'Benefits must be between 10 and 1000 characters' }),
     __metadata("design:type", String)
 ], UpdateJobDto.prototype, "benefits", void 0);
 __decorate([
@@ -247,21 +224,21 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'FREELANCE'], {
-        message: 'Job type must be one of: FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP, FREELANCE',
+        message: 'Job type must be one of: FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP, FREELANCE'
     }),
     __metadata("design:type", String)
 ], UpdateJobDto.prototype, "jobType", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(['REMOTE', 'ONSITE', 'HYBRID'], {
-        message: 'Work mode must be one of: REMOTE, ONSITE, HYBRID',
+        message: 'Work mode must be one of: REMOTE, ONSITE, HYBRID'
     }),
     __metadata("design:type", String)
 ], UpdateJobDto.prototype, "workMode", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(['ENTRY_LEVEL', 'MID_LEVEL', 'SENIOR_LEVEL', 'EXECUTIVE'], {
-        message: 'Experience level must be one of: ENTRY_LEVEL, MID_LEVEL, SENIOR_LEVEL, EXECUTIVE',
+        message: 'Experience level must be one of: ENTRY_LEVEL, MID_LEVEL, SENIOR_LEVEL, EXECUTIVE'
     }),
     __metadata("design:type", String)
 ], UpdateJobDto.prototype, "experienceLevel", void 0);
@@ -306,15 +283,8 @@ __decorate([
 ], UpdateJobDto.prototype, "skillsRequired", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsEnum)([
-        'HIGH_SCHOOL',
-        'DIPLOMA',
-        'BACHELOR',
-        'MASTER',
-        'DOCTORATE',
-        'PROFESSIONAL',
-    ], {
-        message: 'Education level must be one of: HIGH_SCHOOL, DIPLOMA, BACHELOR, MASTER, DOCTORATE, PROFESSIONAL',
+    (0, class_validator_1.IsEnum)(['HIGH_SCHOOL', 'DIPLOMA', 'BACHELOR', 'MASTER', 'DOCTORATE', 'PROFESSIONAL'], {
+        message: 'Education level must be one of: HIGH_SCHOOL, DIPLOMA, BACHELOR, MASTER, DOCTORATE, PROFESSIONAL'
     }),
     __metadata("design:type", String)
 ], UpdateJobDto.prototype, "educationLevel", void 0);
@@ -326,7 +296,7 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(['DRAFT', 'PUBLISHED', 'CLOSED', 'ARCHIVED'], {
-        message: 'Status must be one of: DRAFT, PUBLISHED, CLOSED, ARCHIVED',
+        message: 'Status must be one of: DRAFT, PUBLISHED, CLOSED, ARCHIVED'
     }),
     __metadata("design:type", String)
 ], UpdateJobDto.prototype, "status", void 0);

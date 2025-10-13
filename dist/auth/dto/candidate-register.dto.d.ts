@@ -15,5 +15,6 @@ export declare class CandidateRegisterDto {
     githubUrl?: string;
     portfolioUrl?: string;
     cityId?: string;
+    cityName?: string;
     isAvailable?: boolean;
 }
