@@ -1,10 +1,4 @@
-import {
-  IsString,
-  IsOptional,
-  IsNumber,
-  IsArray,
-  IsBoolean,
-} from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsArray, IsBoolean } from 'class-validator';
 
 // =================================================================
 // RESUME PARSING & ANALYSIS DTOs

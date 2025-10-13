@@ -1,13 +1,4 @@
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsString,
-  MinLength,
-  IsOptional,
-  IsUrl,
-  IsInt,
-  IsBoolean,
-} from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional, IsUrl, IsInt, IsBoolean } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CompanyRegisterDto {
@@ -38,7 +29,7 @@ export class CompanyRegisterDto {
 
   @IsOptional()
   @IsInt({ message: 'Founded year must be a number' })
-  @Transform(({ value }) => (value ? parseInt(value) : undefined))
+  @Transform(({ value }) => value ? parseInt(value) : undefined)
   foundedYear?: number;
 
   @IsOptional()

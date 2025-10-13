@@ -12,6 +12,7 @@ import {
 import { Transform } from 'class-transformer';
 import { UserRole } from '@prisma/client';
 
+
 export class CreateUserDto {
   @IsEmail({}, { message: 'Please provide a valid email address' })
   @Transform(({ value }) => value?.toLowerCase()?.trim())

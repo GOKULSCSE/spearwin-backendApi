@@ -92,20 +92,14 @@ export class AuthController {
   @Post('2fa/enable')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async enable2Fa(
-    @GetCurrentUser() user: CurrentUser,
-    @Body() enable2FaDto: Enable2FaDto,
-  ) {
+  async enable2Fa(@GetCurrentUser() user: CurrentUser, @Body() enable2FaDto: Enable2FaDto) {
     return this.authService.enable2Fa(user.id, enable2FaDto);
   }
 
   @Post('2fa/disable')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async disable2Fa(
-    @GetCurrentUser() user: CurrentUser,
-    @Body() disable2FaDto: Disable2FaDto,
-  ) {
+  async disable2Fa(@GetCurrentUser() user: CurrentUser, @Body() disable2FaDto: Disable2FaDto) {
     return this.authService.disable2Fa(user.id, disable2FaDto);
   }
 
@@ -118,10 +112,7 @@ export class AuthController {
   @Post('2fa/generate-backup-codes')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async generateBackupCodes(
-    @GetCurrentUser() user: CurrentUser,
-    @Body() generateBackupCodesDto: GenerateBackupCodesDto,
-  ) {
+  async generateBackupCodes(@GetCurrentUser() user: CurrentUser, @Body() generateBackupCodesDto: GenerateBackupCodesDto) {
     return this.authService.generateBackupCodes(generateBackupCodesDto);
   }
 }

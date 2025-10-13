@@ -24,7 +24,7 @@ let LocationService = class LocationService {
                 where: { isActive: true },
                 orderBy: { name: 'asc' },
             });
-            return countries.map((country) => ({
+            return countries.map(country => ({
                 id: country.id,
                 name: country.name,
                 code: country.code,
@@ -59,7 +59,7 @@ let LocationService = class LocationService {
                 isActive: country.isActive,
                 createdAt: country.createdAt,
                 updatedAt: country.updatedAt,
-                states: country.states.map((state) => ({
+                states: country.states.map(state => ({
                     id: state.id,
                     name: state.name,
                     code: state.code,
@@ -82,7 +82,10 @@ let LocationService = class LocationService {
         try {
             const existingCountry = await this.db.country.findFirst({
                 where: {
-                    OR: [{ name: createDto.name }, { code: createDto.code }],
+                    OR: [
+                        { name: createDto.name },
+                        { code: createDto.code },
+                    ],
                 },
             });
             if (existingCountry) {
@@ -154,8 +157,7 @@ let LocationService = class LocationService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException ||
-                error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
                 throw error;
             }
             this.handleException(error);
@@ -187,8 +189,7 @@ let LocationService = class LocationService {
             return { message: 'Country deleted successfully' };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException ||
-                error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
                 throw error;
             }
             this.handleException(error);
@@ -210,7 +211,7 @@ let LocationService = class LocationService {
                 },
                 orderBy: { name: 'asc' },
             });
-            return states.map((state) => ({
+            return states.map(state => ({
                 id: state.id,
                 name: state.name,
                 code: state.code,
@@ -259,7 +260,7 @@ let LocationService = class LocationService {
                     createdAt: state.country.createdAt,
                     updatedAt: state.country.updatedAt,
                 },
-                cities: state.cities.map((city) => ({
+                cities: state.cities.map(city => ({
                     id: city.id,
                     name: city.name,
                     stateId: city.stateId,
@@ -309,8 +310,7 @@ let LocationService = class LocationService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException ||
-                error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
                 throw error;
             }
             this.handleException(error);
@@ -354,8 +354,7 @@ let LocationService = class LocationService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException ||
-                error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
                 throw error;
             }
             this.handleException(error);
@@ -383,8 +382,7 @@ let LocationService = class LocationService {
             return { message: 'State deleted successfully' };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException ||
-                error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
                 throw error;
             }
             this.handleException(error);
@@ -406,7 +404,7 @@ let LocationService = class LocationService {
                 },
                 orderBy: { name: 'asc' },
             });
-            return cities.map((city) => ({
+            return cities.map(city => ({
                 id: city.id,
                 name: city.name,
                 stateId: city.stateId,
@@ -459,7 +457,7 @@ let LocationService = class LocationService {
                         code: city.state.country.code,
                     },
                 },
-                pincodes: city.pincodes.map((pincode) => ({
+                pincodes: city.pincodes.map(pincode => ({
                     id: pincode.id,
                     code: pincode.code,
                     area: pincode.area,
@@ -509,8 +507,7 @@ let LocationService = class LocationService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException ||
-                error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
                 throw error;
             }
             this.handleException(error);
@@ -553,8 +550,7 @@ let LocationService = class LocationService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException ||
-                error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
                 throw error;
             }
             this.handleException(error);
@@ -582,8 +578,7 @@ let LocationService = class LocationService {
             return { message: 'City deleted successfully' };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException ||
-                error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
                 throw error;
             }
             this.handleException(error);
@@ -593,7 +588,7 @@ let LocationService = class LocationService {
     async searchCities(query) {
         try {
             const { search, stateId, countryId } = query;
-            const whereClause = { isActive: true };
+            let whereClause = { isActive: true };
             if (search) {
                 whereClause.name = {
                     contains: search,
@@ -620,7 +615,7 @@ let LocationService = class LocationService {
                 orderBy: { name: 'asc' },
                 take: 50,
             });
-            return cities.map((city) => ({
+            return cities.map(city => ({
                 id: city.id,
                 name: city.name,
                 stateId: city.stateId,
@@ -659,7 +654,7 @@ let LocationService = class LocationService {
                 },
                 orderBy: { code: 'asc' },
             });
-            return pincodes.map((pincode) => ({
+            return pincodes.map(pincode => ({
                 id: pincode.id,
                 code: pincode.code,
                 area: pincode.area,
@@ -760,8 +755,7 @@ let LocationService = class LocationService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException ||
-                error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
                 throw error;
             }
             this.handleException(error);
@@ -805,8 +799,7 @@ let LocationService = class LocationService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException ||
-                error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
                 throw error;
             }
             this.handleException(error);
