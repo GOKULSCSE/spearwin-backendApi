@@ -1,4 +1,10 @@
-import { IsString, IsOptional, IsObject, IsArray, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsObject,
+  IsArray,
+  IsBoolean,
+} from 'class-validator';
 
 // =================================================================
 // FCM TOKEN MANAGEMENT DTOs

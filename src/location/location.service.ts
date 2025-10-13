@@ -1,9 +1,31 @@
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { CreateCountryDto, UpdateCountryDto, CountryResponseDto } from './dto/country.dto';
-import { CreateStateDto, UpdateStateDto, StateResponseDto } from './dto/state.dto';
-import { CreateCityDto, UpdateCityDto, CityResponseDto, CitySearchQueryDto } from './dto/city.dto';
-import { CreatePincodeDto, UpdatePincodeDto, PincodeResponseDto } from './dto/pincode.dto';
+import {
+  CreateCountryDto,
+  UpdateCountryDto,
+  CountryResponseDto,
+} from './dto/country.dto';
+import {
+  CreateStateDto,
+  UpdateStateDto,
+  StateResponseDto,
+} from './dto/state.dto';
+import {
+  CreateCityDto,
+  UpdateCityDto,
+  CityResponseDto,
+  CitySearchQueryDto,
+} from './dto/city.dto';
+import {
+  CreatePincodeDto,
+  UpdatePincodeDto,
+  PincodeResponseDto,
+} from './dto/pincode.dto';
 import { LogAction, LogLevel } from '@prisma/client';
 
 @Injectable()
@@ -21,7 +43,7 @@ export class LocationService {
         orderBy: { name: 'asc' },
       });
 
-      return countries.map(country => ({
+      return countries.map((country) => ({
         id: country.id,
         name: country.name,
         code: country.code,
@@ -58,7 +80,7 @@ export class LocationService {
         isActive: country.isActive,
         createdAt: country.createdAt,
         updatedAt: country.updatedAt,
-        states: country.states.map(state => ({
+        states: country.states.map((state) => ({
           id: state.id,
           name: state.name,
           code: state.code,
@@ -77,20 +99,22 @@ export class LocationService {
     }
   }
 
-  async createCountry(createDto: CreateCountryDto, userId: string): Promise<CountryResponseDto> {
+  async createCountry(
+    createDto: CreateCountryDto,
+    userId: string,
+  ): Promise<CountryResponseDto> {
     try {
       // Check if country with same name or code already exists
       const existingCountry = await this.db.country.findFirst({
         where: {
-          OR: [
-            { name: createDto.name },
-            { code: createDto.code },
-          ],
+          OR: [{ name: createDto.name }, { code: createDto.code }],
         },
       });
 
       if (existingCountry) {
-        throw new BadRequestException('Country with this name or code already exists');
+        throw new BadRequestException(
+          'Country with this name or code already exists',
+        );
       }
 
       const country = await this.db.country.create({
@@ -98,7 +122,14 @@ export class LocationService {
       });
 
       // Log the country creation
-      await this.logActivity(userId, LogAction.CREATE, LogLevel.INFO, 'Country', country.id, `Country created: ${country.name}`);
+      await this.logActivity(
+        userId,
+        LogAction.CREATE,
+        LogLevel.INFO,
+        'Country',
+        country.id,
+        `Country created: ${country.name}`,
+      );
 
       return {
         id: country.id,
@@ -117,7 +148,11 @@ export class LocationService {
     }
   }
 
-  async updateCountry(countryId: string, updateDto: UpdateCountryDto, userId: string): Promise<CountryResponseDto> {
+  async updateCountry(
+    countryId: string,
+    updateDto: UpdateCountryDto,
+    userId: string,
+  ): Promise<CountryResponseDto> {
     try {
       const country = await this.db.country.findUnique({
         where: { id: countryId },
@@ -137,7 +172,9 @@ export class LocationService {
         });
 
         if (existingCountry) {
-          throw new BadRequestException('Country with this name already exists');
+          throw new BadRequestException(
+            'Country with this name already exists',
+          );
         }
       }
 
@@ -150,7 +187,9 @@ export class LocationService {
         });
 
         if (existingCountry) {
-          throw new BadRequestException('Country with this code already exists');
+          throw new BadRequestException(
+            'Country with this code already exists',
+          );
         }
       }
 
@@ -160,7 +199,14 @@ export class LocationService {
       });
 
       // Log the country update
-      await this.logActivity(userId, LogAction.UPDATE, LogLevel.INFO, 'Country', countryId, `Country updated: ${updatedCountry.name}`);
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'Country',
+        countryId,
+        `Country updated: ${updatedCountry.name}`,
+      );
 
       return {
         id: updatedCountry.id,
@@ -171,7 +217,10 @@ export class LocationService {
         updatedAt: updatedCountry.updatedAt,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -179,7 +228,10 @@ export class LocationService {
     }
   }
 
-  async deleteCountry(countryId: string, userId: string): Promise<{ message: string }> {
+  async deleteCountry(
+    countryId: string,
+    userId: string,
+  ): Promise<{ message: string }> {
     try {
       const country = await this.db.country.findUnique({
         where: { id: countryId },
@@ -198,7 +250,9 @@ export class LocationService {
 
       // Check if country has states
       if (country.states.length > 0) {
-        throw new BadRequestException('Cannot delete country with existing states. Please delete all states first.');
+        throw new BadRequestException(
+          'Cannot delete country with existing states. Please delete all states first.',
+        );
       }
 
       await this.db.country.delete({
@@ -206,11 +260,21 @@ export class LocationService {
       });
 
       // Log the country deletion
-      await this.logActivity(userId, LogAction.DELETE, LogLevel.CRITICAL, 'Country', countryId, `Country deleted: ${country.name}`);
+      await this.logActivity(
+        userId,
+        LogAction.DELETE,
+        LogLevel.CRITICAL,
+        'Country',
+        countryId,
+        `Country deleted: ${country.name}`,
+      );
 
       return { message: 'Country deleted successfully' };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -233,14 +297,14 @@ export class LocationService {
       }
 
       const states = await this.db.state.findMany({
-        where: { 
+        where: {
           countryId,
           isActive: true,
         },
         orderBy: { name: 'asc' },
       });
 
-      return states.map(state => ({
+      return states.map((state) => ({
         id: state.id,
         name: state.name,
         code: state.code,
@@ -291,7 +355,7 @@ export class LocationService {
           createdAt: state.country.createdAt,
           updatedAt: state.country.updatedAt,
         },
-        cities: state.cities.map(city => ({
+        cities: state.cities.map((city) => ({
           id: city.id,
           name: city.name,
           stateId: city.stateId,
@@ -309,7 +373,10 @@ export class LocationService {
     }
   }
 
-  async createState(createDto: CreateStateDto, userId: string): Promise<StateResponseDto> {
+  async createState(
+    createDto: CreateStateDto,
+    userId: string,
+  ): Promise<StateResponseDto> {
     try {
       // Check if country exists
       const country = await this.db.country.findUnique({
@@ -329,7 +396,9 @@ export class LocationService {
       });
 
       if (existingState) {
-        throw new BadRequestException('State with this name already exists in the country');
+        throw new BadRequestException(
+          'State with this name already exists in the country',
+        );
       }
 
       const state = await this.db.state.create({
@@ -337,7 +406,14 @@ export class LocationService {
       });
 
       // Log the state creation
-      await this.logActivity(userId, LogAction.CREATE, LogLevel.INFO, 'State', state.id, `State created: ${state.name} in ${country.name}`);
+      await this.logActivity(
+        userId,
+        LogAction.CREATE,
+        LogLevel.INFO,
+        'State',
+        state.id,
+        `State created: ${state.name} in ${country.name}`,
+      );
 
       return {
         id: state.id,
@@ -349,7 +425,10 @@ export class LocationService {
         updatedAt: state.updatedAt,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -357,7 +436,11 @@ export class LocationService {
     }
   }
 
-  async updateState(stateId: string, updateDto: UpdateStateDto, userId: string): Promise<StateResponseDto> {
+  async updateState(
+    stateId: string,
+    updateDto: UpdateStateDto,
+    userId: string,
+  ): Promise<StateResponseDto> {
     try {
       const state = await this.db.state.findUnique({
         where: { id: stateId },
@@ -379,7 +462,9 @@ export class LocationService {
         });
 
         if (existingState) {
-          throw new BadRequestException('State with this name already exists in the country');
+          throw new BadRequestException(
+            'State with this name already exists in the country',
+          );
         }
       }
 
@@ -389,7 +474,14 @@ export class LocationService {
       });
 
       // Log the state update
-      await this.logActivity(userId, LogAction.UPDATE, LogLevel.INFO, 'State', stateId, `State updated: ${updatedState.name}`);
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'State',
+        stateId,
+        `State updated: ${updatedState.name}`,
+      );
 
       return {
         id: updatedState.id,
@@ -401,7 +493,10 @@ export class LocationService {
         updatedAt: updatedState.updatedAt,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -409,7 +504,10 @@ export class LocationService {
     }
   }
 
-  async deleteState(stateId: string, userId: string): Promise<{ message: string }> {
+  async deleteState(
+    stateId: string,
+    userId: string,
+  ): Promise<{ message: string }> {
     try {
       const state = await this.db.state.findUnique({
         where: { id: stateId },
@@ -424,7 +522,9 @@ export class LocationService {
 
       // Check if state has cities
       if (state.cities.length > 0) {
-        throw new BadRequestException('Cannot delete state with existing cities. Please delete all cities first.');
+        throw new BadRequestException(
+          'Cannot delete state with existing cities. Please delete all cities first.',
+        );
       }
 
       await this.db.state.delete({
@@ -432,11 +532,21 @@ export class LocationService {
       });
 
       // Log the state deletion
-      await this.logActivity(userId, LogAction.DELETE, LogLevel.CRITICAL, 'State', stateId, `State deleted: ${state.name}`);
+      await this.logActivity(
+        userId,
+        LogAction.DELETE,
+        LogLevel.CRITICAL,
+        'State',
+        stateId,
+        `State deleted: ${state.name}`,
+      );
 
       return { message: 'State deleted successfully' };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -459,14 +569,14 @@ export class LocationService {
       }
 
       const cities = await this.db.city.findMany({
-        where: { 
+        where: {
           stateId,
           isActive: true,
         },
         orderBy: { name: 'asc' },
       });
 
-      return cities.map(city => ({
+      return cities.map((city) => ({
         id: city.id,
         name: city.name,
         stateId: city.stateId,
@@ -521,7 +631,7 @@ export class LocationService {
             code: city.state.country.code,
           },
         },
-        pincodes: city.pincodes.map(pincode => ({
+        pincodes: city.pincodes.map((pincode) => ({
           id: pincode.id,
           code: pincode.code,
           area: pincode.area,
@@ -540,7 +650,10 @@ export class LocationService {
     }
   }
 
-  async createCity(createDto: CreateCityDto, userId: string): Promise<CityResponseDto> {
+  async createCity(
+    createDto: CreateCityDto,
+    userId: string,
+  ): Promise<CityResponseDto> {
     try {
       // Check if state exists
       const state = await this.db.state.findUnique({
@@ -560,7 +673,9 @@ export class LocationService {
       });
 
       if (existingCity) {
-        throw new BadRequestException('City with this name already exists in the state');
+        throw new BadRequestException(
+          'City with this name already exists in the state',
+        );
       }
 
       const city = await this.db.city.create({
@@ -568,7 +683,14 @@ export class LocationService {
       });
 
       // Log the city creation
-      await this.logActivity(userId, LogAction.CREATE, LogLevel.INFO, 'City', city.id, `City created: ${city.name} in ${state.name}`);
+      await this.logActivity(
+        userId,
+        LogAction.CREATE,
+        LogLevel.INFO,
+        'City',
+        city.id,
+        `City created: ${city.name} in ${state.name}`,
+      );
 
       return {
         id: city.id,
@@ -579,7 +701,10 @@ export class LocationService {
         updatedAt: city.updatedAt,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -587,7 +712,11 @@ export class LocationService {
     }
   }
 
-  async updateCity(cityId: string, updateDto: UpdateCityDto, userId: string): Promise<CityResponseDto> {
+  async updateCity(
+    cityId: string,
+    updateDto: UpdateCityDto,
+    userId: string,
+  ): Promise<CityResponseDto> {
     try {
       const city = await this.db.city.findUnique({
         where: { id: cityId },
@@ -609,7 +738,9 @@ export class LocationService {
         });
 
         if (existingCity) {
-          throw new BadRequestException('City with this name already exists in the state');
+          throw new BadRequestException(
+            'City with this name already exists in the state',
+          );
         }
       }
 
@@ -619,7 +750,14 @@ export class LocationService {
       });
 
       // Log the city update
-      await this.logActivity(userId, LogAction.UPDATE, LogLevel.INFO, 'City', cityId, `City updated: ${updatedCity.name}`);
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'City',
+        cityId,
+        `City updated: ${updatedCity.name}`,
+      );
 
       return {
         id: updatedCity.id,
@@ -630,7 +768,10 @@ export class LocationService {
         updatedAt: updatedCity.updatedAt,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -638,7 +779,10 @@ export class LocationService {
     }
   }
 
-  async deleteCity(cityId: string, userId: string): Promise<{ message: string }> {
+  async deleteCity(
+    cityId: string,
+    userId: string,
+  ): Promise<{ message: string }> {
     try {
       const city = await this.db.city.findUnique({
         where: { id: cityId },
@@ -653,7 +797,9 @@ export class LocationService {
 
       // Check if city has pincodes
       if (city.pincodes.length > 0) {
-        throw new BadRequestException('Cannot delete city with existing pincodes. Please delete all pincodes first.');
+        throw new BadRequestException(
+          'Cannot delete city with existing pincodes. Please delete all pincodes first.',
+        );
       }
 
       await this.db.city.delete({
@@ -661,11 +807,21 @@ export class LocationService {
       });
 
       // Log the city deletion
-      await this.logActivity(userId, LogAction.DELETE, LogLevel.CRITICAL, 'City', cityId, `City deleted: ${city.name}`);
+      await this.logActivity(
+        userId,
+        LogAction.DELETE,
+        LogLevel.CRITICAL,
+        'City',
+        cityId,
+        `City deleted: ${city.name}`,
+      );
 
       return { message: 'City deleted successfully' };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -677,7 +833,7 @@ export class LocationService {
     try {
       const { search, stateId, countryId } = query;
 
-      let whereClause: any = { isActive: true };
+      const whereClause: any = { isActive: true };
 
       if (search) {
         whereClause.name = {
@@ -709,7 +865,7 @@ export class LocationService {
         take: 50, // Limit results
       });
 
-      return cities.map(city => ({
+      return cities.map((city) => ({
         id: city.id,
         name: city.name,
         stateId: city.stateId,
@@ -748,14 +904,14 @@ export class LocationService {
       }
 
       const pincodes = await this.db.pincode.findMany({
-        where: { 
+        where: {
           cityId,
           isActive: true,
         },
         orderBy: { code: 'asc' },
       });
 
-      return pincodes.map(pincode => ({
+      return pincodes.map((pincode) => ({
         id: pincode.id,
         code: pincode.code,
         area: pincode.area,
@@ -826,7 +982,10 @@ export class LocationService {
     }
   }
 
-  async createPincode(createDto: CreatePincodeDto, userId: string): Promise<PincodeResponseDto> {
+  async createPincode(
+    createDto: CreatePincodeDto,
+    userId: string,
+  ): Promise<PincodeResponseDto> {
     try {
       // Check if city exists
       const city = await this.db.city.findUnique({
@@ -846,7 +1005,9 @@ export class LocationService {
       });
 
       if (existingPincode) {
-        throw new BadRequestException('Pincode with this code already exists in the city');
+        throw new BadRequestException(
+          'Pincode with this code already exists in the city',
+        );
       }
 
       const pincode = await this.db.pincode.create({
@@ -854,7 +1015,14 @@ export class LocationService {
       });
 
       // Log the pincode creation
-      await this.logActivity(userId, LogAction.CREATE, LogLevel.INFO, 'Pincode', pincode.id, `Pincode created: ${pincode.code} in ${city.name}`);
+      await this.logActivity(
+        userId,
+        LogAction.CREATE,
+        LogLevel.INFO,
+        'Pincode',
+        pincode.id,
+        `Pincode created: ${pincode.code} in ${city.name}`,
+      );
 
       return {
         id: pincode.id,
@@ -866,7 +1034,10 @@ export class LocationService {
         updatedAt: pincode.updatedAt,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -874,7 +1045,11 @@ export class LocationService {
     }
   }
 
-  async updatePincode(pincodeId: string, updateDto: UpdatePincodeDto, userId: string): Promise<PincodeResponseDto> {
+  async updatePincode(
+    pincodeId: string,
+    updateDto: UpdatePincodeDto,
+    userId: string,
+  ): Promise<PincodeResponseDto> {
     try {
       const pincode = await this.db.pincode.findUnique({
         where: { id: pincodeId },
@@ -896,7 +1071,9 @@ export class LocationService {
         });
 
         if (existingPincode) {
-          throw new BadRequestException('Pincode with this code already exists in the city');
+          throw new BadRequestException(
+            'Pincode with this code already exists in the city',
+          );
         }
       }
 
@@ -906,7 +1083,14 @@ export class LocationService {
       });
 
       // Log the pincode update
-      await this.logActivity(userId, LogAction.UPDATE, LogLevel.INFO, 'Pincode', pincodeId, `Pincode updated: ${updatedPincode.code}`);
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'Pincode',
+        pincodeId,
+        `Pincode updated: ${updatedPincode.code}`,
+      );
 
       return {
         id: updatedPincode.id,
@@ -918,7 +1102,10 @@ export class LocationService {
         updatedAt: updatedPincode.updatedAt,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -926,7 +1113,10 @@ export class LocationService {
     }
   }
 
-  async deletePincode(pincodeId: string, userId: string): Promise<{ message: string }> {
+  async deletePincode(
+    pincodeId: string,
+    userId: string,
+  ): Promise<{ message: string }> {
     try {
       const pincode = await this.db.pincode.findUnique({
         where: { id: pincodeId },
@@ -941,7 +1131,14 @@ export class LocationService {
       });
 
       // Log the pincode deletion
-      await this.logActivity(userId, LogAction.DELETE, LogLevel.CRITICAL, 'Pincode', pincodeId, `Pincode deleted: ${pincode.code}`);
+      await this.logActivity(
+        userId,
+        LogAction.DELETE,
+        LogLevel.CRITICAL,
+        'Pincode',
+        pincodeId,
+        `Pincode deleted: ${pincode.code}`,
+      );
 
       return { message: 'Pincode deleted successfully' };
     } catch (error) {

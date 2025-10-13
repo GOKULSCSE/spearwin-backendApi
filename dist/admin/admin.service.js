@@ -136,7 +136,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.BadRequestException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.BadRequestException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to create admin');
@@ -152,7 +153,9 @@ let AdminService = class AdminService {
             const slug = createCompanyDto.name
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
-                .replace(/(^-|-$)/g, '') + '-' + Date.now();
+                .replace(/(^-|-$)/g, '') +
+                '-' +
+                Date.now();
             const result = await this.prisma.$transaction(async (prisma) => {
                 const user = await prisma.user.create({
                     data: {
@@ -225,7 +228,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.BadRequestException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.BadRequestException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to create company profile');
@@ -249,7 +253,9 @@ let AdminService = class AdminService {
             const updatedAdmin = await this.prisma.admin.update({
                 where: { id: updatePermissionsDto.adminId },
                 data: {
-                    permissions: updatePermissionsDto.permissions || admin.permissions || [],
+                    permissions: updatePermissionsDto.permissions ||
+                        admin.permissions ||
+                        [],
                 },
             });
             await this.prisma.activityLog.create({
@@ -268,14 +274,17 @@ let AdminService = class AdminService {
                 data: {
                     admin: {
                         id: updatedAdmin.id,
-                        permissions: Array.isArray(updatedAdmin.permissions) ? updatedAdmin.permissions : [],
+                        permissions: Array.isArray(updatedAdmin.permissions)
+                            ? updatedAdmin.permissions
+                            : [],
                         updatedAt: updatedAdmin.updatedAt,
                     },
                 },
             };
         }
         catch (error) {
-            if (error instanceof common_1.BadRequestException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.BadRequestException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to update admin permissions');
@@ -376,8 +385,12 @@ let AdminService = class AdminService {
                         where: { id: userId },
                         data: {
                             ...userUpdateData,
-                            emailVerified: updateDto.email && updateDto.email !== admin.user.email ? false : admin.user.emailVerified,
-                            phoneVerified: updateDto.phone && updateDto.phone !== admin.user.phone ? false : admin.user.phoneVerified,
+                            emailVerified: updateDto.email && updateDto.email !== admin.user.email
+                                ? false
+                                : admin.user.emailVerified,
+                            phoneVerified: updateDto.phone && updateDto.phone !== admin.user.phone
+                                ? false
+                                : admin.user.phoneVerified,
                         },
                     });
                 }
@@ -450,7 +463,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.BadRequestException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to update admin profile');
@@ -486,11 +500,17 @@ let AdminService = class AdminService {
                 where.user = { ...where.user, status: status };
             }
             const orderBy = {};
-            if (sortBy === 'firstName' || sortBy === 'lastName' || sortBy === 'department' || sortBy === 'designation') {
-                orderBy[sortBy] = sortOrder;
+            if (sortBy === 'firstName' ||
+                sortBy === 'lastName' ||
+                sortBy === 'department' ||
+                sortBy === 'designation') {
+                orderBy[sortBy] =
+                    sortOrder;
             }
             else {
-                orderBy.user = { [sortBy]: sortOrder };
+                orderBy.user = {
+                    [sortBy]: sortOrder,
+                };
             }
             const [admins, total] = await Promise.all([
                 this.prisma.admin.findMany({
@@ -521,7 +541,7 @@ let AdminService = class AdminService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                admins: admins.map(admin => ({
+                admins: admins.map((admin) => ({
                     id: admin.id,
                     userId: admin.userId,
                     firstName: admin.firstName,
@@ -638,10 +658,14 @@ let AdminService = class AdminService {
                 data: { status: statusDto.status },
             });
             await this.logActivity(currentUserId, client_1.LogAction.UPDATE, client_1.LogLevel.INFO, 'Admin', adminId, `Admin status updated to ${statusDto.status}: ${admin.user.email}`);
-            return { message: `Admin status updated to ${statusDto.status} successfully` };
+            return {
+                message: `Admin status updated to ${statusDto.status} successfully`,
+            };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.BadRequestException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to update admin status');
@@ -727,7 +751,7 @@ let AdminService = class AdminService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                jobs: jobs.map(job => this.mapJobToResponse(job)),
+                jobs: jobs.map((job) => this.mapJobToResponse(job)),
                 total,
                 page,
                 limit,
@@ -751,7 +775,9 @@ let AdminService = class AdminService {
             const slug = createJobDto.title
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
-                .replace(/(^-|-$)/g, '') + '-' + Date.now();
+                .replace(/(^-|-$)/g, '') +
+                '-' +
+                Date.now();
             const job = await this.prisma.job.create({
                 data: {
                     title: createJobDto.title,
@@ -774,7 +800,9 @@ let AdminService = class AdminService {
                     salaryNegotiable: createJobDto.salaryNegotiable || false,
                     skillsRequired: createJobDto.skillsRequired || [],
                     educationLevel: createJobDto.educationLevel,
-                    expiresAt: createJobDto.expiresAt ? new Date(createJobDto.expiresAt) : null,
+                    expiresAt: createJobDto.expiresAt
+                        ? new Date(createJobDto.expiresAt)
+                        : null,
                     status: createJobDto.status || 'DRAFT',
                 },
                 include: {
@@ -866,7 +894,8 @@ let AdminService = class AdminService {
             return this.mapJobToResponse(job);
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to get job details');
@@ -921,7 +950,9 @@ let AdminService = class AdminService {
             if (updateJobDto.educationLevel !== undefined)
                 updateData.educationLevel = updateJobDto.educationLevel;
             if (updateJobDto.expiresAt !== undefined) {
-                updateData.expiresAt = updateJobDto.expiresAt ? new Date(updateJobDto.expiresAt) : null;
+                updateData.expiresAt = updateJobDto.expiresAt
+                    ? new Date(updateJobDto.expiresAt)
+                    : null;
             }
             if (updateJobDto.status !== undefined)
                 updateData.status = updateJobDto.status;
@@ -967,7 +998,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to update job');
@@ -995,7 +1027,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to delete job');
@@ -1024,11 +1057,15 @@ let AdminService = class AdminService {
             return {
                 success: true,
                 message: 'Job published successfully',
-                data: { status: updatedJob.status, publishedAt: updatedJob.publishedAt },
+                data: {
+                    status: updatedJob.status,
+                    publishedAt: updatedJob.publishedAt,
+                },
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to publish job');
@@ -1060,7 +1097,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to close job');
@@ -1092,7 +1130,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to archive job');
@@ -1136,7 +1175,7 @@ let AdminService = class AdminService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                applications: applications.map(app => ({
+                applications: applications.map((app) => ({
                     id: app.id,
                     status: app.status,
                     appliedAt: app.appliedAt,
@@ -1162,7 +1201,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to get job applications');
@@ -1188,7 +1228,10 @@ let AdminService = class AdminService {
                 this.prisma.jobApplication.count(),
                 this.prisma.job.aggregate({ _sum: { viewCount: true } }),
                 this.prisma.jobApplication.count({ where: { jobId } }),
-                this.prisma.job.findUnique({ where: { id: jobId }, select: { viewCount: true } }),
+                this.prisma.job.findUnique({
+                    where: { id: jobId },
+                    select: { viewCount: true },
+                }),
                 this.prisma.jobApplication.count({
                     where: {
                         jobId,
@@ -1213,7 +1256,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to get job statistics');
@@ -1252,22 +1296,24 @@ let AdminService = class AdminService {
             updatedAt: job.updatedAt,
             company: job.company,
             postedBy: job.postedBy,
-            location: job.city ? {
-                city: {
-                    id: job.city.id,
-                    name: job.city.name,
-                    state: {
-                        id: job.city.state.id,
-                        name: job.city.state.name,
-                        code: job.city.state.code,
-                        country: {
-                            id: job.city.state.country.id,
-                            name: job.city.state.country.name,
-                            code: job.city.state.country.code,
+            location: job.city
+                ? {
+                    city: {
+                        id: job.city.id,
+                        name: job.city.name,
+                        state: {
+                            id: job.city.state.id,
+                            name: job.city.state.name,
+                            code: job.city.state.code,
+                            country: {
+                                id: job.city.state.country.id,
+                                name: job.city.state.country.name,
+                                code: job.city.state.country.code,
+                            },
                         },
                     },
-                },
-            } : null,
+                }
+                : null,
         };
     }
     async getAllApplications(query, currentUser) {
@@ -1282,7 +1328,10 @@ let AdminService = class AdminService {
             if (query.jobTitle || query.companyName) {
                 whereClause.job = {};
                 if (query.jobTitle) {
-                    whereClause.job.title = { contains: query.jobTitle, mode: 'insensitive' };
+                    whereClause.job.title = {
+                        contains: query.jobTitle,
+                        mode: 'insensitive',
+                    };
                 }
                 if (query.companyName) {
                     whereClause.job.company = {
@@ -1293,8 +1342,12 @@ let AdminService = class AdminService {
             if (query.candidateName) {
                 whereClause.candidate = {
                     OR: [
-                        { firstName: { contains: query.candidateName, mode: 'insensitive' } },
-                        { lastName: { contains: query.candidateName, mode: 'insensitive' } },
+                        {
+                            firstName: { contains: query.candidateName, mode: 'insensitive' },
+                        },
+                        {
+                            lastName: { contains: query.candidateName, mode: 'insensitive' },
+                        },
                     ],
                 };
             }
@@ -1367,7 +1420,7 @@ let AdminService = class AdminService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                applications: applications.map(app => ({
+                applications: applications.map((app) => ({
                     id: app.id,
                     jobId: app.jobId,
                     candidateId: app.candidateId,
@@ -1389,22 +1442,24 @@ let AdminService = class AdminService {
                             name: app.job.company.name,
                             logo: app.job.company.logo || undefined,
                         },
-                        location: app.job.city ? {
-                            city: {
-                                id: app.job.city.id,
-                                name: app.job.city.name,
-                                state: {
-                                    id: app.job.city.state.id,
-                                    name: app.job.city.state.name,
-                                    code: app.job.city.state.code || undefined,
-                                    country: {
-                                        id: app.job.city.state.country.id,
-                                        name: app.job.city.state.country.name,
-                                        code: app.job.city.state.country.code,
+                        location: app.job.city
+                            ? {
+                                city: {
+                                    id: app.job.city.id,
+                                    name: app.job.city.name,
+                                    state: {
+                                        id: app.job.city.state.id,
+                                        name: app.job.city.state.name,
+                                        code: app.job.city.state.code || undefined,
+                                        country: {
+                                            id: app.job.city.state.country.id,
+                                            name: app.job.city.state.country.name,
+                                            code: app.job.city.state.country.code,
+                                        },
                                     },
                                 },
-                            },
-                        } : undefined,
+                            }
+                            : undefined,
                     },
                     candidate: {
                         id: app.candidate.id,
@@ -1415,27 +1470,31 @@ let AdminService = class AdminService {
                         profilePicture: app.candidate.profilePicture || undefined,
                         currentTitle: app.candidate.currentTitle || undefined,
                         experienceYears: app.candidate.experienceYears || undefined,
-                        city: app.candidate.city ? {
-                            id: app.candidate.city.id,
-                            name: app.candidate.city.name,
-                            state: {
-                                id: app.candidate.city.state.id,
-                                name: app.candidate.city.state.name,
-                                code: app.candidate.city.state.code || undefined,
-                                country: {
-                                    id: app.candidate.city.state.country.id,
-                                    name: app.candidate.city.state.country.name,
-                                    code: app.candidate.city.state.country.code,
+                        city: app.candidate.city
+                            ? {
+                                id: app.candidate.city.id,
+                                name: app.candidate.city.name,
+                                state: {
+                                    id: app.candidate.city.state.id,
+                                    name: app.candidate.city.state.name,
+                                    code: app.candidate.city.state.code || undefined,
+                                    country: {
+                                        id: app.candidate.city.state.country.id,
+                                        name: app.candidate.city.state.country.name,
+                                        code: app.candidate.city.state.country.code,
+                                    },
                                 },
-                            },
-                        } : undefined,
+                            }
+                            : undefined,
                     },
-                    resume: app.resume ? {
-                        id: app.resume.id,
-                        title: app.resume.title,
-                        fileName: app.resume.fileName,
-                        uploadedAt: app.resume.uploadedAt,
-                    } : undefined,
+                    resume: app.resume
+                        ? {
+                            id: app.resume.id,
+                            title: app.resume.title,
+                            fileName: app.resume.fileName,
+                            uploadedAt: app.resume.uploadedAt,
+                        }
+                        : undefined,
                 })),
                 total,
                 page,
@@ -1528,22 +1587,24 @@ let AdminService = class AdminService {
                         name: application.job.company.name,
                         logo: application.job.company.logo || undefined,
                     },
-                    location: application.job.city ? {
-                        city: {
-                            id: application.job.city.id,
-                            name: application.job.city.name,
-                            state: {
-                                id: application.job.city.state.id,
-                                name: application.job.city.state.name,
-                                code: application.job.city.state.code || undefined,
-                                country: {
-                                    id: application.job.city.state.country.id,
-                                    name: application.job.city.state.country.name,
-                                    code: application.job.city.state.country.code,
+                    location: application.job.city
+                        ? {
+                            city: {
+                                id: application.job.city.id,
+                                name: application.job.city.name,
+                                state: {
+                                    id: application.job.city.state.id,
+                                    name: application.job.city.state.name,
+                                    code: application.job.city.state.code || undefined,
+                                    country: {
+                                        id: application.job.city.state.country.id,
+                                        name: application.job.city.state.country.name,
+                                        code: application.job.city.state.country.code,
+                                    },
                                 },
                             },
-                        },
-                    } : undefined,
+                        }
+                        : undefined,
                 },
                 candidate: {
                     id: application.candidate.id,
@@ -1554,27 +1615,31 @@ let AdminService = class AdminService {
                     profilePicture: application.candidate.profilePicture || undefined,
                     currentTitle: application.candidate.currentTitle || undefined,
                     experienceYears: application.candidate.experienceYears || undefined,
-                    city: application.candidate.city ? {
-                        id: application.candidate.city.id,
-                        name: application.candidate.city.name,
-                        state: {
-                            id: application.candidate.city.state.id,
-                            name: application.candidate.city.state.name,
-                            code: application.candidate.city.state.code || undefined,
-                            country: {
-                                id: application.candidate.city.state.country.id,
-                                name: application.candidate.city.state.country.name,
-                                code: application.candidate.city.state.country.code,
+                    city: application.candidate.city
+                        ? {
+                            id: application.candidate.city.id,
+                            name: application.candidate.city.name,
+                            state: {
+                                id: application.candidate.city.state.id,
+                                name: application.candidate.city.state.name,
+                                code: application.candidate.city.state.code || undefined,
+                                country: {
+                                    id: application.candidate.city.state.country.id,
+                                    name: application.candidate.city.state.country.name,
+                                    code: application.candidate.city.state.country.code,
+                                },
                             },
-                        },
-                    } : undefined,
+                        }
+                        : undefined,
                 },
-                resume: application.resume ? {
-                    id: application.resume.id,
-                    title: application.resume.title,
-                    fileName: application.resume.fileName,
-                    uploadedAt: application.resume.uploadedAt,
-                } : undefined,
+                resume: application.resume
+                    ? {
+                        id: application.resume.id,
+                        title: application.resume.title,
+                        fileName: application.resume.fileName,
+                        uploadedAt: application.resume.uploadedAt,
+                    }
+                    : undefined,
             };
         }
         catch (error) {
@@ -1672,22 +1737,24 @@ let AdminService = class AdminService {
                         name: updatedApplication.job.company.name,
                         logo: updatedApplication.job.company.logo || undefined,
                     },
-                    location: updatedApplication.job.city ? {
-                        city: {
-                            id: updatedApplication.job.city.id,
-                            name: updatedApplication.job.city.name,
-                            state: {
-                                id: updatedApplication.job.city.state.id,
-                                name: updatedApplication.job.city.state.name,
-                                code: updatedApplication.job.city.state.code || undefined,
-                                country: {
-                                    id: updatedApplication.job.city.state.country.id,
-                                    name: updatedApplication.job.city.state.country.name,
-                                    code: updatedApplication.job.city.state.country.code,
+                    location: updatedApplication.job.city
+                        ? {
+                            city: {
+                                id: updatedApplication.job.city.id,
+                                name: updatedApplication.job.city.name,
+                                state: {
+                                    id: updatedApplication.job.city.state.id,
+                                    name: updatedApplication.job.city.state.name,
+                                    code: updatedApplication.job.city.state.code || undefined,
+                                    country: {
+                                        id: updatedApplication.job.city.state.country.id,
+                                        name: updatedApplication.job.city.state.country.name,
+                                        code: updatedApplication.job.city.state.country.code,
+                                    },
                                 },
                             },
-                        },
-                    } : undefined,
+                        }
+                        : undefined,
                 },
                 candidate: {
                     id: updatedApplication.candidate.id,
@@ -1698,27 +1765,31 @@ let AdminService = class AdminService {
                     profilePicture: updatedApplication.candidate.profilePicture || undefined,
                     currentTitle: updatedApplication.candidate.currentTitle || undefined,
                     experienceYears: updatedApplication.candidate.experienceYears || undefined,
-                    city: updatedApplication.candidate.city ? {
-                        id: updatedApplication.candidate.city.id,
-                        name: updatedApplication.candidate.city.name,
-                        state: {
-                            id: updatedApplication.candidate.city.state.id,
-                            name: updatedApplication.candidate.city.state.name,
-                            code: updatedApplication.candidate.city.state.code || undefined,
-                            country: {
-                                id: updatedApplication.candidate.city.state.country.id,
-                                name: updatedApplication.candidate.city.state.country.name,
-                                code: updatedApplication.candidate.city.state.country.code,
+                    city: updatedApplication.candidate.city
+                        ? {
+                            id: updatedApplication.candidate.city.id,
+                            name: updatedApplication.candidate.city.name,
+                            state: {
+                                id: updatedApplication.candidate.city.state.id,
+                                name: updatedApplication.candidate.city.state.name,
+                                code: updatedApplication.candidate.city.state.code || undefined,
+                                country: {
+                                    id: updatedApplication.candidate.city.state.country.id,
+                                    name: updatedApplication.candidate.city.state.country.name,
+                                    code: updatedApplication.candidate.city.state.country.code,
+                                },
                             },
-                        },
-                    } : undefined,
+                        }
+                        : undefined,
                 },
-                resume: updatedApplication.resume ? {
-                    id: updatedApplication.resume.id,
-                    title: updatedApplication.resume.title,
-                    fileName: updatedApplication.resume.fileName,
-                    uploadedAt: updatedApplication.resume.uploadedAt,
-                } : undefined,
+                resume: updatedApplication.resume
+                    ? {
+                        id: updatedApplication.resume.id,
+                        title: updatedApplication.resume.title,
+                        fileName: updatedApplication.resume.fileName,
+                        uploadedAt: updatedApplication.resume.uploadedAt,
+                    }
+                    : undefined,
             };
         }
         catch (error) {
@@ -1816,22 +1887,24 @@ let AdminService = class AdminService {
                         name: updatedApplication.job.company.name,
                         logo: updatedApplication.job.company.logo || undefined,
                     },
-                    location: updatedApplication.job.city ? {
-                        city: {
-                            id: updatedApplication.job.city.id,
-                            name: updatedApplication.job.city.name,
-                            state: {
-                                id: updatedApplication.job.city.state.id,
-                                name: updatedApplication.job.city.state.name,
-                                code: updatedApplication.job.city.state.code || undefined,
-                                country: {
-                                    id: updatedApplication.job.city.state.country.id,
-                                    name: updatedApplication.job.city.state.country.name,
-                                    code: updatedApplication.job.city.state.country.code,
+                    location: updatedApplication.job.city
+                        ? {
+                            city: {
+                                id: updatedApplication.job.city.id,
+                                name: updatedApplication.job.city.name,
+                                state: {
+                                    id: updatedApplication.job.city.state.id,
+                                    name: updatedApplication.job.city.state.name,
+                                    code: updatedApplication.job.city.state.code || undefined,
+                                    country: {
+                                        id: updatedApplication.job.city.state.country.id,
+                                        name: updatedApplication.job.city.state.country.name,
+                                        code: updatedApplication.job.city.state.country.code,
+                                    },
                                 },
                             },
-                        },
-                    } : undefined,
+                        }
+                        : undefined,
                 },
                 candidate: {
                     id: updatedApplication.candidate.id,
@@ -1842,27 +1915,31 @@ let AdminService = class AdminService {
                     profilePicture: updatedApplication.candidate.profilePicture || undefined,
                     currentTitle: updatedApplication.candidate.currentTitle || undefined,
                     experienceYears: updatedApplication.candidate.experienceYears || undefined,
-                    city: updatedApplication.candidate.city ? {
-                        id: updatedApplication.candidate.city.id,
-                        name: updatedApplication.candidate.city.name,
-                        state: {
-                            id: updatedApplication.candidate.city.state.id,
-                            name: updatedApplication.candidate.city.state.name,
-                            code: updatedApplication.candidate.city.state.code || undefined,
-                            country: {
-                                id: updatedApplication.candidate.city.state.country.id,
-                                name: updatedApplication.candidate.city.state.country.name,
-                                code: updatedApplication.candidate.city.state.country.code,
+                    city: updatedApplication.candidate.city
+                        ? {
+                            id: updatedApplication.candidate.city.id,
+                            name: updatedApplication.candidate.city.name,
+                            state: {
+                                id: updatedApplication.candidate.city.state.id,
+                                name: updatedApplication.candidate.city.state.name,
+                                code: updatedApplication.candidate.city.state.code || undefined,
+                                country: {
+                                    id: updatedApplication.candidate.city.state.country.id,
+                                    name: updatedApplication.candidate.city.state.country.name,
+                                    code: updatedApplication.candidate.city.state.country.code,
+                                },
                             },
-                        },
-                    } : undefined,
+                        }
+                        : undefined,
                 },
-                resume: updatedApplication.resume ? {
-                    id: updatedApplication.resume.id,
-                    title: updatedApplication.resume.title,
-                    fileName: updatedApplication.resume.fileName,
-                    uploadedAt: updatedApplication.resume.uploadedAt,
-                } : undefined,
+                resume: updatedApplication.resume
+                    ? {
+                        id: updatedApplication.resume.id,
+                        title: updatedApplication.resume.title,
+                        fileName: updatedApplication.resume.fileName,
+                        uploadedAt: updatedApplication.resume.uploadedAt,
+                    }
+                    : undefined,
             };
         }
         catch (error) {
@@ -1874,22 +1951,24 @@ let AdminService = class AdminService {
     }
     async getApplicationStats(currentUser) {
         try {
-            const [total, byStatus, byJobType, byExperienceLevel, recentApplications, averageResponseTime] = await Promise.all([
+            const [total, byStatus, byJobType, byExperienceLevel, recentApplications, averageResponseTime,] = await Promise.all([
                 this.prisma.jobApplication.count(),
                 this.prisma.jobApplication.groupBy({
                     by: ['status'],
                     _count: { status: true },
                 }),
-                this.prisma.jobApplication.groupBy({
+                this.prisma.jobApplication
+                    .groupBy({
                     by: ['jobId'],
                     _count: { jobId: true },
-                }).then(async (result) => {
-                    const jobIds = result.map(r => r.jobId);
+                })
+                    .then(async (result) => {
+                    const jobIds = result.map((r) => r.jobId);
                     const jobs = await this.prisma.job.findMany({
                         where: { id: { in: jobIds } },
                         select: { id: true, jobType: true },
                     });
-                    const jobTypeMap = new Map(jobs.map(job => [job.id, job.jobType]));
+                    const jobTypeMap = new Map(jobs.map((job) => [job.id, job.jobType]));
                     const byJobType = {
                         FULL_TIME: 0,
                         PART_TIME: 0,
@@ -1897,7 +1976,7 @@ let AdminService = class AdminService {
                         INTERNSHIP: 0,
                         FREELANCE: 0,
                     };
-                    result.forEach(r => {
+                    result.forEach((r) => {
                         const jobType = jobTypeMap.get(r.jobId);
                         if (jobType && byJobType.hasOwnProperty(jobType)) {
                             byJobType[jobType] += r._count.jobId;
@@ -1905,25 +1984,28 @@ let AdminService = class AdminService {
                     });
                     return byJobType;
                 }),
-                this.prisma.jobApplication.groupBy({
+                this.prisma.jobApplication
+                    .groupBy({
                     by: ['jobId'],
                     _count: { jobId: true },
-                }).then(async (result) => {
-                    const jobIds = result.map(r => r.jobId);
+                })
+                    .then(async (result) => {
+                    const jobIds = result.map((r) => r.jobId);
                     const jobs = await this.prisma.job.findMany({
                         where: { id: { in: jobIds } },
                         select: { id: true, experienceLevel: true },
                     });
-                    const experienceLevelMap = new Map(jobs.map(job => [job.id, job.experienceLevel]));
+                    const experienceLevelMap = new Map(jobs.map((job) => [job.id, job.experienceLevel]));
                     const byExperienceLevel = {
                         ENTRY_LEVEL: 0,
                         MID_LEVEL: 0,
                         SENIOR_LEVEL: 0,
                         EXECUTIVE: 0,
                     };
-                    result.forEach(r => {
+                    result.forEach((r) => {
                         const experienceLevel = experienceLevelMap.get(r.jobId);
-                        if (experienceLevel && byExperienceLevel.hasOwnProperty(experienceLevel)) {
+                        if (experienceLevel &&
+                            byExperienceLevel.hasOwnProperty(experienceLevel)) {
                             byExperienceLevel[experienceLevel] += r._count.jobId;
                         }
                     });
@@ -1936,7 +2018,8 @@ let AdminService = class AdminService {
                         },
                     },
                 }),
-                this.prisma.jobApplication.findMany({
+                this.prisma.jobApplication
+                    .findMany({
                     where: {
                         reviewedAt: { not: null },
                     },
@@ -1944,11 +2027,13 @@ let AdminService = class AdminService {
                         appliedAt: true,
                         reviewedAt: true,
                     },
-                }).then((applications) => {
+                })
+                    .then((applications) => {
                     if (applications.length === 0)
                         return 0;
                     const totalDays = applications.reduce((sum, app) => {
-                        const days = (app.reviewedAt.getTime() - app.appliedAt.getTime()) / (1000 * 60 * 60 * 24);
+                        const days = (app.reviewedAt.getTime() - app.appliedAt.getTime()) /
+                            (1000 * 60 * 60 * 24);
                         return sum + days;
                     }, 0);
                     return totalDays / applications.length;
@@ -1963,7 +2048,7 @@ let AdminService = class AdminService {
                 REJECTED: 0,
                 WITHDRAWN: 0,
             };
-            byStatus.forEach(status => {
+            byStatus.forEach((status) => {
                 if (statusData.hasOwnProperty(status.status)) {
                     statusData[status.status] = status._count.status;
                 }
@@ -2042,7 +2127,10 @@ let AdminService = class AdminService {
             if (exportQuery.jobTitle || exportQuery.companyName) {
                 whereClause.job = {};
                 if (exportQuery.jobTitle) {
-                    whereClause.job.title = { contains: exportQuery.jobTitle, mode: 'insensitive' };
+                    whereClause.job.title = {
+                        contains: exportQuery.jobTitle,
+                        mode: 'insensitive',
+                    };
                 }
                 if (exportQuery.companyName) {
                     whereClause.job.company = {
@@ -2053,8 +2141,18 @@ let AdminService = class AdminService {
             if (exportQuery.candidateName) {
                 whereClause.candidate = {
                     OR: [
-                        { firstName: { contains: exportQuery.candidateName, mode: 'insensitive' } },
-                        { lastName: { contains: exportQuery.candidateName, mode: 'insensitive' } },
+                        {
+                            firstName: {
+                                contains: exportQuery.candidateName,
+                                mode: 'insensitive',
+                            },
+                        },
+                        {
+                            lastName: {
+                                contains: exportQuery.candidateName,
+                                mode: 'insensitive',
+                            },
+                        },
                     ],
                 };
             }
@@ -2111,19 +2209,23 @@ let AdminService = class AdminService {
                 },
                 orderBy: { appliedAt: 'desc' },
             });
-            const exportData = applications.map(app => ({
+            const exportData = applications.map((app) => ({
                 'Application ID': app.id,
                 'Job Title': app.job.title,
-                'Company': app.job.company.name,
+                Company: app.job.company.name,
                 'Candidate Name': `${app.candidate.firstName} ${app.candidate.lastName}`,
                 'Candidate Email': app.candidate.user.email,
                 'Candidate Phone': app.candidate.user.phone || '',
-                'Status': app.status,
+                Status: app.status,
                 'Applied Date': app.appliedAt.toISOString().split('T')[0],
-                'Reviewed Date': app.reviewedAt ? app.reviewedAt.toISOString().split('T')[0] : '',
+                'Reviewed Date': app.reviewedAt
+                    ? app.reviewedAt.toISOString().split('T')[0]
+                    : '',
                 'Cover Letter': app.coverLetter || '',
-                'Feedback': app.feedback || '',
-                'Location': app.job.city ? `${app.job.city.name}, ${app.job.city.state.name}, ${app.job.city.state.country.name}` : '',
+                Feedback: app.feedback || '',
+                Location: app.job.city
+                    ? `${app.job.city.name}, ${app.job.city.state.name}, ${app.job.city.state.country.name}`
+                    : '',
                 'Job Type': app.job.jobType,
                 'Experience Level': app.job.experienceLevel,
                 'Work Mode': app.job.workMode,
@@ -2180,12 +2282,14 @@ let AdminService = class AdminService {
                 where.OR = [
                     { title: { contains: query.search, mode: 'insensitive' } },
                     { fileName: { contains: query.search, mode: 'insensitive' } },
-                    { candidate: {
+                    {
+                        candidate: {
                             OR: [
                                 { firstName: { contains: query.search, mode: 'insensitive' } },
-                                { lastName: { contains: query.search, mode: 'insensitive' } }
-                            ]
-                        } }
+                                { lastName: { contains: query.search, mode: 'insensitive' } },
+                            ],
+                        },
+                    },
                 ];
             }
             const orderBy = {};
@@ -2218,7 +2322,7 @@ let AdminService = class AdminService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                resumes: resumes.map(resume => ({
+                resumes: resumes.map((resume) => ({
                     id: resume.id,
                     candidateId: resume.candidateId,
                     title: resume.title,
@@ -2441,20 +2545,21 @@ let AdminService = class AdminService {
     }
     async sendNotification(sendNotificationDto, currentUser) {
         try {
-            const { userIds, type, title, message, data, expiresAt, sendEmail, sendPush, sendSms } = sendNotificationDto;
-            if (currentUser.role !== client_1.UserRole.ADMIN && currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
+            const { userIds, type, title, message, data, expiresAt, sendEmail, sendPush, sendSms, } = sendNotificationDto;
+            if (currentUser.role !== client_1.UserRole.ADMIN &&
+                currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
                 throw new common_1.ForbiddenException('Only admins can send notifications');
             }
             const existingUsers = await this.prisma.user.findMany({
                 where: { id: { in: userIds } },
                 select: { id: true },
             });
-            const validUserIds = existingUsers.map(user => user.id);
-            const invalidUserIds = userIds.filter(id => !validUserIds.includes(id));
+            const validUserIds = existingUsers.map((user) => user.id);
+            const invalidUserIds = userIds.filter((id) => !validUserIds.includes(id));
             if (validUserIds.length === 0) {
                 throw new common_1.BadRequestException('No valid users found to send notifications to');
             }
-            const notificationsData = validUserIds.map(userId => ({
+            const notificationsData = validUserIds.map((userId) => ({
                 userId,
                 type,
                 title,
@@ -2478,7 +2583,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.BadRequestException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.BadRequestException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to send notifications');
@@ -2486,8 +2592,9 @@ let AdminService = class AdminService {
     }
     async broadcastNotification(broadcastNotificationDto, currentUser) {
         try {
-            const { userIds, roleFilters, excludeUserIds, type, title, message, data, expiresAt, sendEmail, sendPush, sendSms } = broadcastNotificationDto;
-            if (currentUser.role !== client_1.UserRole.ADMIN && currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
+            const { userIds, roleFilters, excludeUserIds, type, title, message, data, expiresAt, sendEmail, sendPush, sendSms, } = broadcastNotificationDto;
+            if (currentUser.role !== client_1.UserRole.ADMIN &&
+                currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
                 throw new common_1.ForbiddenException('Only admins can broadcast notifications');
             }
             const whereClause = {};
@@ -2498,7 +2605,9 @@ let AdminService = class AdminService {
                 whereClause.role = { in: roleFilters };
             }
             if (excludeUserIds && excludeUserIds.length > 0) {
-                if (whereClause.id && typeof whereClause.id === 'object' && 'in' in whereClause.id) {
+                if (whereClause.id &&
+                    typeof whereClause.id === 'object' &&
+                    'in' in whereClause.id) {
                     whereClause.id = {
                         in: whereClause.id.in,
                         notIn: excludeUserIds,
@@ -2526,7 +2635,7 @@ let AdminService = class AdminService {
                 where: whereClause,
                 select: { id: true },
             });
-            const notificationsData = users.map(user => ({
+            const notificationsData = users.map((user) => ({
                 userId: user.id,
                 type,
                 title,
@@ -2537,7 +2646,12 @@ let AdminService = class AdminService {
             const createdNotifications = await this.prisma.notification.createMany({
                 data: notificationsData,
             });
-            await this.logActivity(currentUser.id, client_1.LogAction.CREATE, client_1.LogLevel.INFO, 'Notification', 'broadcast', `Broadcasted ${type} notification to ${users.length} users`, { type, title, totalUsers: users.length, filters: { roleFilters, excludeUserIds } });
+            await this.logActivity(currentUser.id, client_1.LogAction.CREATE, client_1.LogLevel.INFO, 'Notification', 'broadcast', `Broadcasted ${type} notification to ${users.length} users`, {
+                type,
+                title,
+                totalUsers: users.length,
+                filters: { roleFilters, excludeUserIds },
+            });
             return {
                 message: `Broadcast notification sent successfully to ${users.length} users`,
                 notificationsSent: users.length,
@@ -2549,7 +2663,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.BadRequestException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.BadRequestException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to broadcast notifications');
@@ -2557,7 +2672,8 @@ let AdminService = class AdminService {
     }
     async getNotificationTemplates(query, currentUser) {
         try {
-            if (currentUser.role !== client_1.UserRole.ADMIN && currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
+            if (currentUser.role !== client_1.UserRole.ADMIN &&
+                currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
                 throw new common_1.ForbiddenException('Only admins can view notification templates');
             }
             const { search, type, isActive, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc', } = query;
@@ -2587,7 +2703,7 @@ let AdminService = class AdminService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                templates: templates.map(template => ({
+                templates: templates.map((template) => ({
                     id: template.id,
                     name: template.name,
                     description: template.description ?? undefined,
@@ -2615,8 +2731,9 @@ let AdminService = class AdminService {
     }
     async createNotificationTemplate(createTemplateDto, currentUser) {
         try {
-            const { name, description, type, title, message, defaultData, variables, isActive = true } = createTemplateDto;
-            if (currentUser.role !== client_1.UserRole.ADMIN && currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
+            const { name, description, type, title, message, defaultData, variables, isActive = true, } = createTemplateDto;
+            if (currentUser.role !== client_1.UserRole.ADMIN &&
+                currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
                 throw new common_1.ForbiddenException('Only admins can create notification templates');
             }
             const existingTemplate = await this.prisma.notificationTemplate.findUnique({
@@ -2653,7 +2770,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.BadRequestException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.BadRequestException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to create notification template');

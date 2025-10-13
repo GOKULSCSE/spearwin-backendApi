@@ -209,8 +209,12 @@ let AuthService = class AuthService {
                 role: user.role,
                 status: user.status,
             };
-            const accessToken = this.jwtService.sign(newPayload, { expiresIn: '15m' });
-            const newRefreshToken = this.jwtService.sign(newPayload, { expiresIn: '7d' });
+            const accessToken = this.jwtService.sign(newPayload, {
+                expiresIn: '15m',
+            });
+            const newRefreshToken = this.jwtService.sign(newPayload, {
+                expiresIn: '7d',
+            });
             return {
                 success: true,
                 message: 'Token refreshed successfully',
@@ -365,7 +369,9 @@ let AuthService = class AuthService {
                         userId: user.id,
                         firstName: candidateRegisterDto.firstName,
                         lastName: candidateRegisterDto.lastName,
-                        dateOfBirth: candidateRegisterDto.dateOfBirth ? new Date(candidateRegisterDto.dateOfBirth) : null,
+                        dateOfBirth: candidateRegisterDto.dateOfBirth
+                            ? new Date(candidateRegisterDto.dateOfBirth)
+                            : null,
                         gender: candidateRegisterDto.gender,
                         bio: candidateRegisterDto.bio,
                         currentTitle: candidateRegisterDto.currentTitle,
@@ -444,7 +450,9 @@ let AuthService = class AuthService {
             const slug = companyRegisterDto.name
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
-                .replace(/(^-|-$)/g, '') + '-' + Date.now();
+                .replace(/(^-|-$)/g, '') +
+                '-' +
+                Date.now();
             const result = await this.prisma.$transaction(async (prisma) => {
                 const user = await prisma.user.create({
                     data: {
@@ -736,12 +744,22 @@ let AuthService = class AuthService {
                 await prisma.userSetting.upsert({
                     where: { userId_key: { userId, key: '2fa_secret' } },
                     update: { value: secret.base32 },
-                    create: { userId, key: '2fa_secret', value: secret.base32, category: 'security' },
+                    create: {
+                        userId,
+                        key: '2fa_secret',
+                        value: secret.base32,
+                        category: 'security',
+                    },
                 });
                 await prisma.userSetting.upsert({
                     where: { userId_key: { userId, key: '2fa_backup_codes' } },
                     update: { value: JSON.stringify(backupCodes) },
-                    create: { userId, key: '2fa_backup_codes', value: JSON.stringify(backupCodes), category: 'security' },
+                    create: {
+                        userId,
+                        key: '2fa_backup_codes',
+                        value: JSON.stringify(backupCodes),
+                        category: 'security',
+                    },
                 });
             });
             await this.prisma.activityLog.create({
@@ -836,7 +854,7 @@ let AuthService = class AuthService {
             if (!user.twoFactorEnabled) {
                 throw new common_1.BadRequestException('2FA is not enabled');
             }
-            const secretSetting = user.settings.find(s => s.key === '2fa_secret');
+            const secretSetting = user.settings.find((s) => s.key === '2fa_secret');
             if (!secretSetting) {
                 throw new common_1.BadRequestException('2FA secret not found');
             }
@@ -848,7 +866,12 @@ let AuthService = class AuthService {
             });
             if (!verified) {
                 const backupCodesSetting = await this.prisma.userSetting.findUnique({
-                    where: { userId_key: { userId: verify2FaDto.userId, key: '2fa_backup_codes' } },
+                    where: {
+                        userId_key: {
+                            userId: verify2FaDto.userId,
+                            key: '2fa_backup_codes',
+                        },
+                    },
                 });
                 if (backupCodesSetting) {
                     const backupCodes = JSON.parse(backupCodesSetting.value);
@@ -856,7 +879,12 @@ let AuthService = class AuthService {
                     if (codeIndex !== -1) {
                         backupCodes.splice(codeIndex, 1);
                         await this.prisma.userSetting.update({
-                            where: { userId_key: { userId: verify2FaDto.userId, key: '2fa_backup_codes' } },
+                            where: {
+                                userId_key: {
+                                    userId: verify2FaDto.userId,
+                                    key: '2fa_backup_codes',
+                                },
+                            },
                             data: { value: JSON.stringify(backupCodes) },
                         });
                         await this.prisma.activityLog.create({
@@ -916,13 +944,18 @@ let AuthService = class AuthService {
             }
             const backupCodes = Array.from({ length: 10 }, () => Math.random().toString(36).substring(2, 8).toUpperCase());
             await this.prisma.userSetting.upsert({
-                where: { userId_key: { userId: generateBackupCodesDto.userId, key: '2fa_backup_codes' } },
+                where: {
+                    userId_key: {
+                        userId: generateBackupCodesDto.userId,
+                        key: '2fa_backup_codes',
+                    },
+                },
                 update: { value: JSON.stringify(backupCodes) },
                 create: {
                     userId: generateBackupCodesDto.userId,
                     key: '2fa_backup_codes',
                     value: JSON.stringify(backupCodes),
-                    category: 'security'
+                    category: 'security',
                 },
             });
             await this.prisma.activityLog.create({

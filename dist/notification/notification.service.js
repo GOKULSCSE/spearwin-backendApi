@@ -59,7 +59,9 @@ let NotificationService = NotificationService_1 = class NotificationService {
     initializeFirebase() {
         try {
             if (admin.apps.length === 0) {
-                if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_PRIVATE_KEY || !process.env.FIREBASE_CLIENT_EMAIL) {
+                if (!process.env.FIREBASE_PROJECT_ID ||
+                    !process.env.FIREBASE_PRIVATE_KEY ||
+                    !process.env.FIREBASE_CLIENT_EMAIL) {
                     this.logger.warn('Firebase environment variables not set. FCM features will be disabled.');
                     return;
                 }
@@ -110,10 +112,7 @@ let NotificationService = NotificationService_1 = class NotificationService {
                     { message: { contains: query.search, mode: 'insensitive' } },
                 ];
             }
-            where.OR = [
-                { expiresAt: null },
-                { expiresAt: { gt: new Date() } },
-            ];
+            where.OR = [{ expiresAt: null }, { expiresAt: { gt: new Date() } }];
             const orderBy = {};
             if (query.sortBy) {
                 orderBy[query.sortBy] = query.sortOrder || 'desc';
@@ -133,16 +132,13 @@ let NotificationService = NotificationService_1 = class NotificationService {
                     where: {
                         userId,
                         isRead: false,
-                        OR: [
-                            { expiresAt: null },
-                            { expiresAt: { gt: new Date() } },
-                        ],
+                        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
                     },
                 }),
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                notifications: notifications.map(notification => ({
+                notifications: notifications.map((notification) => ({
                     id: notification.id,
                     userId: notification.userId,
                     type: notification.type,
@@ -264,10 +260,7 @@ let NotificationService = NotificationService_1 = class NotificationService {
                 where: {
                     userId,
                     isRead: false,
-                    OR: [
-                        { expiresAt: null },
-                        { expiresAt: { gt: new Date() } },
-                    ],
+                    OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
                 },
             });
             return {
@@ -309,7 +302,7 @@ let NotificationService = NotificationService_1 = class NotificationService {
     }
     async getNotificationStats(userId) {
         try {
-            const [total, unread, byType, recentNotifications, averageReadTime,] = await Promise.all([
+            const [total, unread, byType, recentNotifications, averageReadTime] = await Promise.all([
                 this.prisma.notification.count({
                     where: { userId },
                 }),
@@ -317,10 +310,7 @@ let NotificationService = NotificationService_1 = class NotificationService {
                     where: {
                         userId,
                         isRead: false,
-                        OR: [
-                            { expiresAt: null },
-                            { expiresAt: { gt: new Date() } },
-                        ],
+                        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
                     },
                 }),
                 this.prisma.notification.groupBy({
@@ -711,7 +701,7 @@ let NotificationService = NotificationService_1 = class NotificationService {
     }
     async getUserDeviceTokens(userId) {
         try {
-            const tokens = await this.prisma.fcmToken.findMany({
+            const tokens = await this.prisma.fCMToken.findMany({
                 where: {
                     userId,
                     isActive: true,
@@ -720,7 +710,7 @@ let NotificationService = NotificationService_1 = class NotificationService {
                     token: true,
                 },
             });
-            return tokens.map(t => t.token);
+            return tokens.map((t) => t.token);
         }
         catch (error) {
             this.logger.error('Failed to get user device tokens:', error);
@@ -729,14 +719,14 @@ let NotificationService = NotificationService_1 = class NotificationService {
     }
     async registerDeviceToken(userId, token, deviceInfo) {
         try {
-            const existingToken = await this.prisma.fcmToken.findFirst({
+            const existingToken = await this.prisma.fCMToken.findFirst({
                 where: {
                     token,
                     userId,
                 },
             });
             if (existingToken) {
-                await this.prisma.fcmToken.update({
+                await this.prisma.fCMToken.update({
                     where: { id: existingToken.id },
                     data: {
                         isActive: true,
@@ -746,7 +736,7 @@ let NotificationService = NotificationService_1 = class NotificationService {
                 });
             }
             else {
-                await this.prisma.fcmToken.create({
+                await this.prisma.fCMToken.create({
                     data: {
                         userId,
                         token,
@@ -765,7 +755,7 @@ let NotificationService = NotificationService_1 = class NotificationService {
     }
     async unregisterDeviceToken(userId, token) {
         try {
-            await this.prisma.fcmToken.updateMany({
+            await this.prisma.fCMToken.updateMany({
                 where: {
                     userId,
                     token,
@@ -783,7 +773,7 @@ let NotificationService = NotificationService_1 = class NotificationService {
     }
     async removeInvalidTokens(tokens) {
         try {
-            await this.prisma.fcmToken.updateMany({
+            await this.prisma.fCMToken.updateMany({
                 where: {
                     token: {
                         in: tokens,
@@ -825,7 +815,9 @@ let NotificationService = NotificationService_1 = class NotificationService {
     }
     async unsubscribeFromTopic(tokens, topic) {
         try {
-            const response = await admin.messaging().unsubscribeFromTopic(tokens, topic);
+            const response = await admin
+                .messaging()
+                .unsubscribeFromTopic(tokens, topic);
             this.logger.log(`Unsubscribed ${response.successCount} tokens from topic ${topic}`);
             return response;
         }

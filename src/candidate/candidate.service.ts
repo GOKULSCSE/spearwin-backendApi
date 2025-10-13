@@ -1,29 +1,50 @@
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { Multer } from 'multer';
-import { UpdateCandidateProfileDto, UpdateAvailabilityDto, CandidateProfileResponseDto } from './dto/candidate-profile.dto';
-import { CreateCandidateSkillDto, UpdateCandidateSkillDto, CandidateSkillResponseDto } from './dto/candidate-skill.dto';
-import { CreateCandidateEducationDto, UpdateCandidateEducationDto, CandidateEducationResponseDto } from './dto/candidate-education.dto';
-import { CreateCandidateExperienceDto, UpdateCandidateExperienceDto, CandidateExperienceResponseDto } from './dto/candidate-experience.dto';
-import { 
-  CreateJobAlertDto, 
-  UpdateJobAlertDto, 
-  JobAlertResponseDto, 
-  RecommendedJobsResponseDto, 
-  JobAlertsResponseDto 
+import {
+  UpdateCandidateProfileDto,
+  UpdateAvailabilityDto,
+  CandidateProfileResponseDto,
+} from './dto/candidate-profile.dto';
+import {
+  CreateCandidateSkillDto,
+  UpdateCandidateSkillDto,
+  CandidateSkillResponseDto,
+} from './dto/candidate-skill.dto';
+import {
+  CreateCandidateEducationDto,
+  UpdateCandidateEducationDto,
+  CandidateEducationResponseDto,
+} from './dto/candidate-education.dto';
+import {
+  CreateCandidateExperienceDto,
+  UpdateCandidateExperienceDto,
+  CandidateExperienceResponseDto,
+} from './dto/candidate-experience.dto';
+import {
+  CreateJobAlertDto,
+  UpdateJobAlertDto,
+  JobAlertResponseDto,
+  RecommendedJobsResponseDto,
+  JobAlertsResponseDto,
 } from './dto/job-alert.dto';
-import { 
-  ApplyForJobDto, 
-  UpdateApplicationDto, 
-  ApplicationResponseDto, 
-  ApplicationsResponseDto, 
-  ApplicationHistoryQueryDto 
+import {
+  ApplyForJobDto,
+  UpdateApplicationDto,
+  ApplicationResponseDto,
+  ApplicationsResponseDto,
+  ApplicationHistoryQueryDto,
 } from './dto/job-application.dto';
-import { 
-  ResumeParseRequestDto, 
-  ResumeParseResponseDto, 
-  ResumeAnalysisResponseDto, 
-  ResumeOptimizationResponseDto 
+import {
+  ResumeParseRequestDto,
+  ResumeParseResponseDto,
+  ResumeAnalysisResponseDto,
+  ResumeOptimizationResponseDto,
 } from './dto/resume-analysis.dto';
 import { LogAction, LogLevel } from '@prisma/client';
 
@@ -35,7 +56,10 @@ export class CandidateService {
   // CANDIDATE PROFILE MANAGEMENT
   // =================================================================
 
-  async createCandidate(userId: string, createDto: any): Promise<CandidateProfileResponseDto> {
+  async createCandidate(
+    userId: string,
+    createDto: any,
+  ): Promise<CandidateProfileResponseDto> {
     try {
       const candidate = await this.db.candidate.create({
         data: {
@@ -67,7 +91,7 @@ export class CandidateService {
         LogLevel.INFO,
         'Candidate',
         candidate.id,
-        'Candidate profile created'
+        'Candidate profile created',
       );
 
       return {
@@ -81,7 +105,9 @@ export class CandidateService {
         bio: candidate.bio || undefined,
         currentTitle: candidate.currentTitle || undefined,
         experienceYears: candidate.experienceYears || undefined,
-        expectedSalary: candidate.expectedSalary ? Number(candidate.expectedSalary) : undefined,
+        expectedSalary: candidate.expectedSalary
+          ? Number(candidate.expectedSalary)
+          : undefined,
         address: candidate.address || undefined,
         linkedinUrl: candidate.linkedinUrl || undefined,
         githubUrl: candidate.githubUrl || undefined,
@@ -89,19 +115,21 @@ export class CandidateService {
         isAvailable: candidate.isAvailable,
         createdAt: candidate.createdAt,
         updatedAt: candidate.updatedAt,
-        city: candidate.city ? {
-          id: candidate.city.id,
-          name: candidate.city.name,
-          state: {
-            id: candidate.city.state.id,
-            name: candidate.city.state.name,
-            country: {
-              id: candidate.city.state.country.id,
-              name: candidate.city.state.country.name,
-              code: candidate.city.state.country.code,
-            },
-          },
-        } : undefined,
+        city: candidate.city
+          ? {
+              id: candidate.city.id,
+              name: candidate.city.name,
+              state: {
+                id: candidate.city.state.id,
+                name: candidate.city.state.name,
+                country: {
+                  id: candidate.city.state.country.id,
+                  name: candidate.city.state.country.name,
+                  code: candidate.city.state.country.code,
+                },
+              },
+            }
+          : undefined,
       };
     } catch (error) {
       this.handleException(error);
@@ -109,7 +137,9 @@ export class CandidateService {
     }
   }
 
-  async getCandidateProfile(userId: string): Promise<CandidateProfileResponseDto> {
+  async getCandidateProfile(
+    userId: string,
+  ): Promise<CandidateProfileResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -150,7 +180,9 @@ export class CandidateService {
         bio: candidate.bio || undefined,
         currentTitle: candidate.currentTitle || undefined,
         experienceYears: candidate.experienceYears || undefined,
-        expectedSalary: candidate.expectedSalary ? Number(candidate.expectedSalary) : undefined,
+        expectedSalary: candidate.expectedSalary
+          ? Number(candidate.expectedSalary)
+          : undefined,
         address: candidate.address || undefined,
         linkedinUrl: candidate.linkedinUrl || undefined,
         githubUrl: candidate.githubUrl || undefined,
@@ -168,7 +200,10 @@ export class CandidateService {
     }
   }
 
-  async updateCandidate(userId: string, updateDto: any): Promise<CandidateProfileResponseDto> {
+  async updateCandidate(
+    userId: string,
+    updateDto: any,
+  ): Promise<CandidateProfileResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -206,7 +241,7 @@ export class CandidateService {
         LogLevel.INFO,
         'Candidate',
         candidate.id,
-        'Candidate profile updated'
+        'Candidate profile updated',
       );
 
       return {
@@ -220,7 +255,9 @@ export class CandidateService {
         bio: updatedCandidate.bio || undefined,
         currentTitle: updatedCandidate.currentTitle || undefined,
         experienceYears: updatedCandidate.experienceYears || undefined,
-        expectedSalary: updatedCandidate.expectedSalary ? Number(updatedCandidate.expectedSalary) : undefined,
+        expectedSalary: updatedCandidate.expectedSalary
+          ? Number(updatedCandidate.expectedSalary)
+          : undefined,
         address: updatedCandidate.address || undefined,
         linkedinUrl: updatedCandidate.linkedinUrl || undefined,
         githubUrl: updatedCandidate.githubUrl || undefined,
@@ -228,19 +265,21 @@ export class CandidateService {
         isAvailable: updatedCandidate.isAvailable,
         createdAt: updatedCandidate.createdAt,
         updatedAt: updatedCandidate.updatedAt,
-        city: updatedCandidate.city ? {
-          id: updatedCandidate.city.id,
-          name: updatedCandidate.city.name,
-          state: {
-            id: updatedCandidate.city.state.id,
-            name: updatedCandidate.city.state.name,
-            country: {
-              id: updatedCandidate.city.state.country.id,
-              name: updatedCandidate.city.state.country.name,
-              code: updatedCandidate.city.state.country.code,
-            },
-          },
-        } : undefined,
+        city: updatedCandidate.city
+          ? {
+              id: updatedCandidate.city.id,
+              name: updatedCandidate.city.name,
+              state: {
+                id: updatedCandidate.city.state.id,
+                name: updatedCandidate.city.state.name,
+                country: {
+                  id: updatedCandidate.city.state.country.id,
+                  name: updatedCandidate.city.state.country.name,
+                  code: updatedCandidate.city.state.country.code,
+                },
+              },
+            }
+          : undefined,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -255,7 +294,10 @@ export class CandidateService {
   // RESUME PARSING & ANALYSIS
   // =================================================================
 
-  async parseResume(userId: string, parseDto: ResumeParseRequestDto): Promise<ResumeParseResponseDto> {
+  async parseResume(
+    userId: string,
+    parseDto: ResumeParseRequestDto,
+  ): Promise<ResumeParseResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -306,22 +348,27 @@ export class CandidateService {
           name: `${candidate.firstName} ${candidate.lastName}`,
           email: candidate.user.email,
           phone: candidate.user.phone || '',
-          location: candidate.city ? `${candidate.city.name}, ${candidate.city.state.name}, ${candidate.city.state.country.name}` : '',
+          location: candidate.city
+            ? `${candidate.city.name}, ${candidate.city.state.name}, ${candidate.city.state.country.name}`
+            : '',
         },
-        experience: candidate.experience.map(exp => ({
+        experience: candidate.experience.map((exp) => ({
           company: exp.company,
           position: exp.position,
           duration: `${exp.startDate.toISOString().split('T')[0]} - ${exp.endDate ? exp.endDate.toISOString().split('T')[0] : 'Present'}`,
           description: exp.description || '',
         })),
-        education: candidate.education.map(edu => ({
+        education: candidate.education.map((edu) => ({
           institution: edu.institution,
           degree: edu.degree,
           field: edu.fieldOfStudy || '',
-          graduationYear: edu.endDate ? edu.endDate.getFullYear().toString() : '',
+          graduationYear: edu.endDate
+            ? edu.endDate.getFullYear().toString()
+            : '',
         })),
-        skills: candidate.skills.map(skill => skill.skillName),
-        summary: candidate.bio || 'Professional with relevant experience and skills',
+        skills: candidate.skills.map((skill) => skill.skillName),
+        summary:
+          candidate.bio || 'Professional with relevant experience and skills',
       };
 
       // Log the resume parsing activity
@@ -331,7 +378,7 @@ export class CandidateService {
         LogLevel.INFO,
         'Resume',
         resume?.id || 'parse',
-        'Resume parsed for data extraction'
+        'Resume parsed for data extraction',
       );
 
       return {
@@ -349,7 +396,10 @@ export class CandidateService {
     }
   }
 
-  async getResumeAnalysis(userId: string, resumeId: string): Promise<ResumeAnalysisResponseDto> {
+  async getResumeAnalysis(
+    userId: string,
+    resumeId: string,
+  ): Promise<ResumeAnalysisResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -392,12 +442,21 @@ export class CandidateService {
 
       // Calculate scores based on actual data
       const personalInfoScore = this.calculatePersonalInfoScore(candidate);
-      const experienceScore = this.calculateExperienceScore(candidate.experience);
+      const experienceScore = this.calculateExperienceScore(
+        candidate.experience,
+      );
       const educationScore = this.calculateEducationScore(candidate.education);
       const skillsScore = this.calculateSkillsScore(candidate.skills);
       const summaryScore = this.calculateSummaryScore(candidate.bio);
 
-      const overallScore = Math.round((personalInfoScore + experienceScore + educationScore + skillsScore + summaryScore) / 5);
+      const overallScore = Math.round(
+        (personalInfoScore +
+          experienceScore +
+          educationScore +
+          skillsScore +
+          summaryScore) /
+          5,
+      );
 
       const analysis = {
         resumeId,
@@ -450,7 +509,7 @@ export class CandidateService {
         LogLevel.INFO,
         'Resume',
         resumeId,
-        'Resume analysis generated'
+        'Resume analysis generated',
       );
 
       return analysis;
@@ -463,7 +522,10 @@ export class CandidateService {
     }
   }
 
-  async optimizeResume(userId: string, resumeId: string): Promise<ResumeOptimizationResponseDto> {
+  async optimizeResume(
+    userId: string,
+    resumeId: string,
+  ): Promise<ResumeOptimizationResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -492,7 +554,8 @@ export class CandidateService {
       // Generate optimization suggestions based on actual candidate data
       const optimization = {
         resumeId,
-        optimizationSuggestions: this.generateOptimizationSuggestions(candidate),
+        optimizationSuggestions:
+          this.generateOptimizationSuggestions(candidate),
         keywordOptimization: this.generateKeywordOptimization(candidate),
         formattingSuggestions: this.generateFormattingSuggestions(candidate),
         lengthOptimization: this.generateLengthOptimization(candidate),
@@ -510,7 +573,7 @@ export class CandidateService {
         LogLevel.INFO,
         'Resume',
         resumeId,
-        'Resume optimization suggestions generated'
+        'Resume optimization suggestions generated',
       );
 
       return optimization;
@@ -543,8 +606,12 @@ export class CandidateService {
     if (experience.length === 0) return 0;
     let score = 0;
     score += Math.min(experience.length * 15, 60);
-    score += experience.some(exp => exp.achievements) ? 20 : 0;
-    score += experience.some(exp => exp.description && exp.description.length > 50) ? 20 : 0;
+    score += experience.some((exp) => exp.achievements) ? 20 : 0;
+    score += experience.some(
+      (exp) => exp.description && exp.description.length > 50,
+    )
+      ? 20
+      : 0;
     return Math.min(score, 100);
   }
 
@@ -552,8 +619,8 @@ export class CandidateService {
     if (education.length === 0) return 0;
     let score = 0;
     score += Math.min(education.length * 25, 75);
-    score += education.some(edu => edu.isCompleted) ? 15 : 0;
-    score += education.some(edu => edu.grade) ? 10 : 0;
+    score += education.some((edu) => edu.isCompleted) ? 15 : 0;
+    score += education.some((edu) => edu.grade) ? 10 : 0;
     return Math.min(score, 100);
   }
 
@@ -561,8 +628,8 @@ export class CandidateService {
     if (skills.length === 0) return 0;
     let score = 0;
     score += Math.min(skills.length * 8, 60);
-    score += skills.some(skill => skill.level) ? 20 : 0;
-    score += skills.some(skill => skill.yearsUsed) ? 20 : 0;
+    score += skills.some((skill) => skill.level) ? 20 : 0;
+    score += skills.some((skill) => skill.yearsUsed) ? 20 : 0;
     return Math.min(score, 100);
   }
 
@@ -580,20 +647,27 @@ export class CandidateService {
   private calculateCompleteness(candidate: any): number {
     let fields = 0;
     let completed = 0;
-    
+
     const requiredFields = ['firstName', 'lastName', 'user.email'];
-    const optionalFields = ['user.phone', 'city', 'bio', 'linkedinUrl', 'githubUrl', 'portfolioUrl'];
-    
-    requiredFields.forEach(field => {
+    const optionalFields = [
+      'user.phone',
+      'city',
+      'bio',
+      'linkedinUrl',
+      'githubUrl',
+      'portfolioUrl',
+    ];
+
+    requiredFields.forEach((field) => {
       fields++;
       if (this.getNestedValue(candidate, field)) completed++;
     });
-    
-    optionalFields.forEach(field => {
+
+    optionalFields.forEach((field) => {
       fields++;
       if (this.getNestedValue(candidate, field)) completed++;
     });
-    
+
     return Math.round((completed / fields) * 100);
   }
 
@@ -616,15 +690,21 @@ export class CandidateService {
   }
 
   private calculateAchievementsScore(experience: any[]): number {
-    const withAchievements = experience.filter(exp => exp.achievements && exp.achievements.length > 0).length;
+    const withAchievements = experience.filter(
+      (exp) => exp.achievements && exp.achievements.length > 0,
+    ).length;
     return Math.round((withAchievements / experience.length) * 100) || 0;
   }
 
   private getExperienceIssues(experience: any[]): string[] {
     const issues: string[] = [];
     if (experience.length === 0) issues.push('No work experience listed');
-    if (!experience.some(exp => exp.achievements)) issues.push('Missing quantifiable achievements');
-    if (!experience.some(exp => exp.description && exp.description.length > 50)) issues.push('Job descriptions are too brief');
+    if (!experience.some((exp) => exp.achievements))
+      issues.push('Missing quantifiable achievements');
+    if (
+      !experience.some((exp) => exp.description && exp.description.length > 50)
+    )
+      issues.push('Job descriptions are too brief');
     return issues;
   }
 
@@ -636,7 +716,8 @@ export class CandidateService {
   private getEducationIssues(education: any[]): string[] {
     const issues: string[] = [];
     if (education.length === 0) issues.push('No education listed');
-    if (!education.some(edu => edu.isCompleted)) issues.push('Some education entries are incomplete');
+    if (!education.some((edu) => edu.isCompleted))
+      issues.push('Some education entries are incomplete');
     return issues;
   }
 
@@ -647,7 +728,9 @@ export class CandidateService {
 
   private calculateSkillsDiversity(skills: any[]): number {
     if (skills.length === 0) return 0;
-    const categories = new Set(skills.map(skill => skill.skillName.toLowerCase().split(' ')[0]));
+    const categories = new Set(
+      skills.map((skill) => skill.skillName.toLowerCase().split(' ')[0]),
+    );
     return Math.min(categories.size * 20, 100);
   }
 
@@ -655,7 +738,8 @@ export class CandidateService {
     const issues: string[] = [];
     if (skills.length === 0) issues.push('No skills listed');
     if (skills.length < 3) issues.push('Too few skills listed');
-    if (!skills.some(skill => skill.level)) issues.push('Skill levels not specified');
+    if (!skills.some((skill) => skill.level))
+      issues.push('Skill levels not specified');
     return issues;
   }
 
@@ -675,14 +759,15 @@ export class CandidateService {
     else {
       if (bio.length < 50) issues.push('Summary is too brief');
       if (bio.length > 300) issues.push('Summary is too long');
-      if (!bio.includes('experience') && !bio.includes('skills')) issues.push('Summary lacks key information');
+      if (!bio.includes('experience') && !bio.includes('skills'))
+        issues.push('Summary lacks key information');
     }
     return issues;
   }
 
   private generateRecommendations(candidate: any): any[] {
     const recommendations: any[] = [];
-    
+
     if (candidate.experience.length === 0) {
       recommendations.push({
         priority: 'HIGH' as const,
@@ -691,7 +776,7 @@ export class CandidateService {
         impact: 'Essential for most job applications',
       });
     }
-    
+
     if (!candidate.bio || candidate.bio.length < 50) {
       recommendations.push({
         priority: 'HIGH' as const,
@@ -700,7 +785,7 @@ export class CandidateService {
         impact: 'Creates strong first impression',
       });
     }
-    
+
     if (candidate.skills.length < 5) {
       recommendations.push({
         priority: 'MEDIUM' as const,
@@ -709,7 +794,7 @@ export class CandidateService {
         impact: 'Improves keyword matching',
       });
     }
-    
+
     if (!candidate.linkedinUrl) {
       recommendations.push({
         priority: 'MEDIUM' as const,
@@ -718,24 +803,28 @@ export class CandidateService {
         impact: 'Enhances professional credibility',
       });
     }
-    
+
     return recommendations;
   }
 
   private identifyStrengths(candidate: any): string[] {
     const strengths: string[] = [];
     if (candidate.experience.length > 0) strengths.push('Has work experience');
-    if (candidate.education.length > 0) strengths.push('Educational background present');
+    if (candidate.education.length > 0)
+      strengths.push('Educational background present');
     if (candidate.skills.length > 0) strengths.push('Skills are listed');
-    if (candidate.bio && candidate.bio.length > 50) strengths.push('Professional summary present');
+    if (candidate.bio && candidate.bio.length > 50)
+      strengths.push('Professional summary present');
     if (candidate.linkedinUrl) strengths.push('LinkedIn profile connected');
     return strengths;
   }
 
   private identifyWeaknesses(candidate: any): string[] {
     const weaknesses: string[] = [];
-    if (candidate.experience.length === 0) weaknesses.push('No work experience');
-    if (!candidate.bio || candidate.bio.length < 50) weaknesses.push('Weak professional summary');
+    if (candidate.experience.length === 0)
+      weaknesses.push('No work experience');
+    if (!candidate.bio || candidate.bio.length < 50)
+      weaknesses.push('Weak professional summary');
     if (candidate.skills.length < 3) weaknesses.push('Limited skills listed');
     if (!candidate.linkedinUrl) weaknesses.push('Missing LinkedIn profile');
     return weaknesses;
@@ -762,7 +851,9 @@ export class CandidateService {
 
   private getATSSuggestions(candidate: any): string[] {
     const suggestions: string[] = [];
-    suggestions.push('Use standard section headers (Experience, Education, Skills)');
+    suggestions.push(
+      'Use standard section headers (Experience, Education, Skills)',
+    );
     suggestions.push('Include relevant keywords from job descriptions');
     suggestions.push('Avoid graphics and complex formatting');
     suggestions.push('Use simple, clean layout');
@@ -771,7 +862,7 @@ export class CandidateService {
 
   private generateOptimizationSuggestions(candidate: any): any[] {
     const suggestions: any[] = [];
-    
+
     if (candidate.experience.length > 0) {
       const exp = candidate.experience[0];
       if (!exp.achievements) {
@@ -785,7 +876,7 @@ export class CandidateService {
         });
       }
     }
-    
+
     if (candidate.skills.length > 0) {
       suggestions.push({
         category: 'Skills',
@@ -796,18 +887,19 @@ export class CandidateService {
         impact: 'Medium - Better keyword matching',
       });
     }
-    
+
     if (!candidate.bio || candidate.bio.length < 100) {
       suggestions.push({
         category: 'Summary',
         priority: 'HIGH' as const,
         current: candidate.bio || 'No summary',
-        suggested: 'Write a compelling professional summary highlighting key achievements',
+        suggested:
+          'Write a compelling professional summary highlighting key achievements',
         reason: 'Professional summary is crucial for first impression',
         impact: 'High - Creates stronger first impression',
       });
     }
-    
+
     return suggestions;
   }
 
@@ -815,15 +907,16 @@ export class CandidateService {
     const missing = ['Agile', 'Scrum', 'Git', 'Docker', 'AWS', 'CI/CD'];
     const overused = ['Experienced', 'Skilled', 'Proficient'];
     const suggested = ['Expert', 'Advanced', 'Specialized', 'Certified'];
-    
+
     return {
-      missing: missing.filter(keyword => 
-        !candidate.skills.some((skill: any) => 
-          skill.skillName.toLowerCase().includes(keyword.toLowerCase())
-        )
+      missing: missing.filter(
+        (keyword) =>
+          !candidate.skills.some((skill: any) =>
+            skill.skillName.toLowerCase().includes(keyword.toLowerCase()),
+          ),
       ),
-      overused: overused.filter(keyword => 
-        candidate.bio?.toLowerCase().includes(keyword.toLowerCase())
+      overused: overused.filter((keyword) =>
+        candidate.bio?.toLowerCase().includes(keyword.toLowerCase()),
       ),
       suggested,
     };
@@ -831,7 +924,7 @@ export class CandidateService {
 
   private generateFormattingSuggestions(candidate: any): any[] {
     const suggestions: any[] = [];
-    
+
     if (candidate.experience.length > 0) {
       suggestions.push({
         issue: 'Inconsistent date formatting',
@@ -839,20 +932,20 @@ export class CandidateService {
         impact: 'Improves readability and professionalism',
       });
     }
-    
+
     suggestions.push({
       issue: 'Missing section headers',
       suggestion: 'Use clear section headers (Experience, Education, Skills)',
       impact: 'Enhances ATS compatibility',
     });
-    
+
     return suggestions;
   }
 
   private generateLengthOptimization(candidate: any): any {
     const currentLength = this.estimateResumeLength(candidate);
     const recommendedLength = 1.5;
-    
+
     return {
       currentLength,
       recommendedLength,
@@ -867,8 +960,10 @@ export class CandidateService {
   private estimateResumeLength(candidate: any): number {
     let length = 0;
     if (candidate.bio) length += 0.2;
-    if (candidate.experience.length > 0) length += candidate.experience.length * 0.3;
-    if (candidate.education.length > 0) length += candidate.education.length * 0.2;
+    if (candidate.experience.length > 0)
+      length += candidate.experience.length * 0.3;
+    if (candidate.education.length > 0)
+      length += candidate.education.length * 0.2;
     if (candidate.skills.length > 0) length += 0.3;
     return Math.round(length * 10) / 10;
   }
@@ -908,7 +1003,10 @@ export class CandidateService {
   // CANDIDATE PROFILE MANAGEMENT
   // =================================================================
 
-  async updateCandidateProfile(userId: string, updateDto: UpdateCandidateProfileDto): Promise<CandidateProfileResponseDto> {
+  async updateCandidateProfile(
+    userId: string,
+    updateDto: UpdateCandidateProfileDto,
+  ): Promise<CandidateProfileResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -951,7 +1049,14 @@ export class CandidateService {
       });
 
       // Log the profile update
-      await this.logActivity(userId, LogAction.UPDATE, LogLevel.INFO, 'Candidate', candidate.id, 'Profile updated');
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'Candidate',
+        candidate.id,
+        'Profile updated',
+      );
 
       return {
         id: updatedCandidate.id,
@@ -964,7 +1069,9 @@ export class CandidateService {
         bio: updatedCandidate.bio || undefined,
         currentTitle: updatedCandidate.currentTitle || undefined,
         experienceYears: updatedCandidate.experienceYears || undefined,
-        expectedSalary: updatedCandidate.expectedSalary ? Number(updatedCandidate.expectedSalary) : undefined,
+        expectedSalary: updatedCandidate.expectedSalary
+          ? Number(updatedCandidate.expectedSalary)
+          : undefined,
         address: updatedCandidate.address || undefined,
         linkedinUrl: updatedCandidate.linkedinUrl || undefined,
         githubUrl: updatedCandidate.githubUrl || undefined,
@@ -982,7 +1089,10 @@ export class CandidateService {
     }
   }
 
-  async uploadProfilePicture(userId: string, file: Multer.File): Promise<{ message: string; profilePicture: string }> {
+  async uploadProfilePicture(
+    userId: string,
+    file: Multer.File,
+  ): Promise<{ message: string; profilePicture: string }> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1002,9 +1112,19 @@ export class CandidateService {
       });
 
       // Log the profile picture upload
-      await this.logActivity(userId, LogAction.UPDATE, LogLevel.INFO, 'Candidate', candidate.id, 'Profile picture uploaded');
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'Candidate',
+        candidate.id,
+        'Profile picture uploaded',
+      );
 
-      return { message: 'Profile picture uploaded successfully', profilePicture };
+      return {
+        message: 'Profile picture uploaded successfully',
+        profilePicture,
+      };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -1030,7 +1150,14 @@ export class CandidateService {
       });
 
       // Log the profile picture deletion
-      await this.logActivity(userId, LogAction.DELETE, LogLevel.INFO, 'Candidate', candidate.id, 'Profile picture deleted');
+      await this.logActivity(
+        userId,
+        LogAction.DELETE,
+        LogLevel.INFO,
+        'Candidate',
+        candidate.id,
+        'Profile picture deleted',
+      );
 
       return { message: 'Profile picture deleted successfully' };
     } catch (error) {
@@ -1042,7 +1169,10 @@ export class CandidateService {
     }
   }
 
-  async updateAvailability(userId: string, updateDto: UpdateAvailabilityDto): Promise<{ message: string }> {
+  async updateAvailability(
+    userId: string,
+    updateDto: UpdateAvailabilityDto,
+  ): Promise<{ message: string }> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1058,7 +1188,14 @@ export class CandidateService {
       });
 
       // Log the availability update
-      await this.logActivity(userId, LogAction.UPDATE, LogLevel.INFO, 'Candidate', candidate.id, `Availability updated to ${updateDto.isAvailable ? 'available' : 'unavailable'}`);
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'Candidate',
+        candidate.id,
+        `Availability updated to ${updateDto.isAvailable ? 'available' : 'unavailable'}`,
+      );
 
       return { message: 'Availability updated successfully' };
     } catch (error) {
@@ -1074,7 +1211,9 @@ export class CandidateService {
   // CANDIDATE SKILLS MANAGEMENT
   // =================================================================
 
-  async getCandidateSkills(userId: string): Promise<CandidateSkillResponseDto[]> {
+  async getCandidateSkills(
+    userId: string,
+  ): Promise<CandidateSkillResponseDto[]> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1089,7 +1228,7 @@ export class CandidateService {
         orderBy: { skillName: 'asc' },
       });
 
-      return skills.map(skill => ({
+      return skills.map((skill) => ({
         id: skill.id,
         candidateId: skill.candidateId,
         skillName: skill.skillName,
@@ -1105,7 +1244,10 @@ export class CandidateService {
     }
   }
 
-  async addCandidateSkill(userId: string, createDto: CreateCandidateSkillDto): Promise<CandidateSkillResponseDto> {
+  async addCandidateSkill(
+    userId: string,
+    createDto: CreateCandidateSkillDto,
+  ): Promise<CandidateSkillResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1137,7 +1279,14 @@ export class CandidateService {
       });
 
       // Log the skill addition
-      await this.logActivity(userId, LogAction.CREATE, LogLevel.INFO, 'CandidateSkill', skill.id, `Skill added: ${createDto.skillName}`);
+      await this.logActivity(
+        userId,
+        LogAction.CREATE,
+        LogLevel.INFO,
+        'CandidateSkill',
+        skill.id,
+        `Skill added: ${createDto.skillName}`,
+      );
 
       return {
         id: skill.id,
@@ -1147,7 +1296,10 @@ export class CandidateService {
         yearsUsed: skill.yearsUsed,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -1155,7 +1307,11 @@ export class CandidateService {
     }
   }
 
-  async updateCandidateSkill(userId: string, skillId: string, updateDto: UpdateCandidateSkillDto): Promise<CandidateSkillResponseDto> {
+  async updateCandidateSkill(
+    userId: string,
+    skillId: string,
+    updateDto: UpdateCandidateSkillDto,
+  ): Promise<CandidateSkillResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1197,7 +1353,14 @@ export class CandidateService {
       });
 
       // Log the skill update
-      await this.logActivity(userId, LogAction.UPDATE, LogLevel.INFO, 'CandidateSkill', skillId, `Skill updated: ${updatedSkill.skillName}`);
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'CandidateSkill',
+        skillId,
+        `Skill updated: ${updatedSkill.skillName}`,
+      );
 
       return {
         id: updatedSkill.id,
@@ -1207,7 +1370,10 @@ export class CandidateService {
         yearsUsed: updatedSkill.yearsUsed,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -1215,7 +1381,10 @@ export class CandidateService {
     }
   }
 
-  async deleteCandidateSkill(userId: string, skillId: string): Promise<{ message: string }> {
+  async deleteCandidateSkill(
+    userId: string,
+    skillId: string,
+  ): Promise<{ message: string }> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1241,7 +1410,14 @@ export class CandidateService {
       });
 
       // Log the skill deletion
-      await this.logActivity(userId, LogAction.DELETE, LogLevel.INFO, 'CandidateSkill', skillId, `Skill deleted: ${skill.skillName}`);
+      await this.logActivity(
+        userId,
+        LogAction.DELETE,
+        LogLevel.INFO,
+        'CandidateSkill',
+        skillId,
+        `Skill deleted: ${skill.skillName}`,
+      );
 
       return { message: 'Skill deleted successfully' };
     } catch (error) {
@@ -1257,7 +1433,9 @@ export class CandidateService {
   // CANDIDATE EDUCATION MANAGEMENT
   // =================================================================
 
-  async getCandidateEducation(userId: string): Promise<CandidateEducationResponseDto[]> {
+  async getCandidateEducation(
+    userId: string,
+  ): Promise<CandidateEducationResponseDto[]> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1272,7 +1450,7 @@ export class CandidateService {
         orderBy: { startDate: 'desc' },
       });
 
-      return education.map(edu => ({
+      return education.map((edu) => ({
         id: edu.id,
         candidateId: edu.candidateId,
         institution: edu.institution,
@@ -1295,7 +1473,10 @@ export class CandidateService {
     }
   }
 
-  async addCandidateEducation(userId: string, createDto: CreateCandidateEducationDto): Promise<CandidateEducationResponseDto> {
+  async addCandidateEducation(
+    userId: string,
+    createDto: CreateCandidateEducationDto,
+  ): Promise<CandidateEducationResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1321,7 +1502,14 @@ export class CandidateService {
       });
 
       // Log the education addition
-      await this.logActivity(userId, LogAction.CREATE, LogLevel.INFO, 'CandidateEducation', education.id, `Education added: ${createDto.degree} at ${createDto.institution}`);
+      await this.logActivity(
+        userId,
+        LogAction.CREATE,
+        LogLevel.INFO,
+        'CandidateEducation',
+        education.id,
+        `Education added: ${createDto.degree} at ${createDto.institution}`,
+      );
 
       return {
         id: education.id,
@@ -1346,7 +1534,11 @@ export class CandidateService {
     }
   }
 
-  async updateCandidateEducation(userId: string, educationId: string, updateDto: UpdateCandidateEducationDto): Promise<CandidateEducationResponseDto> {
+  async updateCandidateEducation(
+    userId: string,
+    educationId: string,
+    updateDto: UpdateCandidateEducationDto,
+  ): Promise<CandidateEducationResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1383,7 +1575,14 @@ export class CandidateService {
       });
 
       // Log the education update
-      await this.logActivity(userId, LogAction.UPDATE, LogLevel.INFO, 'CandidateEducation', educationId, `Education updated: ${updatedEducation.degree} at ${updatedEducation.institution}`);
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'CandidateEducation',
+        educationId,
+        `Education updated: ${updatedEducation.degree} at ${updatedEducation.institution}`,
+      );
 
       return {
         id: updatedEducation.id,
@@ -1408,7 +1607,10 @@ export class CandidateService {
     }
   }
 
-  async deleteCandidateEducation(userId: string, educationId: string): Promise<{ message: string }> {
+  async deleteCandidateEducation(
+    userId: string,
+    educationId: string,
+  ): Promise<{ message: string }> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1434,7 +1636,14 @@ export class CandidateService {
       });
 
       // Log the education deletion
-      await this.logActivity(userId, LogAction.DELETE, LogLevel.INFO, 'CandidateEducation', educationId, `Education deleted: ${education.degree} at ${education.institution}`);
+      await this.logActivity(
+        userId,
+        LogAction.DELETE,
+        LogLevel.INFO,
+        'CandidateEducation',
+        educationId,
+        `Education deleted: ${education.degree} at ${education.institution}`,
+      );
 
       return { message: 'Education record deleted successfully' };
     } catch (error) {
@@ -1450,7 +1659,9 @@ export class CandidateService {
   // CANDIDATE EXPERIENCE MANAGEMENT
   // =================================================================
 
-  async getCandidateExperience(userId: string): Promise<CandidateExperienceResponseDto[]> {
+  async getCandidateExperience(
+    userId: string,
+  ): Promise<CandidateExperienceResponseDto[]> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1465,7 +1676,7 @@ export class CandidateService {
         orderBy: { startDate: 'desc' },
       });
 
-      return experience.map(exp => ({
+      return experience.map((exp) => ({
         id: exp.id,
         candidateId: exp.candidateId,
         company: exp.company,
@@ -1487,7 +1698,10 @@ export class CandidateService {
     }
   }
 
-  async addCandidateExperience(userId: string, createDto: CreateCandidateExperienceDto): Promise<CandidateExperienceResponseDto> {
+  async addCandidateExperience(
+    userId: string,
+    createDto: CreateCandidateExperienceDto,
+  ): Promise<CandidateExperienceResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1512,7 +1726,14 @@ export class CandidateService {
       });
 
       // Log the experience addition
-      await this.logActivity(userId, LogAction.CREATE, LogLevel.INFO, 'CandidateExperience', experience.id, `Experience added: ${createDto.position} at ${createDto.company}`);
+      await this.logActivity(
+        userId,
+        LogAction.CREATE,
+        LogLevel.INFO,
+        'CandidateExperience',
+        experience.id,
+        `Experience added: ${createDto.position} at ${createDto.company}`,
+      );
 
       return {
         id: experience.id,
@@ -1536,7 +1757,11 @@ export class CandidateService {
     }
   }
 
-  async updateCandidateExperience(userId: string, experienceId: string, updateDto: UpdateCandidateExperienceDto): Promise<CandidateExperienceResponseDto> {
+  async updateCandidateExperience(
+    userId: string,
+    experienceId: string,
+    updateDto: UpdateCandidateExperienceDto,
+  ): Promise<CandidateExperienceResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1573,7 +1798,14 @@ export class CandidateService {
       });
 
       // Log the experience update
-      await this.logActivity(userId, LogAction.UPDATE, LogLevel.INFO, 'CandidateExperience', experienceId, `Experience updated: ${updatedExperience.position} at ${updatedExperience.company}`);
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'CandidateExperience',
+        experienceId,
+        `Experience updated: ${updatedExperience.position} at ${updatedExperience.company}`,
+      );
 
       return {
         id: updatedExperience.id,
@@ -1597,7 +1829,10 @@ export class CandidateService {
     }
   }
 
-  async deleteCandidateExperience(userId: string, experienceId: string): Promise<{ message: string }> {
+  async deleteCandidateExperience(
+    userId: string,
+    experienceId: string,
+  ): Promise<{ message: string }> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1623,7 +1858,14 @@ export class CandidateService {
       });
 
       // Log the experience deletion
-      await this.logActivity(userId, LogAction.DELETE, LogLevel.INFO, 'CandidateExperience', experienceId, `Experience deleted: ${experience.position} at ${experience.company}`);
+      await this.logActivity(
+        userId,
+        LogAction.DELETE,
+        LogLevel.INFO,
+        'CandidateExperience',
+        experienceId,
+        `Experience deleted: ${experience.position} at ${experience.company}`,
+      );
 
       return { message: 'Experience record deleted successfully' };
     } catch (error) {
@@ -1639,7 +1881,10 @@ export class CandidateService {
   // JOB RECOMMENDATIONS & ALERTS
   // =================================================================
 
-  async getRecommendedJobs(userId: string, query: any): Promise<RecommendedJobsResponseDto> {
+  async getRecommendedJobs(
+    userId: string,
+    query: any,
+  ): Promise<RecommendedJobsResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1665,7 +1910,9 @@ export class CandidateService {
 
       // Filter by skills if candidate has skills
       if (candidate.skills && candidate.skills.length > 0) {
-        const candidateSkills = candidate.skills.map(skill => skill.skillName);
+        const candidateSkills = candidate.skills.map(
+          (skill) => skill.skillName,
+        );
         whereClause.skillsRequired = {
           hasSome: candidateSkills,
         };
@@ -1676,8 +1923,14 @@ export class CandidateService {
         // Determine experience level based on years of experience
         const totalExperience = candidate.experience.reduce((total, exp) => {
           const startDate = new Date(exp.startDate);
-          const endDate = exp.isCurrent ? new Date() : (exp.endDate ? new Date(exp.endDate) : new Date());
-          const years = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
+          const endDate = exp.isCurrent
+            ? new Date()
+            : exp.endDate
+              ? new Date(exp.endDate)
+              : new Date();
+          const years =
+            (endDate.getTime() - startDate.getTime()) /
+            (1000 * 60 * 60 * 24 * 365);
           return total + years;
         }, 0);
 
@@ -1729,7 +1982,7 @@ export class CandidateService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        jobs: jobs.map(job => ({
+        jobs: jobs.map((job) => ({
           id: job.id,
           title: job.title,
           slug: job.slug,
@@ -1757,22 +2010,24 @@ export class CandidateService {
           publishedAt: job.publishedAt,
           createdAt: job.createdAt,
           company: job.company,
-          location: job.city ? {
-            city: {
-              id: job.city.id,
-              name: job.city.name,
-              state: {
-                id: job.city.state.id,
-                name: job.city.state.name,
-                code: job.city.state.code,
-                country: {
-                  id: job.city.state.country.id,
-                  name: job.city.state.country.name,
-                  code: job.city.state.country.code,
+          location: job.city
+            ? {
+                city: {
+                  id: job.city.id,
+                  name: job.city.name,
+                  state: {
+                    id: job.city.state.id,
+                    name: job.city.state.name,
+                    code: job.city.state.code,
+                    country: {
+                      id: job.city.state.country.id,
+                      name: job.city.state.country.name,
+                      code: job.city.state.country.code,
+                    },
+                  },
                 },
-              },
-            },
-          } : null,
+              }
+            : null,
         })),
         total,
         page,
@@ -1790,7 +2045,10 @@ export class CandidateService {
     }
   }
 
-  async getJobAlerts(userId: string, query: any): Promise<JobAlertsResponseDto> {
+  async getJobAlerts(
+    userId: string,
+    query: any,
+  ): Promise<JobAlertsResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1817,7 +2075,7 @@ export class CandidateService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        alerts: alerts.map(alert => ({
+        alerts: alerts.map((alert) => ({
           id: alert.id,
           candidateId: alert.candidateId,
           title: alert.title,
@@ -1849,7 +2107,10 @@ export class CandidateService {
     }
   }
 
-  async createJobAlert(userId: string, createDto: CreateJobAlertDto): Promise<JobAlertResponseDto> {
+  async createJobAlert(
+    userId: string,
+    createDto: CreateJobAlertDto,
+  ): Promise<JobAlertResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1875,7 +2136,14 @@ export class CandidateService {
       });
 
       // Log the job alert creation
-      await this.logActivity(userId, LogAction.CREATE, LogLevel.INFO, 'JobAlert', alert.id, `Job alert created: ${createDto.title}`);
+      await this.logActivity(
+        userId,
+        LogAction.CREATE,
+        LogLevel.INFO,
+        'JobAlert',
+        alert.id,
+        `Job alert created: ${createDto.title}`,
+      );
 
       return {
         id: alert.id,
@@ -1902,7 +2170,11 @@ export class CandidateService {
     }
   }
 
-  async updateJobAlert(userId: string, alertId: string, updateDto: UpdateJobAlertDto): Promise<JobAlertResponseDto> {
+  async updateJobAlert(
+    userId: string,
+    alertId: string,
+    updateDto: UpdateJobAlertDto,
+  ): Promise<JobAlertResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -1929,7 +2201,14 @@ export class CandidateService {
       });
 
       // Log the job alert update
-      await this.logActivity(userId, LogAction.UPDATE, LogLevel.INFO, 'JobAlert', alertId, `Job alert updated: ${updatedAlert.title}`);
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'JobAlert',
+        alertId,
+        `Job alert updated: ${updatedAlert.title}`,
+      );
 
       return {
         id: updatedAlert.id,
@@ -1960,7 +2239,10 @@ export class CandidateService {
   // JOB APPLICATIONS MANAGEMENT
   // =================================================================
 
-  async getCandidateApplications(userId: string, query: any): Promise<ApplicationsResponseDto> {
+  async getCandidateApplications(
+    userId: string,
+    query: any,
+  ): Promise<ApplicationsResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -2017,7 +2299,7 @@ export class CandidateService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        applications: applications.map(app => ({
+        applications: applications.map((app) => ({
           id: app.id,
           jobId: app.jobId,
           candidateId: app.candidateId,
@@ -2039,29 +2321,33 @@ export class CandidateService {
               name: app.job.company.name,
               logo: app.job.company.logo || undefined,
             },
-            location: app.job.city ? {
-              city: {
-                id: app.job.city.id,
-                name: app.job.city.name,
-                state: {
-                  id: app.job.city.state.id,
-                  name: app.job.city.state.name,
-                  code: app.job.city.state.code || undefined,
-                  country: {
-                    id: app.job.city.state.country.id,
-                    name: app.job.city.state.country.name,
-                    code: app.job.city.state.country.code,
+            location: app.job.city
+              ? {
+                  city: {
+                    id: app.job.city.id,
+                    name: app.job.city.name,
+                    state: {
+                      id: app.job.city.state.id,
+                      name: app.job.city.state.name,
+                      code: app.job.city.state.code || undefined,
+                      country: {
+                        id: app.job.city.state.country.id,
+                        name: app.job.city.state.country.name,
+                        code: app.job.city.state.country.code,
+                      },
+                    },
                   },
-                },
-              },
-            } : undefined,
+                }
+              : undefined,
           },
-          resume: app.resume ? {
-            id: app.resume.id,
-            title: app.resume.title,
-            fileName: app.resume.fileName,
-            uploadedAt: app.resume.uploadedAt,
-          } : undefined,
+          resume: app.resume
+            ? {
+                id: app.resume.id,
+                title: app.resume.title,
+                fileName: app.resume.fileName,
+                uploadedAt: app.resume.uploadedAt,
+              }
+            : undefined,
         })),
         total,
         page,
@@ -2079,7 +2365,10 @@ export class CandidateService {
     }
   }
 
-  async getApplicationHistory(userId: string, query: ApplicationHistoryQueryDto): Promise<ApplicationsResponseDto> {
+  async getApplicationHistory(
+    userId: string,
+    query: ApplicationHistoryQueryDto,
+  ): Promise<ApplicationsResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -2103,7 +2392,10 @@ export class CandidateService {
       if (query.jobTitle || query.companyName) {
         whereClause.job = {};
         if (query.jobTitle) {
-          whereClause.job.title = { contains: query.jobTitle, mode: 'insensitive' };
+          whereClause.job.title = {
+            contains: query.jobTitle,
+            mode: 'insensitive',
+          };
         }
         if (query.companyName) {
           whereClause.job.company = {
@@ -2165,7 +2457,7 @@ export class CandidateService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        applications: applications.map(app => ({
+        applications: applications.map((app) => ({
           id: app.id,
           jobId: app.jobId,
           candidateId: app.candidateId,
@@ -2187,29 +2479,33 @@ export class CandidateService {
               name: app.job.company.name,
               logo: app.job.company.logo || undefined,
             },
-            location: app.job.city ? {
-              city: {
-                id: app.job.city.id,
-                name: app.job.city.name,
-                state: {
-                  id: app.job.city.state.id,
-                  name: app.job.city.state.name,
-                  code: app.job.city.state.code || undefined,
-                  country: {
-                    id: app.job.city.state.country.id,
-                    name: app.job.city.state.country.name,
-                    code: app.job.city.state.country.code,
+            location: app.job.city
+              ? {
+                  city: {
+                    id: app.job.city.id,
+                    name: app.job.city.name,
+                    state: {
+                      id: app.job.city.state.id,
+                      name: app.job.city.state.name,
+                      code: app.job.city.state.code || undefined,
+                      country: {
+                        id: app.job.city.state.country.id,
+                        name: app.job.city.state.country.name,
+                        code: app.job.city.state.country.code,
+                      },
+                    },
                   },
-                },
-              },
-            } : undefined,
+                }
+              : undefined,
           },
-          resume: app.resume ? {
-            id: app.resume.id,
-            title: app.resume.title,
-            fileName: app.resume.fileName,
-            uploadedAt: app.resume.uploadedAt,
-          } : undefined,
+          resume: app.resume
+            ? {
+                id: app.resume.id,
+                title: app.resume.title,
+                fileName: app.resume.fileName,
+                uploadedAt: app.resume.uploadedAt,
+              }
+            : undefined,
         })),
         total,
         page,
@@ -2227,7 +2523,10 @@ export class CandidateService {
     }
   }
 
-  async getApplicationDetails(userId: string, applicationId: string): Promise<ApplicationResponseDto> {
+  async getApplicationDetails(
+    userId: string,
+    applicationId: string,
+  ): Promise<ApplicationResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -2300,29 +2599,33 @@ export class CandidateService {
             name: application.job.company.name,
             logo: application.job.company.logo || undefined,
           },
-          location: application.job.city ? {
-            city: {
-              id: application.job.city.id,
-              name: application.job.city.name,
-              state: {
-                id: application.job.city.state.id,
-                name: application.job.city.state.name,
-                code: application.job.city.state.code || undefined,
-                country: {
-                  id: application.job.city.state.country.id,
-                  name: application.job.city.state.country.name,
-                  code: application.job.city.state.country.code,
+          location: application.job.city
+            ? {
+                city: {
+                  id: application.job.city.id,
+                  name: application.job.city.name,
+                  state: {
+                    id: application.job.city.state.id,
+                    name: application.job.city.state.name,
+                    code: application.job.city.state.code || undefined,
+                    country: {
+                      id: application.job.city.state.country.id,
+                      name: application.job.city.state.country.name,
+                      code: application.job.city.state.country.code,
+                    },
+                  },
                 },
-              },
-            },
-          } : undefined,
+              }
+            : undefined,
         },
-        resume: application.resume ? {
-          id: application.resume.id,
-          title: application.resume.title,
-          fileName: application.resume.fileName,
-          uploadedAt: application.resume.uploadedAt,
-        } : undefined,
+        resume: application.resume
+          ? {
+              id: application.resume.id,
+              title: application.resume.title,
+              fileName: application.resume.fileName,
+              uploadedAt: application.resume.uploadedAt,
+            }
+          : undefined,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -2333,7 +2636,11 @@ export class CandidateService {
     }
   }
 
-  async updateApplication(userId: string, applicationId: string, updateDto: UpdateApplicationDto): Promise<ApplicationResponseDto> {
+  async updateApplication(
+    userId: string,
+    applicationId: string,
+    updateDto: UpdateApplicationDto,
+  ): Promise<ApplicationResponseDto> {
     try {
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
@@ -2399,7 +2706,14 @@ export class CandidateService {
       });
 
       // Log the application update
-      await this.logActivity(userId, LogAction.UPDATE, LogLevel.INFO, 'JobApplication', applicationId, 'Application updated');
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'JobApplication',
+        applicationId,
+        'Application updated',
+      );
 
       return {
         id: updatedApplication.id,
@@ -2423,29 +2737,33 @@ export class CandidateService {
             name: updatedApplication.job.company.name,
             logo: updatedApplication.job.company.logo || undefined,
           },
-          location: updatedApplication.job.city ? {
-            city: {
-              id: updatedApplication.job.city.id,
-              name: updatedApplication.job.city.name,
-              state: {
-                id: updatedApplication.job.city.state.id,
-                name: updatedApplication.job.city.state.name,
-                code: updatedApplication.job.city.state.code || undefined,
-                country: {
-                  id: updatedApplication.job.city.state.country.id,
-                  name: updatedApplication.job.city.state.country.name,
-                  code: updatedApplication.job.city.state.country.code,
+          location: updatedApplication.job.city
+            ? {
+                city: {
+                  id: updatedApplication.job.city.id,
+                  name: updatedApplication.job.city.name,
+                  state: {
+                    id: updatedApplication.job.city.state.id,
+                    name: updatedApplication.job.city.state.name,
+                    code: updatedApplication.job.city.state.code || undefined,
+                    country: {
+                      id: updatedApplication.job.city.state.country.id,
+                      name: updatedApplication.job.city.state.country.name,
+                      code: updatedApplication.job.city.state.country.code,
+                    },
+                  },
                 },
-              },
-            },
-          } : undefined,
+              }
+            : undefined,
         },
-        resume: updatedApplication.resume ? {
-          id: updatedApplication.resume.id,
-          title: updatedApplication.resume.title,
-          fileName: updatedApplication.resume.fileName,
-          uploadedAt: updatedApplication.resume.uploadedAt,
-        } : undefined,
+        resume: updatedApplication.resume
+          ? {
+              id: updatedApplication.resume.id,
+              title: updatedApplication.resume.title,
+              fileName: updatedApplication.resume.fileName,
+              uploadedAt: updatedApplication.resume.uploadedAt,
+            }
+          : undefined,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
