@@ -1,4 +1,13 @@
-import { IsString, IsOptional, IsBoolean, IsEnum, IsDateString, IsInt, IsArray, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsEnum,
+  IsDateString,
+  IsInt,
+  IsArray,
+  IsObject,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { NotificationType } from '@prisma/client';
 

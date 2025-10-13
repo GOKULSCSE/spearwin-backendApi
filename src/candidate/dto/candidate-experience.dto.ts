@@ -1,9 +1,4 @@
-import {
-  IsString,
-  IsOptional,
-  IsDateString,
-  IsBoolean,
-} from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsBoolean } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreateCandidateExperienceDto {
