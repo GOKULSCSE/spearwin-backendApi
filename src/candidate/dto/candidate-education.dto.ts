@@ -22,7 +22,8 @@ export class CreateCandidateEducationDto {
   fieldOfStudy?: string;
 
   @IsEnum(EducationLevel, {
-    message: 'Level must be one of: HIGH_SCHOOL, DIPLOMA, BACHELOR, MASTER, DOCTORATE, PROFESSIONAL',
+    message:
+      'Level must be one of: HIGH_SCHOOL, DIPLOMA, BACHELOR, MASTER, DOCTORATE, PROFESSIONAL',
   })
   level: EducationLevel;
 
@@ -63,7 +64,8 @@ export class UpdateCandidateEducationDto {
 
   @IsOptional()
   @IsEnum(EducationLevel, {
-    message: 'Level must be one of: HIGH_SCHOOL, DIPLOMA, BACHELOR, MASTER, DOCTORATE, PROFESSIONAL',
+    message:
+      'Level must be one of: HIGH_SCHOOL, DIPLOMA, BACHELOR, MASTER, DOCTORATE, PROFESSIONAL',
   })
   level?: EducationLevel;
 

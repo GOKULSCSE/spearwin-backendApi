@@ -154,8 +154,12 @@ let UserService = class UserService {
                 where: { id: userId },
                 data: {
                     ...updateProfileDto,
-                    emailVerified: updateProfileDto.email && updateProfileDto.email !== user.email ? false : user.emailVerified,
-                    phoneVerified: updateProfileDto.phone && updateProfileDto.phone !== user.phone ? false : user.phoneVerified,
+                    emailVerified: updateProfileDto.email && updateProfileDto.email !== user.email
+                        ? false
+                        : user.emailVerified,
+                    phoneVerified: updateProfileDto.phone && updateProfileDto.phone !== user.phone
+                        ? false
+                        : user.phoneVerified,
                 },
                 include: {
                     candidate: {
@@ -192,7 +196,8 @@ let UserService = class UserService {
             return updatedUser;
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.BadRequestException) {
                 throw error;
             }
             this.handleException(error);
@@ -242,7 +247,8 @@ let UserService = class UserService {
             return { message: 'Password changed successfully' };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.UnauthorizedException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.UnauthorizedException) {
                 throw error;
             }
             this.handleException(error);
@@ -291,7 +297,7 @@ let UserService = class UserService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                logs: logs.map(log => ({
+                logs: logs.map((log) => ({
                     id: log.id,
                     action: log.action,
                     level: log.level,
@@ -391,20 +397,24 @@ let UserService = class UserService {
                     inApp: true,
                 },
             ];
-            const preferences = defaultPreferences.map(pref => {
+            const preferences = defaultPreferences.map((pref) => {
                 const settingMap = {
                     email: `notification_${pref.type.toLowerCase()}_email`,
                     push: `notification_${pref.type.toLowerCase()}_push`,
                     sms: `notification_${pref.type.toLowerCase()}_sms`,
                     inApp: `notification_${pref.type.toLowerCase()}_in_app`,
                 };
-                const prefSettings = settings.filter(setting => Object.values(settingMap).includes(setting.key));
+                const prefSettings = settings.filter((setting) => Object.values(settingMap).includes(setting.key));
                 return {
                     type: pref.type,
-                    email: prefSettings.find(s => s.key === settingMap.email)?.value === 'true' || pref.email,
-                    push: prefSettings.find(s => s.key === settingMap.push)?.value === 'true' || pref.push,
-                    sms: prefSettings.find(s => s.key === settingMap.sms)?.value === 'true' || pref.sms,
-                    inApp: prefSettings.find(s => s.key === settingMap.inApp)?.value === 'true' || pref.inApp,
+                    email: prefSettings.find((s) => s.key === settingMap.email)?.value ===
+                        'true' || pref.email,
+                    push: prefSettings.find((s) => s.key === settingMap.push)?.value ===
+                        'true' || pref.push,
+                    sms: prefSettings.find((s) => s.key === settingMap.sms)?.value ===
+                        'true' || pref.sms,
+                    inApp: prefSettings.find((s) => s.key === settingMap.inApp)?.value ===
+                        'true' || pref.inApp,
                 };
             });
             const latestUpdate = new Date();
@@ -492,7 +502,11 @@ let UserService = class UserService {
             if (enabledNotifications.length === 0) {
                 return { message: 'No notification channels are enabled for testing' };
             }
-            for (const notificationType of ['JOB_ALERT', 'APPLICATION_UPDATE', 'SYSTEM_NOTIFICATION']) {
+            for (const notificationType of [
+                'JOB_ALERT',
+                'APPLICATION_UPDATE',
+                'SYSTEM_NOTIFICATION',
+            ]) {
                 await this.db.notification.create({
                     data: {
                         userId,
