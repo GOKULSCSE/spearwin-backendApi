@@ -12,6 +12,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CandidateRegisterDto } from './dto/candidate-register.dto';
+import { CandidateRegisterSimpleDto } from './dto/candidate-register-simple.dto';
 import { CompanyRegisterDto } from './dto/company-register.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { VerifyPhoneDto } from './dto/verify-phone.dto';
@@ -32,6 +33,12 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   async candidateRegister(@Body() candidateRegisterDto: CandidateRegisterDto) {
     return this.authService.candidateRegister(candidateRegisterDto);
+  }
+
+  @Post('register/candidate/simple')
+  @HttpCode(HttpStatus.CREATED)
+  async candidateRegisterSimple(@Body() candidateRegisterSimpleDto: CandidateRegisterSimpleDto) {
+    return this.authService.candidateRegisterSimple(candidateRegisterSimpleDto);
   }
 
   @Post('register/company')

@@ -11,6 +11,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CandidateRegisterDto } from './dto/candidate-register.dto';
+import { CandidateRegisterSimpleDto } from './dto/candidate-register-simple.dto';
 import { CompanyRegisterDto } from './dto/company-register.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { VerifyPhoneDto } from './dto/verify-phone.dto';
@@ -516,6 +517,132 @@ export class AuthService {
           action: 'CREATE',
           level: 'INFO',
           description: 'Candidate registered successfully',
+          entity: 'User',
+          entityId: result.user.id,
+        },
+      });
+
+      // TODO: Send verification email
+      // In production, you would send an email with the verification code
+
+      return {
+        success: true,
+        message:
+          'Candidate registered successfully. Please check your email for verification.',
+        data: {
+          user: {
+            id: result.user.id,
+            email: result.user.email,
+            role: result.user.role,
+            status: result.user.status,
+            emailVerified: result.user.emailVerified,
+            phoneVerified: result.user.phoneVerified,
+            profileCompleted: result.user.profileCompleted,
+            twoFactorEnabled: result.user.twoFactorEnabled,
+            createdAt: result.user.createdAt,
+          },
+          candidate: {
+            id: result.candidate.id,
+            firstName: result.candidate.firstName,
+            lastName: result.candidate.lastName,
+            isAvailable: result.candidate.isAvailable,
+            createdAt: result.candidate.createdAt,
+          },
+        },
+      };
+    } catch (error) {
+      console.log('actual error', error);
+      
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to register candidate');
+    }
+  }
+
+  async candidateRegisterSimple(
+    candidateRegisterSimpleDto: CandidateRegisterSimpleDto,
+  ): Promise<RegisterResponseDto> {
+    try {
+      // Validate password confirmation
+      if (candidateRegisterSimpleDto.password !== candidateRegisterSimpleDto.reenterPassword) {
+        throw new BadRequestException('Passwords do not match');
+      }
+
+      // Check if user already exists
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: candidateRegisterSimpleDto.email },
+      });
+
+      if (existingUser) {
+        throw new BadRequestException('User with this email already exists');
+      }
+
+      // Split full name into first and last name
+      const nameParts = candidateRegisterSimpleDto.fullName.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      if (!firstName) {
+        throw new BadRequestException('Full name must contain at least a first name');
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(
+        candidateRegisterSimpleDto.password,
+        10,
+      );
+
+      // Create user and candidate in a transaction
+      const result = await this.prisma.$transaction(async (prisma) => {
+        // Create user
+        const user = await prisma.user.create({
+          data: {
+            email: candidateRegisterSimpleDto.email,
+            password: hashedPassword,
+            role: UserRole.CANDIDATE,
+            status: UserStatus.PENDING_VERIFICATION,
+            emailVerified: false,
+            phoneVerified: false,
+            profileCompleted: false,
+            twoFactorEnabled: false,
+          },
+        });
+
+        // Create candidate profile
+        const candidate = await prisma.candidate.create({
+          data: {
+            userId: user.id,
+            firstName: firstName,
+            lastName: lastName,
+            isAvailable: true,
+          },
+        });
+
+        return { user, candidate };
+      });
+
+      // Generate email verification OTP
+      const verificationCode = uuidv4();
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours expiry
+
+      await this.prisma.oTP.create({
+        data: {
+          userId: result.user.id,
+          code: verificationCode,
+          type: OTPType.EMAIL_VERIFICATION,
+          expiresAt,
+        },
+      });
+
+      // Log activity
+      await this.prisma.activityLog.create({
+        data: {
+          userId: result.user.id,
+          action: 'CREATE',
+          level: 'INFO',
+          description: 'Candidate registered successfully (simple registration)',
           entity: 'User',
           entityId: result.user.id,
         },

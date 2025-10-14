@@ -5,6 +5,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CandidateRegisterDto } from './dto/candidate-register.dto';
+import { CandidateRegisterSimpleDto } from './dto/candidate-register-simple.dto';
 import { CompanyRegisterDto } from './dto/company-register.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { VerifyPhoneDto } from './dto/verify-phone.dto';
@@ -25,6 +26,7 @@ export declare class AuthService {
     validateUserById(userId: string): Promise<any>;
     resetPassword(resetPasswordDto: ResetPasswordDto): Promise<ResetPasswordResponseDto>;
     candidateRegister(candidateRegisterDto: CandidateRegisterDto): Promise<RegisterResponseDto>;
+    candidateRegisterSimple(candidateRegisterSimpleDto: CandidateRegisterSimpleDto): Promise<RegisterResponseDto>;
     companyRegister(companyRegisterDto: CompanyRegisterDto): Promise<RegisterResponseDto>;
     verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<{
         success: boolean;
