@@ -1,21 +1,32 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
+import {
+  Controller,
+  Get,
+  Post,
   Put,
-  Param, 
-  Query, 
+  Param,
+  Query,
   Body,
   ValidationPipe,
-  UseGuards 
+  UseGuards,
 } from '@nestjs/common';
 import { JobService } from './job.service';
 import { JobQueryDto, JobSearchDto } from './dto/job-query.dto';
-import { JobResponseDto, JobListResponseDto, JobFiltersResponseDto, JobViewResponseDto } from './dto/job-response.dto';
+import {
+  JobResponseDto,
+  JobListResponseDto,
+  JobFiltersResponseDto,
+  JobViewResponseDto,
+} from './dto/job-response.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
-import { ApplyForJobDto, ApplicationResponseDto } from '../candidate/dto/job-application.dto';
+import {
+  ApplyForJobDto,
+  ApplicationResponseDto,
+} from '../candidate/dto/job-application.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { GetCurrentUser, type CurrentUser } from '../auth/decorators/current-user.decorator';
+import {
+  GetCurrentUser,
+  type CurrentUser,
+} from '../auth/decorators/current-user.decorator';
 
 @Controller('jobs')
 export class JobController {
@@ -50,7 +61,9 @@ export class JobController {
   }
 
   @Post(':id/view')
-  async incrementJobView(@Param('id') jobId: string): Promise<JobViewResponseDto> {
+  async incrementJobView(
+    @Param('id') jobId: string,
+  ): Promise<JobViewResponseDto> {
     return this.jobService.incrementJobView(jobId);
   }
 

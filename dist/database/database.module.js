@@ -15,7 +15,7 @@ exports.DatabaseModule = DatabaseModule;
 exports.DatabaseModule = DatabaseModule = __decorate([
     (0, common_1.Module)({
         providers: [database_service_1.DatabaseService],
-        exports: [database_service_1.DatabaseService]
+        exports: [database_service_1.DatabaseService],
     })
 ], DatabaseModule);
 //# sourceMappingURL=database.module.js.map
