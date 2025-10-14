@@ -1,29 +1,38 @@
-import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdatePermissionsDto } from './dto/update-permissions.dto';
-import { UpdateAdminProfileDto, AdminProfileResponseDto } from './dto/admin-profile.dto';
+import {
+  UpdateAdminProfileDto,
+  AdminProfileResponseDto,
+} from './dto/admin-profile.dto';
 import { AdminListQueryDto, AdminListResponseDto } from './dto/admin-list.dto';
 import { UpdateAdminStatusDto } from './dto/update-admin-status.dto';
-import { 
-  CreateJobDto, 
-  UpdateJobDto, 
-  JobListQueryDto, 
-  JobStatsResponseDto, 
-  JobApplicationsResponseDto 
+import {
+  CreateJobDto,
+  UpdateJobDto,
+  JobListQueryDto,
+  JobStatsResponseDto,
+  JobApplicationsResponseDto,
 } from './dto/admin-job.dto';
-import { 
-  UpdateApplicationStatusDto, 
-  AddApplicationFeedbackDto, 
-  ApplicationQueryDto, 
-  AdminApplicationResponseDto, 
-  ApplicationsListResponseDto, 
+import {
+  UpdateApplicationStatusDto,
+  AddApplicationFeedbackDto,
+  ApplicationQueryDto,
+  AdminApplicationResponseDto,
+  ApplicationsListResponseDto,
   ApplicationStatsResponseDto,
   BulkUpdateApplicationsDto,
   BulkUpdateResponseDto,
   BulkExportQueryDto,
-  BulkExportResponseDto
+  BulkExportResponseDto,
 } from './dto/admin-application.dto';
 import {
   ResumeQueryDto,
@@ -31,7 +40,7 @@ import {
   ResumesListResponseDto,
   ResumeStatsResponseDto,
   BulkDownloadDto,
-  BulkDownloadResponseDto
+  BulkDownloadResponseDto,
 } from './dto/admin-resume.dto';
 import {
   SendNotificationDto,
@@ -42,12 +51,12 @@ import {
   SendNotificationResponseDto,
   BroadcastNotificationResponseDto,
   NotificationTemplatesListResponseDto,
-  NotificationQueryDto
+  NotificationQueryDto,
 } from './dto/admin-notification.dto';
-import { 
-  CreateAdminResponseDto, 
-  CreateCompanyResponseDto, 
-  UpdatePermissionsResponseDto 
+import {
+  CreateAdminResponseDto,
+  CreateCompanyResponseDto,
+  UpdatePermissionsResponseDto,
 } from './dto/admin-response.dto';
 import { UserRole, UserStatus, LogAction, LogLevel } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
@@ -58,7 +67,10 @@ import { Prisma } from '@prisma/client';
 export class AdminService {
   constructor(private prisma: DatabaseService) {}
 
-  async createAdmin(createAdminDto: CreateAdminDto, currentUser: any): Promise<CreateAdminResponseDto> {
+  async createAdmin(
+    createAdminDto: CreateAdminDto,
+    currentUser: any,
+  ): Promise<CreateAdminResponseDto> {
     try {
       // Check if current user is SUPER_ADMIN
       if (currentUser.role !== UserRole.SUPER_ADMIN) {
@@ -81,7 +93,9 @@ export class AdminService {
         });
 
         if (existingPhoneUser) {
-          throw new BadRequestException('User with this phone number already exists');
+          throw new BadRequestException(
+            'User with this phone number already exists',
+          );
         }
       }
 
@@ -158,14 +172,20 @@ export class AdminService {
         },
       };
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof ForbiddenException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to create admin');
     }
   }
 
-  async createCompany(createCompanyDto: CreateCompanyDto, currentUser: any): Promise<CreateCompanyResponseDto> {
+  async createCompany(
+    createCompanyDto: CreateCompanyDto,
+    currentUser: any,
+  ): Promise<CreateCompanyResponseDto> {
     try {
       // Check if current user is ADMIN or SUPER_ADMIN
       if (![UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(currentUser.role)) {
@@ -177,10 +197,13 @@ export class AdminService {
       const hashedPassword = await bcrypt.hash(uuidv4(), 10); // Random password
 
       // Generate unique slug for company
-      const slug = createCompanyDto.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '') + '-' + Date.now();
+      const slug =
+        createCompanyDto.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '') +
+        '-' +
+        Date.now();
 
       // Create user and company in a transaction
       const result = await this.prisma.$transaction(async (prisma) => {
@@ -261,18 +284,26 @@ export class AdminService {
         },
       };
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof ForbiddenException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to create company profile');
     }
   }
 
-  async updatePermissions(updatePermissionsDto: UpdatePermissionsDto, currentUser: any): Promise<UpdatePermissionsResponseDto> {
+  async updatePermissions(
+    updatePermissionsDto: UpdatePermissionsDto,
+    currentUser: any,
+  ): Promise<UpdatePermissionsResponseDto> {
     try {
       // Check if current user is SUPER_ADMIN
       if (currentUser.role !== UserRole.SUPER_ADMIN) {
-        throw new ForbiddenException('Only SUPER_ADMIN can update admin permissions');
+        throw new ForbiddenException(
+          'Only SUPER_ADMIN can update admin permissions',
+        );
       }
 
       // Find the admin to update
@@ -294,7 +325,10 @@ export class AdminService {
       const updatedAdmin = await this.prisma.admin.update({
         where: { id: updatePermissionsDto.adminId },
         data: {
-          permissions: updatePermissionsDto.permissions || (admin.permissions as string[]) || [],
+          permissions:
+            updatePermissionsDto.permissions ||
+            (admin.permissions as string[]) ||
+            [],
         },
       });
 
@@ -316,13 +350,18 @@ export class AdminService {
         data: {
           admin: {
             id: updatedAdmin.id,
-            permissions: Array.isArray(updatedAdmin.permissions) ? (updatedAdmin.permissions as string[]) : [],
+            permissions: Array.isArray(updatedAdmin.permissions)
+              ? (updatedAdmin.permissions as string[])
+              : [],
             updatedAt: updatedAdmin.updatedAt,
           },
         },
       };
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof ForbiddenException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to update admin permissions');
@@ -394,7 +433,10 @@ export class AdminService {
     }
   }
 
-  async updateAdminProfile(userId: string, updateDto: UpdateAdminProfileDto): Promise<AdminProfileResponseDto> {
+  async updateAdminProfile(
+    userId: string,
+    updateDto: UpdateAdminProfileDto,
+  ): Promise<AdminProfileResponseDto> {
     try {
       const admin = await this.prisma.admin.findFirst({
         where: { userId },
@@ -439,18 +481,27 @@ export class AdminService {
             where: { id: userId },
             data: {
               ...userUpdateData,
-              emailVerified: updateDto.email && updateDto.email !== admin.user.email ? false : admin.user.emailVerified,
-              phoneVerified: updateDto.phone && updateDto.phone !== admin.user.phone ? false : admin.user.phoneVerified,
+              emailVerified:
+                updateDto.email && updateDto.email !== admin.user.email
+                  ? false
+                  : admin.user.emailVerified,
+              phoneVerified:
+                updateDto.phone && updateDto.phone !== admin.user.phone
+                  ? false
+                  : admin.user.phoneVerified,
             },
           });
         }
 
         // Update admin data
         const adminUpdateData: any = {};
-        if (updateDto.firstName) adminUpdateData.firstName = updateDto.firstName;
+        if (updateDto.firstName)
+          adminUpdateData.firstName = updateDto.firstName;
         if (updateDto.lastName) adminUpdateData.lastName = updateDto.lastName;
-        if (updateDto.department) adminUpdateData.department = updateDto.department;
-        if (updateDto.designation) adminUpdateData.designation = updateDto.designation;
+        if (updateDto.department)
+          adminUpdateData.department = updateDto.department;
+        if (updateDto.designation)
+          adminUpdateData.designation = updateDto.designation;
 
         if (Object.keys(adminUpdateData).length > 0) {
           await prisma.admin.update({
@@ -483,14 +534,23 @@ export class AdminService {
         });
 
         if (!updatedAdmin) {
-          throw new BadRequestException('Failed to retrieve updated admin profile');
+          throw new BadRequestException(
+            'Failed to retrieve updated admin profile',
+          );
         }
 
         return updatedAdmin;
       });
 
       // Log the profile update
-      await this.logActivity(userId, LogAction.UPDATE, LogLevel.INFO, 'Admin', admin.id, 'Admin profile updated');
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'Admin',
+        admin.id,
+        'Admin profile updated',
+      );
 
       return {
         id: result.id,
@@ -518,7 +578,10 @@ export class AdminService {
         },
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to update admin profile');
@@ -573,10 +636,18 @@ export class AdminService {
 
       // Build order by clause
       const orderBy: Prisma.AdminOrderByWithRelationInput = {};
-      if (sortBy === 'firstName' || sortBy === 'lastName' || sortBy === 'department' || sortBy === 'designation') {
-        orderBy[sortBy as keyof Prisma.AdminOrderByWithRelationInput] = sortOrder;
+      if (
+        sortBy === 'firstName' ||
+        sortBy === 'lastName' ||
+        sortBy === 'department' ||
+        sortBy === 'designation'
+      ) {
+        orderBy[sortBy as keyof Prisma.AdminOrderByWithRelationInput] =
+          sortOrder;
       } else {
-        orderBy.user = { [sortBy as keyof Prisma.UserOrderByWithRelationInput]: sortOrder };
+        orderBy.user = {
+          [sortBy as keyof Prisma.UserOrderByWithRelationInput]: sortOrder,
+        };
       }
 
       // Get admins and total count
@@ -611,7 +682,7 @@ export class AdminService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        admins: admins.map(admin => ({
+        admins: admins.map((admin) => ({
           id: admin.id,
           userId: admin.userId,
           firstName: admin.firstName,
@@ -707,7 +778,11 @@ export class AdminService {
     }
   }
 
-  async updateAdminStatus(adminId: string, statusDto: UpdateAdminStatusDto, currentUserId: string): Promise<{ message: string }> {
+  async updateAdminStatus(
+    adminId: string,
+    statusDto: UpdateAdminStatusDto,
+    currentUserId: string,
+  ): Promise<{ message: string }> {
     try {
       // Check if current user is SUPER_ADMIN
       const currentUser = await this.prisma.user.findUnique({
@@ -715,7 +790,9 @@ export class AdminService {
       });
 
       if (currentUser?.role !== UserRole.SUPER_ADMIN) {
-        throw new ForbiddenException('Only SUPER_ADMIN can update admin status');
+        throw new ForbiddenException(
+          'Only SUPER_ADMIN can update admin status',
+        );
       }
 
       const admin = await this.prisma.admin.findUnique({
@@ -738,11 +815,24 @@ export class AdminService {
       });
 
       // Log the status update
-      await this.logActivity(currentUserId, LogAction.UPDATE, LogLevel.INFO, 'Admin', adminId, `Admin status updated to ${statusDto.status}: ${admin.user.email}`);
+      await this.logActivity(
+        currentUserId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'Admin',
+        adminId,
+        `Admin status updated to ${statusDto.status}: ${admin.user.email}`,
+      );
 
-      return { message: `Admin status updated to ${statusDto.status} successfully` };
+      return {
+        message: `Admin status updated to ${statusDto.status} successfully`,
+      };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to update admin status');
@@ -851,7 +941,7 @@ export class AdminService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        jobs: jobs.map(job => this.mapJobToResponse(job)),
+        jobs: jobs.map((job) => this.mapJobToResponse(job)),
         total,
         page,
         limit,
@@ -875,10 +965,13 @@ export class AdminService {
       }
 
       // Generate unique slug
-      const slug = createJobDto.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '') + '-' + Date.now();
+      const slug =
+        createJobDto.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '') +
+        '-' +
+        Date.now();
 
       // Create job
       const job = await this.prisma.job.create({
@@ -903,8 +996,10 @@ export class AdminService {
           salaryNegotiable: createJobDto.salaryNegotiable || false,
           skillsRequired: createJobDto.skillsRequired || [],
           educationLevel: createJobDto.educationLevel as any,
-          expiresAt: createJobDto.expiresAt ? new Date(createJobDto.expiresAt) : null,
-          status: createJobDto.status as any || 'DRAFT',
+          expiresAt: createJobDto.expiresAt
+            ? new Date(createJobDto.expiresAt)
+            : null,
+          status: (createJobDto.status as any) || 'DRAFT',
         },
         include: {
           company: {
@@ -1008,7 +1103,10 @@ export class AdminService {
 
       return this.mapJobToResponse(job);
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to get job details');
@@ -1034,28 +1132,49 @@ export class AdminService {
       // Prepare update data
       const updateData: any = {};
 
-      if (updateJobDto.title !== undefined) updateData.title = updateJobDto.title;
-      if (updateJobDto.description !== undefined) updateData.description = updateJobDto.description;
-      if (updateJobDto.requirements !== undefined) updateData.requirements = updateJobDto.requirements;
-      if (updateJobDto.responsibilities !== undefined) updateData.responsibilities = updateJobDto.responsibilities;
-      if (updateJobDto.benefits !== undefined) updateData.benefits = updateJobDto.benefits;
-      if (updateJobDto.companyId !== undefined) updateData.companyId = updateJobDto.companyId;
-      if (updateJobDto.cityId !== undefined) updateData.cityId = updateJobDto.cityId;
-      if (updateJobDto.address !== undefined) updateData.address = updateJobDto.address;
-      if (updateJobDto.jobType !== undefined) updateData.jobType = updateJobDto.jobType as any;
-      if (updateJobDto.workMode !== undefined) updateData.workMode = updateJobDto.workMode as any;
-      if (updateJobDto.experienceLevel !== undefined) updateData.experienceLevel = updateJobDto.experienceLevel as any;
-      if (updateJobDto.minExperience !== undefined) updateData.minExperience = updateJobDto.minExperience;
-      if (updateJobDto.maxExperience !== undefined) updateData.maxExperience = updateJobDto.maxExperience;
-      if (updateJobDto.minSalary !== undefined) updateData.minSalary = updateJobDto.minSalary;
-      if (updateJobDto.maxSalary !== undefined) updateData.maxSalary = updateJobDto.maxSalary;
-      if (updateJobDto.salaryNegotiable !== undefined) updateData.salaryNegotiable = updateJobDto.salaryNegotiable;
-      if (updateJobDto.skillsRequired !== undefined) updateData.skillsRequired = updateJobDto.skillsRequired;
-      if (updateJobDto.educationLevel !== undefined) updateData.educationLevel = updateJobDto.educationLevel as any;
+      if (updateJobDto.title !== undefined)
+        updateData.title = updateJobDto.title;
+      if (updateJobDto.description !== undefined)
+        updateData.description = updateJobDto.description;
+      if (updateJobDto.requirements !== undefined)
+        updateData.requirements = updateJobDto.requirements;
+      if (updateJobDto.responsibilities !== undefined)
+        updateData.responsibilities = updateJobDto.responsibilities;
+      if (updateJobDto.benefits !== undefined)
+        updateData.benefits = updateJobDto.benefits;
+      if (updateJobDto.companyId !== undefined)
+        updateData.companyId = updateJobDto.companyId;
+      if (updateJobDto.cityId !== undefined)
+        updateData.cityId = updateJobDto.cityId;
+      if (updateJobDto.address !== undefined)
+        updateData.address = updateJobDto.address;
+      if (updateJobDto.jobType !== undefined)
+        updateData.jobType = updateJobDto.jobType as any;
+      if (updateJobDto.workMode !== undefined)
+        updateData.workMode = updateJobDto.workMode as any;
+      if (updateJobDto.experienceLevel !== undefined)
+        updateData.experienceLevel = updateJobDto.experienceLevel as any;
+      if (updateJobDto.minExperience !== undefined)
+        updateData.minExperience = updateJobDto.minExperience;
+      if (updateJobDto.maxExperience !== undefined)
+        updateData.maxExperience = updateJobDto.maxExperience;
+      if (updateJobDto.minSalary !== undefined)
+        updateData.minSalary = updateJobDto.minSalary;
+      if (updateJobDto.maxSalary !== undefined)
+        updateData.maxSalary = updateJobDto.maxSalary;
+      if (updateJobDto.salaryNegotiable !== undefined)
+        updateData.salaryNegotiable = updateJobDto.salaryNegotiable;
+      if (updateJobDto.skillsRequired !== undefined)
+        updateData.skillsRequired = updateJobDto.skillsRequired;
+      if (updateJobDto.educationLevel !== undefined)
+        updateData.educationLevel = updateJobDto.educationLevel as any;
       if (updateJobDto.expiresAt !== undefined) {
-        updateData.expiresAt = updateJobDto.expiresAt ? new Date(updateJobDto.expiresAt) : null;
+        updateData.expiresAt = updateJobDto.expiresAt
+          ? new Date(updateJobDto.expiresAt)
+          : null;
       }
-      if (updateJobDto.status !== undefined) updateData.status = updateJobDto.status as any;
+      if (updateJobDto.status !== undefined)
+        updateData.status = updateJobDto.status as any;
 
       // Update the job
       const updatedJob = await this.prisma.job.update({
@@ -1109,7 +1228,10 @@ export class AdminService {
         data: this.mapJobToResponse(updatedJob),
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to update job');
@@ -1153,7 +1275,10 @@ export class AdminService {
         message: 'Job deleted successfully',
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to delete job');
@@ -1197,10 +1322,16 @@ export class AdminService {
       return {
         success: true,
         message: 'Job published successfully',
-        data: { status: updatedJob.status, publishedAt: updatedJob.publishedAt },
+        data: {
+          status: updatedJob.status,
+          publishedAt: updatedJob.publishedAt,
+        },
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to publish job');
@@ -1246,7 +1377,10 @@ export class AdminService {
         data: { status: updatedJob.status },
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to close job');
@@ -1292,14 +1426,21 @@ export class AdminService {
         data: { status: updatedJob.status },
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to archive job');
     }
   }
 
-  async getJobApplications(jobId: string, query: any, currentUser: any): Promise<JobApplicationsResponseDto> {
+  async getJobApplications(
+    jobId: string,
+    query: any,
+    currentUser: any,
+  ): Promise<JobApplicationsResponseDto> {
     try {
       // Check if current user is ADMIN or SUPER_ADMIN
       if (![UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(currentUser.role)) {
@@ -1346,7 +1487,7 @@ export class AdminService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        applications: applications.map(app => ({
+        applications: applications.map((app) => ({
           id: app.id,
           status: app.status,
           appliedAt: app.appliedAt,
@@ -1371,14 +1512,20 @@ export class AdminService {
         hasPrev: page > 1,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to get job applications');
     }
   }
 
-  async getJobStats(jobId: string, currentUser: any): Promise<JobStatsResponseDto> {
+  async getJobStats(
+    jobId: string,
+    currentUser: any,
+  ): Promise<JobStatsResponseDto> {
     try {
       // Check if current user is ADMIN or SUPER_ADMIN
       if (![UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(currentUser.role)) {
@@ -1415,7 +1562,10 @@ export class AdminService {
         this.prisma.jobApplication.count(),
         this.prisma.job.aggregate({ _sum: { viewCount: true } }),
         this.prisma.jobApplication.count({ where: { jobId } }),
-        this.prisma.job.findUnique({ where: { id: jobId }, select: { viewCount: true } }),
+        this.prisma.job.findUnique({
+          where: { id: jobId },
+          select: { viewCount: true },
+        }),
         this.prisma.jobApplication.count({
           where: {
             jobId,
@@ -1435,13 +1585,17 @@ export class AdminService {
         closedJobs,
         totalApplications,
         totalViews: totalViewsCount,
-        averageApplicationsPerJob: totalJobs > 0 ? totalApplications / totalJobs : 0,
+        averageApplicationsPerJob:
+          totalJobs > 0 ? totalApplications / totalJobs : 0,
         averageViewsPerJob: totalJobs > 0 ? totalViewsCount / totalJobs : 0,
         recentApplications,
         recentViews,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to get job statistics');
@@ -1485,22 +1639,24 @@ export class AdminService {
       updatedAt: job.updatedAt,
       company: job.company,
       postedBy: job.postedBy,
-      location: job.city ? {
-        city: {
-          id: job.city.id,
-          name: job.city.name,
-          state: {
-            id: job.city.state.id,
-            name: job.city.state.name,
-            code: job.city.state.code,
-            country: {
-              id: job.city.state.country.id,
-              name: job.city.state.country.name,
-              code: job.city.state.country.code,
+      location: job.city
+        ? {
+            city: {
+              id: job.city.id,
+              name: job.city.name,
+              state: {
+                id: job.city.state.id,
+                name: job.city.state.name,
+                code: job.city.state.code,
+                country: {
+                  id: job.city.state.country.id,
+                  name: job.city.state.country.name,
+                  code: job.city.state.country.code,
+                },
+              },
             },
-          },
-        },
-      } : null,
+          }
+        : null,
     };
   }
 
@@ -1508,7 +1664,10 @@ export class AdminService {
   // APPLICATION MANAGEMENT
   // =================================================================
 
-  async getAllApplications(query: ApplicationQueryDto, currentUser: any): Promise<ApplicationsListResponseDto> {
+  async getAllApplications(
+    query: ApplicationQueryDto,
+    currentUser: any,
+  ): Promise<ApplicationsListResponseDto> {
     try {
       const page = parseInt(query.page || '1');
       const limit = parseInt(query.limit || '10');
@@ -1524,7 +1683,10 @@ export class AdminService {
       if (query.jobTitle || query.companyName) {
         whereClause.job = {};
         if (query.jobTitle) {
-          whereClause.job.title = { contains: query.jobTitle, mode: 'insensitive' };
+          whereClause.job.title = {
+            contains: query.jobTitle,
+            mode: 'insensitive',
+          };
         }
         if (query.companyName) {
           whereClause.job.company = {
@@ -1536,8 +1698,12 @@ export class AdminService {
       if (query.candidateName) {
         whereClause.candidate = {
           OR: [
-            { firstName: { contains: query.candidateName, mode: 'insensitive' } },
-            { lastName: { contains: query.candidateName, mode: 'insensitive' } },
+            {
+              firstName: { contains: query.candidateName, mode: 'insensitive' },
+            },
+            {
+              lastName: { contains: query.candidateName, mode: 'insensitive' },
+            },
           ],
         };
       }
@@ -1614,7 +1780,7 @@ export class AdminService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        applications: applications.map(app => ({
+        applications: applications.map((app) => ({
           id: app.id,
           jobId: app.jobId,
           candidateId: app.candidateId,
@@ -1636,22 +1802,24 @@ export class AdminService {
               name: app.job.company.name,
               logo: app.job.company.logo || undefined,
             },
-            location: app.job.city ? {
-              city: {
-                id: app.job.city.id,
-                name: app.job.city.name,
-                state: {
-                  id: app.job.city.state.id,
-                  name: app.job.city.state.name,
-                  code: app.job.city.state.code || undefined,
-                  country: {
-                    id: app.job.city.state.country.id,
-                    name: app.job.city.state.country.name,
-                    code: app.job.city.state.country.code,
+            location: app.job.city
+              ? {
+                  city: {
+                    id: app.job.city.id,
+                    name: app.job.city.name,
+                    state: {
+                      id: app.job.city.state.id,
+                      name: app.job.city.state.name,
+                      code: app.job.city.state.code || undefined,
+                      country: {
+                        id: app.job.city.state.country.id,
+                        name: app.job.city.state.country.name,
+                        code: app.job.city.state.country.code,
+                      },
+                    },
                   },
-                },
-              },
-            } : undefined,
+                }
+              : undefined,
           },
           candidate: {
             id: app.candidate.id,
@@ -1662,27 +1830,31 @@ export class AdminService {
             profilePicture: app.candidate.profilePicture || undefined,
             currentTitle: app.candidate.currentTitle || undefined,
             experienceYears: app.candidate.experienceYears || undefined,
-            city: app.candidate.city ? {
-              id: app.candidate.city.id,
-              name: app.candidate.city.name,
-              state: {
-                id: app.candidate.city.state.id,
-                name: app.candidate.city.state.name,
-                code: app.candidate.city.state.code || undefined,
-                country: {
-                  id: app.candidate.city.state.country.id,
-                  name: app.candidate.city.state.country.name,
-                  code: app.candidate.city.state.country.code,
-                },
-              },
-            } : undefined,
+            city: app.candidate.city
+              ? {
+                  id: app.candidate.city.id,
+                  name: app.candidate.city.name,
+                  state: {
+                    id: app.candidate.city.state.id,
+                    name: app.candidate.city.state.name,
+                    code: app.candidate.city.state.code || undefined,
+                    country: {
+                      id: app.candidate.city.state.country.id,
+                      name: app.candidate.city.state.country.name,
+                      code: app.candidate.city.state.country.code,
+                    },
+                  },
+                }
+              : undefined,
           },
-          resume: app.resume ? {
-            id: app.resume.id,
-            title: app.resume.title,
-            fileName: app.resume.fileName,
-            uploadedAt: app.resume.uploadedAt,
-          } : undefined,
+          resume: app.resume
+            ? {
+                id: app.resume.id,
+                title: app.resume.title,
+                fileName: app.resume.fileName,
+                uploadedAt: app.resume.uploadedAt,
+              }
+            : undefined,
         })),
         total,
         page,
@@ -1696,7 +1868,10 @@ export class AdminService {
     }
   }
 
-  async getApplicationDetails(applicationId: string, currentUser: any): Promise<AdminApplicationResponseDto> {
+  async getApplicationDetails(
+    applicationId: string,
+    currentUser: any,
+  ): Promise<AdminApplicationResponseDto> {
     try {
       const application = await this.prisma.jobApplication.findUnique({
         where: { id: applicationId },
@@ -1777,22 +1952,24 @@ export class AdminService {
             name: application.job.company.name,
             logo: application.job.company.logo || undefined,
           },
-          location: application.job.city ? {
-            city: {
-              id: application.job.city.id,
-              name: application.job.city.name,
-              state: {
-                id: application.job.city.state.id,
-                name: application.job.city.state.name,
-                code: application.job.city.state.code || undefined,
-                country: {
-                  id: application.job.city.state.country.id,
-                  name: application.job.city.state.country.name,
-                  code: application.job.city.state.country.code,
+          location: application.job.city
+            ? {
+                city: {
+                  id: application.job.city.id,
+                  name: application.job.city.name,
+                  state: {
+                    id: application.job.city.state.id,
+                    name: application.job.city.state.name,
+                    code: application.job.city.state.code || undefined,
+                    country: {
+                      id: application.job.city.state.country.id,
+                      name: application.job.city.state.country.name,
+                      code: application.job.city.state.country.code,
+                    },
+                  },
                 },
-              },
-            },
-          } : undefined,
+              }
+            : undefined,
         },
         candidate: {
           id: application.candidate.id,
@@ -1803,27 +1980,31 @@ export class AdminService {
           profilePicture: application.candidate.profilePicture || undefined,
           currentTitle: application.candidate.currentTitle || undefined,
           experienceYears: application.candidate.experienceYears || undefined,
-          city: application.candidate.city ? {
-            id: application.candidate.city.id,
-            name: application.candidate.city.name,
-            state: {
-              id: application.candidate.city.state.id,
-              name: application.candidate.city.state.name,
-              code: application.candidate.city.state.code || undefined,
-              country: {
-                id: application.candidate.city.state.country.id,
-                name: application.candidate.city.state.country.name,
-                code: application.candidate.city.state.country.code,
-              },
-            },
-          } : undefined,
+          city: application.candidate.city
+            ? {
+                id: application.candidate.city.id,
+                name: application.candidate.city.name,
+                state: {
+                  id: application.candidate.city.state.id,
+                  name: application.candidate.city.state.name,
+                  code: application.candidate.city.state.code || undefined,
+                  country: {
+                    id: application.candidate.city.state.country.id,
+                    name: application.candidate.city.state.country.name,
+                    code: application.candidate.city.state.country.code,
+                  },
+                },
+              }
+            : undefined,
         },
-        resume: application.resume ? {
-          id: application.resume.id,
-          title: application.resume.title,
-          fileName: application.resume.fileName,
-          uploadedAt: application.resume.uploadedAt,
-        } : undefined,
+        resume: application.resume
+          ? {
+              id: application.resume.id,
+              title: application.resume.title,
+              fileName: application.resume.fileName,
+              uploadedAt: application.resume.uploadedAt,
+            }
+          : undefined,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -1834,9 +2015,9 @@ export class AdminService {
   }
 
   async updateApplicationStatus(
-    applicationId: string, 
-    updateDto: UpdateApplicationStatusDto, 
-    currentUser: any
+    applicationId: string,
+    updateDto: UpdateApplicationStatusDto,
+    currentUser: any,
   ): Promise<AdminApplicationResponseDto> {
     try {
       const application = await this.prisma.jobApplication.findUnique({
@@ -1907,12 +2088,12 @@ export class AdminService {
 
       // Log the status update
       await this.logActivity(
-        currentUser.id, 
-        LogAction.UPDATE, 
-        LogLevel.INFO, 
-        'JobApplication', 
-        applicationId, 
-        `Application status updated to ${updateDto.status}`
+        currentUser.id,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'JobApplication',
+        applicationId,
+        `Application status updated to ${updateDto.status}`,
       );
 
       return {
@@ -1937,22 +2118,24 @@ export class AdminService {
             name: updatedApplication.job.company.name,
             logo: updatedApplication.job.company.logo || undefined,
           },
-          location: updatedApplication.job.city ? {
-            city: {
-              id: updatedApplication.job.city.id,
-              name: updatedApplication.job.city.name,
-              state: {
-                id: updatedApplication.job.city.state.id,
-                name: updatedApplication.job.city.state.name,
-                code: updatedApplication.job.city.state.code || undefined,
-                country: {
-                  id: updatedApplication.job.city.state.country.id,
-                  name: updatedApplication.job.city.state.country.name,
-                  code: updatedApplication.job.city.state.country.code,
+          location: updatedApplication.job.city
+            ? {
+                city: {
+                  id: updatedApplication.job.city.id,
+                  name: updatedApplication.job.city.name,
+                  state: {
+                    id: updatedApplication.job.city.state.id,
+                    name: updatedApplication.job.city.state.name,
+                    code: updatedApplication.job.city.state.code || undefined,
+                    country: {
+                      id: updatedApplication.job.city.state.country.id,
+                      name: updatedApplication.job.city.state.country.name,
+                      code: updatedApplication.job.city.state.country.code,
+                    },
+                  },
                 },
-              },
-            },
-          } : undefined,
+              }
+            : undefined,
         },
         candidate: {
           id: updatedApplication.candidate.id,
@@ -1960,30 +2143,37 @@ export class AdminService {
           lastName: updatedApplication.candidate.lastName,
           email: updatedApplication.candidate.user.email,
           phone: updatedApplication.candidate.user.phone || undefined,
-          profilePicture: updatedApplication.candidate.profilePicture || undefined,
+          profilePicture:
+            updatedApplication.candidate.profilePicture || undefined,
           currentTitle: updatedApplication.candidate.currentTitle || undefined,
-          experienceYears: updatedApplication.candidate.experienceYears || undefined,
-          city: updatedApplication.candidate.city ? {
-            id: updatedApplication.candidate.city.id,
-            name: updatedApplication.candidate.city.name,
-            state: {
-              id: updatedApplication.candidate.city.state.id,
-              name: updatedApplication.candidate.city.state.name,
-              code: updatedApplication.candidate.city.state.code || undefined,
-              country: {
-                id: updatedApplication.candidate.city.state.country.id,
-                name: updatedApplication.candidate.city.state.country.name,
-                code: updatedApplication.candidate.city.state.country.code,
-              },
-            },
-          } : undefined,
+          experienceYears:
+            updatedApplication.candidate.experienceYears || undefined,
+          city: updatedApplication.candidate.city
+            ? {
+                id: updatedApplication.candidate.city.id,
+                name: updatedApplication.candidate.city.name,
+                state: {
+                  id: updatedApplication.candidate.city.state.id,
+                  name: updatedApplication.candidate.city.state.name,
+                  code:
+                    updatedApplication.candidate.city.state.code || undefined,
+                  country: {
+                    id: updatedApplication.candidate.city.state.country.id,
+                    name: updatedApplication.candidate.city.state.country.name,
+                    code: updatedApplication.candidate.city.state.country.code,
+                  },
+                },
+              }
+            : undefined,
         },
-        resume: updatedApplication.resume ? {
-          id: updatedApplication.resume.id,
-          title: updatedApplication.resume.title,
-          fileName: updatedApplication.resume.fileName,
-          uploadedAt: updatedApplication.resume.uploadedAt,
-        } : undefined,
+        resume: updatedApplication.resume
+          ? {
+              id: updatedApplication.resume.id,
+              title: updatedApplication.resume.title,
+              fileName: updatedApplication.resume.fileName,
+              uploadedAt: updatedApplication.resume.uploadedAt,
+            }
+          : undefined,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -1994,9 +2184,9 @@ export class AdminService {
   }
 
   async addApplicationFeedback(
-    applicationId: string, 
-    feedbackDto: AddApplicationFeedbackDto, 
-    currentUser: any
+    applicationId: string,
+    feedbackDto: AddApplicationFeedbackDto,
+    currentUser: any,
   ): Promise<AdminApplicationResponseDto> {
     try {
       const application = await this.prisma.jobApplication.findUnique({
@@ -2067,12 +2257,12 @@ export class AdminService {
 
       // Log the feedback addition
       await this.logActivity(
-        currentUser.id, 
-        LogAction.UPDATE, 
-        LogLevel.INFO, 
-        'JobApplication', 
-        applicationId, 
-        'Feedback added to application'
+        currentUser.id,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'JobApplication',
+        applicationId,
+        'Feedback added to application',
       );
 
       return {
@@ -2097,22 +2287,24 @@ export class AdminService {
             name: updatedApplication.job.company.name,
             logo: updatedApplication.job.company.logo || undefined,
           },
-          location: updatedApplication.job.city ? {
-            city: {
-              id: updatedApplication.job.city.id,
-              name: updatedApplication.job.city.name,
-              state: {
-                id: updatedApplication.job.city.state.id,
-                name: updatedApplication.job.city.state.name,
-                code: updatedApplication.job.city.state.code || undefined,
-                country: {
-                  id: updatedApplication.job.city.state.country.id,
-                  name: updatedApplication.job.city.state.country.name,
-                  code: updatedApplication.job.city.state.country.code,
+          location: updatedApplication.job.city
+            ? {
+                city: {
+                  id: updatedApplication.job.city.id,
+                  name: updatedApplication.job.city.name,
+                  state: {
+                    id: updatedApplication.job.city.state.id,
+                    name: updatedApplication.job.city.state.name,
+                    code: updatedApplication.job.city.state.code || undefined,
+                    country: {
+                      id: updatedApplication.job.city.state.country.id,
+                      name: updatedApplication.job.city.state.country.name,
+                      code: updatedApplication.job.city.state.country.code,
+                    },
+                  },
                 },
-              },
-            },
-          } : undefined,
+              }
+            : undefined,
         },
         candidate: {
           id: updatedApplication.candidate.id,
@@ -2120,30 +2312,37 @@ export class AdminService {
           lastName: updatedApplication.candidate.lastName,
           email: updatedApplication.candidate.user.email,
           phone: updatedApplication.candidate.user.phone || undefined,
-          profilePicture: updatedApplication.candidate.profilePicture || undefined,
+          profilePicture:
+            updatedApplication.candidate.profilePicture || undefined,
           currentTitle: updatedApplication.candidate.currentTitle || undefined,
-          experienceYears: updatedApplication.candidate.experienceYears || undefined,
-          city: updatedApplication.candidate.city ? {
-            id: updatedApplication.candidate.city.id,
-            name: updatedApplication.candidate.city.name,
-            state: {
-              id: updatedApplication.candidate.city.state.id,
-              name: updatedApplication.candidate.city.state.name,
-              code: updatedApplication.candidate.city.state.code || undefined,
-              country: {
-                id: updatedApplication.candidate.city.state.country.id,
-                name: updatedApplication.candidate.city.state.country.name,
-                code: updatedApplication.candidate.city.state.country.code,
-              },
-            },
-          } : undefined,
+          experienceYears:
+            updatedApplication.candidate.experienceYears || undefined,
+          city: updatedApplication.candidate.city
+            ? {
+                id: updatedApplication.candidate.city.id,
+                name: updatedApplication.candidate.city.name,
+                state: {
+                  id: updatedApplication.candidate.city.state.id,
+                  name: updatedApplication.candidate.city.state.name,
+                  code:
+                    updatedApplication.candidate.city.state.code || undefined,
+                  country: {
+                    id: updatedApplication.candidate.city.state.country.id,
+                    name: updatedApplication.candidate.city.state.country.name,
+                    code: updatedApplication.candidate.city.state.country.code,
+                  },
+                },
+              }
+            : undefined,
         },
-        resume: updatedApplication.resume ? {
-          id: updatedApplication.resume.id,
-          title: updatedApplication.resume.title,
-          fileName: updatedApplication.resume.fileName,
-          uploadedAt: updatedApplication.resume.uploadedAt,
-        } : undefined,
+        resume: updatedApplication.resume
+          ? {
+              id: updatedApplication.resume.id,
+              title: updatedApplication.resume.title,
+              fileName: updatedApplication.resume.fileName,
+              uploadedAt: updatedApplication.resume.uploadedAt,
+            }
+          : undefined,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -2153,7 +2352,9 @@ export class AdminService {
     }
   }
 
-  async getApplicationStats(currentUser: any): Promise<ApplicationStatsResponseDto> {
+  async getApplicationStats(
+    currentUser: any,
+  ): Promise<ApplicationStatsResponseDto> {
     try {
       const [
         total,
@@ -2161,76 +2362,87 @@ export class AdminService {
         byJobType,
         byExperienceLevel,
         recentApplications,
-        averageResponseTime
+        averageResponseTime,
       ] = await Promise.all([
         // Total applications
         this.prisma.jobApplication.count(),
-        
+
         // Applications by status
         this.prisma.jobApplication.groupBy({
           by: ['status'],
           _count: { status: true },
         }),
-        
+
         // Applications by job type
-        this.prisma.jobApplication.groupBy({
-          by: ['jobId'],
-          _count: { jobId: true },
-        }).then(async (result) => {
-          const jobIds = result.map(r => r.jobId);
-          const jobs = await this.prisma.job.findMany({
-            where: { id: { in: jobIds } },
-            select: { id: true, jobType: true },
-          });
-          
-          const jobTypeMap = new Map(jobs.map(job => [job.id, job.jobType]));
-          const byJobType: any = {
-            FULL_TIME: 0,
-            PART_TIME: 0,
-            CONTRACT: 0,
-            INTERNSHIP: 0,
-            FREELANCE: 0,
-          };
-          
-          result.forEach(r => {
-            const jobType = jobTypeMap.get(r.jobId);
-            if (jobType && byJobType.hasOwnProperty(jobType)) {
-              byJobType[jobType] += r._count.jobId;
-            }
-          });
-          
-          return byJobType;
-        }),
-        
+        this.prisma.jobApplication
+          .groupBy({
+            by: ['jobId'],
+            _count: { jobId: true },
+          })
+          .then(async (result) => {
+            const jobIds = result.map((r) => r.jobId);
+            const jobs = await this.prisma.job.findMany({
+              where: { id: { in: jobIds } },
+              select: { id: true, jobType: true },
+            });
+
+            const jobTypeMap = new Map(
+              jobs.map((job) => [job.id, job.jobType]),
+            );
+            const byJobType: any = {
+              FULL_TIME: 0,
+              PART_TIME: 0,
+              CONTRACT: 0,
+              INTERNSHIP: 0,
+              FREELANCE: 0,
+            };
+
+            result.forEach((r) => {
+              const jobType = jobTypeMap.get(r.jobId);
+              if (jobType && byJobType.hasOwnProperty(jobType)) {
+                byJobType[jobType] += r._count.jobId;
+              }
+            });
+
+            return byJobType;
+          }),
+
         // Applications by experience level
-        this.prisma.jobApplication.groupBy({
-          by: ['jobId'],
-          _count: { jobId: true },
-        }).then(async (result) => {
-          const jobIds = result.map(r => r.jobId);
-          const jobs = await this.prisma.job.findMany({
-            where: { id: { in: jobIds } },
-            select: { id: true, experienceLevel: true },
-          });
-          
-          const experienceLevelMap = new Map(jobs.map(job => [job.id, job.experienceLevel]));
-          const byExperienceLevel: any = {
-            ENTRY_LEVEL: 0,
-            MID_LEVEL: 0,
-            SENIOR_LEVEL: 0,
-            EXECUTIVE: 0,
-          };
-          
-          result.forEach(r => {
-            const experienceLevel = experienceLevelMap.get(r.jobId);
-            if (experienceLevel && byExperienceLevel.hasOwnProperty(experienceLevel)) {
-              byExperienceLevel[experienceLevel] += r._count.jobId;
-            }
-          });
-          
-          return byExperienceLevel;
-        }),
-        
+        this.prisma.jobApplication
+          .groupBy({
+            by: ['jobId'],
+            _count: { jobId: true },
+          })
+          .then(async (result) => {
+            const jobIds = result.map((r) => r.jobId);
+            const jobs = await this.prisma.job.findMany({
+              where: { id: { in: jobIds } },
+              select: { id: true, experienceLevel: true },
+            });
+
+            const experienceLevelMap = new Map(
+              jobs.map((job) => [job.id, job.experienceLevel]),
+            );
+            const byExperienceLevel: any = {
+              ENTRY_LEVEL: 0,
+              MID_LEVEL: 0,
+              SENIOR_LEVEL: 0,
+              EXECUTIVE: 0,
+            };
+
+            result.forEach((r) => {
+              const experienceLevel = experienceLevelMap.get(r.jobId);
+              if (
+                experienceLevel &&
+                byExperienceLevel.hasOwnProperty(experienceLevel)
+              ) {
+                byExperienceLevel[experienceLevel] += r._count.jobId;
+              }
+            });
+
+            return byExperienceLevel;
+          }),
+
         // Recent applications (last 7 days)
         this.prisma.jobApplication.count({
           where: {
@@ -2239,26 +2451,30 @@ export class AdminService {
             },
           },
         }),
-        
+
         // Average response time
-        this.prisma.jobApplication.findMany({
-          where: {
-            reviewedAt: { not: null },
-          },
-          select: {
-            appliedAt: true,
-            reviewedAt: true,
-          },
-        }).then((applications) => {
-          if (applications.length === 0) return 0;
-          
-          const totalDays = applications.reduce((sum, app) => {
-            const days = (app.reviewedAt!.getTime() - app.appliedAt.getTime()) / (1000 * 60 * 60 * 24);
-            return sum + days;
-          }, 0);
-          
-          return totalDays / applications.length;
-        }),
+        this.prisma.jobApplication
+          .findMany({
+            where: {
+              reviewedAt: { not: null },
+            },
+            select: {
+              appliedAt: true,
+              reviewedAt: true,
+            },
+          })
+          .then((applications) => {
+            if (applications.length === 0) return 0;
+
+            const totalDays = applications.reduce((sum, app) => {
+              const days =
+                (app.reviewedAt!.getTime() - app.appliedAt.getTime()) /
+                (1000 * 60 * 60 * 24);
+              return sum + days;
+            }, 0);
+
+            return totalDays / applications.length;
+          }),
       ]);
 
       // Format status data
@@ -2271,8 +2487,8 @@ export class AdminService {
         REJECTED: 0,
         WITHDRAWN: 0,
       };
-      
-      byStatus.forEach(status => {
+
+      byStatus.forEach((status) => {
         if (statusData.hasOwnProperty(status.status)) {
           statusData[status.status] = status._count.status;
         }
@@ -2295,7 +2511,10 @@ export class AdminService {
   // BULK OPERATIONS
   // =================================================================
 
-  async bulkUpdateApplications(bulkUpdateDto: BulkUpdateApplicationsDto, currentUser: any): Promise<BulkUpdateResponseDto> {
+  async bulkUpdateApplications(
+    bulkUpdateDto: BulkUpdateApplicationsDto,
+    currentUser: any,
+  ): Promise<BulkUpdateResponseDto> {
     try {
       const { applicationIds, status, feedback } = bulkUpdateDto;
       const failedApplications: { applicationId: string; error: string }[] = [];
@@ -2340,7 +2559,7 @@ export class AdminService {
             LogLevel.INFO,
             'JobApplication',
             applicationId,
-            `Bulk update: Status changed to ${status}`
+            `Bulk update: Status changed to ${status}`,
           );
 
           updatedCount++;
@@ -2364,10 +2583,13 @@ export class AdminService {
     }
   }
 
-  async bulkExportApplications(exportQuery: BulkExportQueryDto, currentUser: any): Promise<BulkExportResponseDto> {
+  async bulkExportApplications(
+    exportQuery: BulkExportQueryDto,
+    currentUser: any,
+  ): Promise<BulkExportResponseDto> {
     try {
       const format = exportQuery.format || 'csv';
-      
+
       // Build where clause for filtering (same as getAllApplications)
       const whereClause: any = {};
 
@@ -2378,7 +2600,10 @@ export class AdminService {
       if (exportQuery.jobTitle || exportQuery.companyName) {
         whereClause.job = {};
         if (exportQuery.jobTitle) {
-          whereClause.job.title = { contains: exportQuery.jobTitle, mode: 'insensitive' };
+          whereClause.job.title = {
+            contains: exportQuery.jobTitle,
+            mode: 'insensitive',
+          };
         }
         if (exportQuery.companyName) {
           whereClause.job.company = {
@@ -2390,8 +2615,18 @@ export class AdminService {
       if (exportQuery.candidateName) {
         whereClause.candidate = {
           OR: [
-            { firstName: { contains: exportQuery.candidateName, mode: 'insensitive' } },
-            { lastName: { contains: exportQuery.candidateName, mode: 'insensitive' } },
+            {
+              firstName: {
+                contains: exportQuery.candidateName,
+                mode: 'insensitive',
+              },
+            },
+            {
+              lastName: {
+                contains: exportQuery.candidateName,
+                mode: 'insensitive',
+              },
+            },
           ],
         };
       }
@@ -2453,19 +2688,23 @@ export class AdminService {
       });
 
       // Generate export data
-      const exportData = applications.map(app => ({
+      const exportData = applications.map((app) => ({
         'Application ID': app.id,
         'Job Title': app.job.title,
-        'Company': app.job.company.name,
+        Company: app.job.company.name,
         'Candidate Name': `${app.candidate.firstName} ${app.candidate.lastName}`,
         'Candidate Email': app.candidate.user.email,
         'Candidate Phone': app.candidate.user.phone || '',
-        'Status': app.status,
+        Status: app.status,
         'Applied Date': app.appliedAt.toISOString().split('T')[0],
-        'Reviewed Date': app.reviewedAt ? app.reviewedAt.toISOString().split('T')[0] : '',
+        'Reviewed Date': app.reviewedAt
+          ? app.reviewedAt.toISOString().split('T')[0]
+          : '',
         'Cover Letter': app.coverLetter || '',
-        'Feedback': app.feedback || '',
-        'Location': app.job.city ? `${app.job.city.name}, ${app.job.city.state.name}, ${app.job.city.state.country.name}` : '',
+        Feedback: app.feedback || '',
+        Location: app.job.city
+          ? `${app.job.city.name}, ${app.job.city.state.name}, ${app.job.city.state.country.name}`
+          : '',
         'Job Type': app.job.jobType,
         'Experience Level': app.job.experienceLevel,
         'Work Mode': app.job.workMode,
@@ -2486,7 +2725,7 @@ export class AdminService {
         LogLevel.INFO,
         'JobApplication',
         'bulk-export',
-        `Exported ${applications.length} applications in ${format.toUpperCase()} format`
+        `Exported ${applications.length} applications in ${format.toUpperCase()} format`,
       );
 
       return {
@@ -2536,7 +2775,10 @@ export class AdminService {
   // RESUME MANAGEMENT METHODS
   // =================================================================
 
-  async getAllResumes(query: ResumeQueryDto, currentUser: any): Promise<ResumesListResponseDto> {
+  async getAllResumes(
+    query: ResumeQueryDto,
+    currentUser: any,
+  ): Promise<ResumesListResponseDto> {
     try {
       const page = parseInt(query.page || '1');
       const limit = parseInt(query.limit || '10');
@@ -2557,12 +2799,14 @@ export class AdminService {
         where.OR = [
           { title: { contains: query.search, mode: 'insensitive' } },
           { fileName: { contains: query.search, mode: 'insensitive' } },
-          { candidate: { 
-            OR: [
-              { firstName: { contains: query.search, mode: 'insensitive' } },
-              { lastName: { contains: query.search, mode: 'insensitive' } }
-            ]
-          } }
+          {
+            candidate: {
+              OR: [
+                { firstName: { contains: query.search, mode: 'insensitive' } },
+                { lastName: { contains: query.search, mode: 'insensitive' } },
+              ],
+            },
+          },
         ];
       }
 
@@ -2599,7 +2843,7 @@ export class AdminService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        resumes: resumes.map(resume => ({
+        resumes: resumes.map((resume) => ({
           id: resume.id,
           candidateId: resume.candidateId,
           title: resume.title,
@@ -2632,7 +2876,10 @@ export class AdminService {
     }
   }
 
-  async getResumeById(resumeId: string, currentUser: any): Promise<AdminResumeResponseDto> {
+  async getResumeById(
+    resumeId: string,
+    currentUser: any,
+  ): Promise<AdminResumeResponseDto> {
     try {
       const resume = await this.prisma.resume.findUnique({
         where: { id: resumeId },
@@ -2711,14 +2958,14 @@ export class AdminService {
         LogLevel.INFO,
         'Resume',
         resumeId,
-        `Resume downloaded: ${resume.fileName}`
+        `Resume downloaded: ${resume.fileName}`,
       );
 
       // In a real implementation, you would:
       // 1. Check if the file exists on the filesystem
       // 2. Stream the file to the response
       // 3. Set appropriate headers for file download
-      
+
       // For now, return the file path and metadata
       return {
         success: true,
@@ -2741,7 +2988,10 @@ export class AdminService {
     }
   }
 
-  async bulkDownloadResumes(bulkDownloadDto: BulkDownloadDto, currentUser: any): Promise<BulkDownloadResponseDto> {
+  async bulkDownloadResumes(
+    bulkDownloadDto: BulkDownloadDto,
+    currentUser: any,
+  ): Promise<BulkDownloadResponseDto> {
     try {
       // Validate that all resume IDs exist
       const resumes = await this.prisma.resume.findMany({
@@ -2766,7 +3016,10 @@ export class AdminService {
       }
 
       // Calculate total size
-      const totalSize = resumes.reduce((sum, resume) => sum + resume.fileSize, 0);
+      const totalSize = resumes.reduce(
+        (sum, resume) => sum + resume.fileSize,
+        0,
+      );
 
       // Log the bulk download activity
       await this.logActivity(
@@ -2775,14 +3028,14 @@ export class AdminService {
         LogLevel.INFO,
         'Resume',
         bulkDownloadDto.resumeIds.join(','),
-        `Bulk download initiated for ${resumes.length} resumes`
+        `Bulk download initiated for ${resumes.length} resumes`,
       );
 
       // In a real implementation, you would:
       // 1. Create a ZIP file containing all the resumes
       // 2. Upload it to a temporary storage location
       // 3. Generate a secure download URL with expiration
-      
+
       // For now, return a mock response
       const downloadUrl = `https://temp-storage.example.com/bulk-downloads/${uuidv4()}.zip`;
       const expiresAt = new Date();
@@ -2878,10 +3131,23 @@ export class AdminService {
     currentUser: any,
   ): Promise<SendNotificationResponseDto> {
     try {
-      const { userIds, type, title, message, data, expiresAt, sendEmail, sendPush, sendSms } = sendNotificationDto;
+      const {
+        userIds,
+        type,
+        title,
+        message,
+        data,
+        expiresAt,
+        sendEmail,
+        sendPush,
+        sendSms,
+      } = sendNotificationDto;
 
       // Verify admin permissions
-      if (currentUser.role !== UserRole.ADMIN && currentUser.role !== UserRole.SUPER_ADMIN) {
+      if (
+        currentUser.role !== UserRole.ADMIN &&
+        currentUser.role !== UserRole.SUPER_ADMIN
+      ) {
         throw new ForbiddenException('Only admins can send notifications');
       }
 
@@ -2891,15 +3157,17 @@ export class AdminService {
         select: { id: true },
       });
 
-      const validUserIds = existingUsers.map(user => user.id);
-      const invalidUserIds = userIds.filter(id => !validUserIds.includes(id));
+      const validUserIds = existingUsers.map((user) => user.id);
+      const invalidUserIds = userIds.filter((id) => !validUserIds.includes(id));
 
       if (validUserIds.length === 0) {
-        throw new BadRequestException('No valid users found to send notifications to');
+        throw new BadRequestException(
+          'No valid users found to send notifications to',
+        );
       }
 
       // Create notifications for valid users
-      const notificationsData = validUserIds.map(userId => ({
+      const notificationsData = validUserIds.map((userId) => ({
         userId,
         type,
         title,
@@ -2934,7 +3202,10 @@ export class AdminService {
         },
       };
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof ForbiddenException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to send notifications');
@@ -2957,11 +3228,14 @@ export class AdminService {
         expiresAt,
         sendEmail,
         sendPush,
-        sendSms
+        sendSms,
       } = broadcastNotificationDto;
 
       // Verify admin permissions
-      if (currentUser.role !== UserRole.ADMIN && currentUser.role !== UserRole.SUPER_ADMIN) {
+      if (
+        currentUser.role !== UserRole.ADMIN &&
+        currentUser.role !== UserRole.SUPER_ADMIN
+      ) {
         throw new ForbiddenException('Only admins can broadcast notifications');
       }
 
@@ -2977,7 +3251,11 @@ export class AdminService {
       }
 
       if (excludeUserIds && excludeUserIds.length > 0) {
-        if (whereClause.id && typeof whereClause.id === 'object' && 'in' in whereClause.id) {
+        if (
+          whereClause.id &&
+          typeof whereClause.id === 'object' &&
+          'in' in whereClause.id
+        ) {
           whereClause.id = {
             in: (whereClause.id as { in: string[] }).in,
             notIn: excludeUserIds,
@@ -3011,7 +3289,7 @@ export class AdminService {
         select: { id: true },
       });
 
-      const notificationsData = users.map(user => ({
+      const notificationsData = users.map((user) => ({
         userId: user.id,
         type,
         title,
@@ -3032,7 +3310,12 @@ export class AdminService {
         'Notification',
         'broadcast',
         `Broadcasted ${type} notification to ${users.length} users`,
-        { type, title, totalUsers: users.length, filters: { roleFilters, excludeUserIds } },
+        {
+          type,
+          title,
+          totalUsers: users.length,
+          filters: { roleFilters, excludeUserIds },
+        },
       );
 
       return {
@@ -3045,7 +3328,10 @@ export class AdminService {
         },
       };
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof ForbiddenException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to broadcast notifications');
@@ -3058,8 +3344,13 @@ export class AdminService {
   ): Promise<NotificationTemplatesListResponseDto> {
     try {
       // Verify admin permissions
-      if (currentUser.role !== UserRole.ADMIN && currentUser.role !== UserRole.SUPER_ADMIN) {
-        throw new ForbiddenException('Only admins can view notification templates');
+      if (
+        currentUser.role !== UserRole.ADMIN &&
+        currentUser.role !== UserRole.SUPER_ADMIN
+      ) {
+        throw new ForbiddenException(
+          'Only admins can view notification templates',
+        );
       }
 
       const {
@@ -3107,7 +3398,7 @@ export class AdminService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        templates: templates.map(template => ({
+        templates: templates.map((template) => ({
           id: template.id,
           name: template.name,
           description: template.description ?? undefined,
@@ -3115,7 +3406,7 @@ export class AdminService {
           title: template.title,
           message: template.message,
           defaultData: template.defaultData as Record<string, any> | undefined,
-          variables: template.variables as string[],
+          variables: template.variables,
           isActive: template.isActive,
           createdAt: template.createdAt,
           updatedAt: template.updatedAt,
@@ -3138,20 +3429,37 @@ export class AdminService {
     currentUser: any,
   ): Promise<NotificationTemplateResponseDto> {
     try {
-      const { name, description, type, title, message, defaultData, variables, isActive = true } = createTemplateDto;
+      const {
+        name,
+        description,
+        type,
+        title,
+        message,
+        defaultData,
+        variables,
+        isActive = true,
+      } = createTemplateDto;
 
       // Verify admin permissions
-      if (currentUser.role !== UserRole.ADMIN && currentUser.role !== UserRole.SUPER_ADMIN) {
-        throw new ForbiddenException('Only admins can create notification templates');
+      if (
+        currentUser.role !== UserRole.ADMIN &&
+        currentUser.role !== UserRole.SUPER_ADMIN
+      ) {
+        throw new ForbiddenException(
+          'Only admins can create notification templates',
+        );
       }
 
       // Check if template name already exists
-      const existingTemplate = await this.prisma.notificationTemplate.findUnique({
-        where: { name },
-      });
+      const existingTemplate =
+        await this.prisma.notificationTemplate.findUnique({
+          where: { name },
+        });
 
       if (existingTemplate) {
-        throw new BadRequestException('A template with this name already exists');
+        throw new BadRequestException(
+          'A template with this name already exists',
+        );
       }
 
       const template = await this.prisma.notificationTemplate.create({
@@ -3185,17 +3493,19 @@ export class AdminService {
         title: template.title,
         message: template.message,
         defaultData: template.defaultData as Record<string, any> | undefined,
-        variables: template.variables as string[],
+        variables: template.variables,
         isActive: template.isActive,
         createdAt: template.createdAt,
         updatedAt: template.updatedAt,
       };
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof ForbiddenException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to create notification template');
     }
   }
-
 }

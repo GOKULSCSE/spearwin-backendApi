@@ -39,12 +39,12 @@ exports.AppModule = AppModule = __decorate([
             notification_module_1.NotificationModule,
             throttler_1.ThrottlerModule.forRoot([
                 {
-                    name: "short",
+                    name: 'short',
                     limit: 2,
-                    ttl: 3000
-                }
+                    ttl: 3000,
+                },
             ]),
-            setting_module_1.SettingModule
+            setting_module_1.SettingModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService, { provide: core_1.APP_GUARD, useClass: throttler_1.ThrottlerGuard }],

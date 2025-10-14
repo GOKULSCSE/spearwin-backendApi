@@ -16,7 +16,7 @@ exports.SettingController = void 0;
 const common_1 = require("@nestjs/common");
 let SettingController = class SettingController {
     fineAll() {
-        return "";
+        return '';
     }
     findSettingById(body, id) {
         return body;
@@ -30,7 +30,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], SettingController.prototype, "fineAll", null);
 __decorate([
-    (0, common_1.Get)(":id"),
+    (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Param)()),
     __metadata("design:type", Function),

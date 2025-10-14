@@ -14,6 +14,7 @@ const class_validator_1 = require("class-validator");
 class LoginDto {
     email;
     password;
+    userType;
 }
 exports.LoginDto = LoginDto;
 __decorate([
@@ -27,4 +28,9 @@ __decorate([
     (0, class_validator_1.MinLength)(6, { message: 'Password must be at least 6 characters long' }),
     __metadata("design:type", String)
 ], LoginDto.prototype, "password", void 0);
+__decorate([
+    (0, class_validator_1.IsString)({ message: 'User type must be a string' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'User type is required' }),
+    __metadata("design:type", String)
+], LoginDto.prototype, "userType", void 0);
 //# sourceMappingURL=login.dto.js.map
