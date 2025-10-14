@@ -452,6 +452,99 @@ let AuthService = class AuthService {
             throw new common_1.BadRequestException('Failed to register candidate');
         }
     }
+    async candidateSimpleRegister(candidateSimpleRegisterDto) {
+        try {
+            console.log('candidateSimpleRegisterDto ', candidateSimpleRegisterDto);
+            const existingUser = await this.prisma.user.findUnique({
+                where: { email: candidateSimpleRegisterDto.email },
+            });
+            if (existingUser) {
+                throw new common_1.BadRequestException('User with this email already exists');
+            }
+            const nameParts = candidateSimpleRegisterDto.fullName.trim().split(' ');
+            const firstName = nameParts[0];
+            const lastName = nameParts.slice(1).join(' ') || '';
+            if (!firstName) {
+                throw new common_1.BadRequestException('Full name must contain at least a first name');
+            }
+            const hashedPassword = await bcrypt.hash(candidateSimpleRegisterDto.password, 10);
+            const result = await this.prisma.$transaction(async (prisma) => {
+                const user = await prisma.user.create({
+                    data: {
+                        email: candidateSimpleRegisterDto.email,
+                        password: hashedPassword,
+                        role: client_1.UserRole.CANDIDATE,
+                        status: client_1.UserStatus.PENDING_VERIFICATION,
+                        emailVerified: false,
+                        phoneVerified: false,
+                        profileCompleted: false,
+                        twoFactorEnabled: false,
+                    },
+                });
+                const candidate = await prisma.candidate.create({
+                    data: {
+                        userId: user.id,
+                        firstName: firstName,
+                        lastName: lastName,
+                        isAvailable: true,
+                    },
+                });
+                return { user, candidate };
+            });
+            const verificationCode = (0, uuid_1.v4)();
+            const expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 24);
+            await this.prisma.oTP.create({
+                data: {
+                    userId: result.user.id,
+                    code: verificationCode,
+                    type: client_1.OTPType.EMAIL_VERIFICATION,
+                    expiresAt,
+                },
+            });
+            await this.prisma.activityLog.create({
+                data: {
+                    userId: result.user.id,
+                    action: 'CREATE',
+                    level: 'INFO',
+                    description: 'Candidate registered successfully (simple registration)',
+                    entity: 'User',
+                    entityId: result.user.id,
+                },
+            });
+            return {
+                success: true,
+                message: 'Candidate registered successfully. Please check your email for verification.',
+                data: {
+                    user: {
+                        id: result.user.id,
+                        email: result.user.email,
+                        role: result.user.role,
+                        status: result.user.status,
+                        emailVerified: result.user.emailVerified,
+                        phoneVerified: result.user.phoneVerified,
+                        profileCompleted: result.user.profileCompleted,
+                        twoFactorEnabled: result.user.twoFactorEnabled,
+                        createdAt: result.user.createdAt,
+                    },
+                    candidate: {
+                        id: result.candidate.id,
+                        firstName: result.candidate.firstName,
+                        lastName: result.candidate.lastName,
+                        isAvailable: result.candidate.isAvailable,
+                        createdAt: result.candidate.createdAt,
+                    },
+                },
+            };
+        }
+        catch (error) {
+            console.log('actual error', error);
+            if (error instanceof common_1.BadRequestException) {
+                throw error;
+            }
+            throw new common_1.BadRequestException('Failed to register candidate');
+        }
+    }
     async companyRegister(companyRegisterDto) {
         try {
             const existingUser = await this.prisma.user.findUnique({
