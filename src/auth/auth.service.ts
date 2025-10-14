@@ -11,7 +11,11 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CandidateRegisterDto } from './dto/candidate-register.dto';
+<<<<<<< HEAD
 import { CandidateSimpleRegisterDto } from './dto/candidate-simple-register.dto';
+=======
+import { CandidateRegisterSimpleDto } from './dto/candidate-register-simple.dto';
+>>>>>>> 9a6272e20d685382ca12a9bbf7a8e08554fdc161
 import { CompanyRegisterDto } from './dto/company-register.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { VerifyPhoneDto } from './dto/verify-phone.dto';
@@ -560,6 +564,7 @@ export class AuthService {
     }
   }
 
+<<<<<<< HEAD
   async candidateSimpleRegister(
     candidateSimpleRegisterDto: CandidateSimpleRegisterDto,
   ): Promise<RegisterResponseDto> {
@@ -569,6 +574,20 @@ export class AuthService {
       // Check if user already exists
       const existingUser = await this.prisma.user.findUnique({
         where: { email: candidateSimpleRegisterDto.email },
+=======
+  async candidateRegisterSimple(
+    candidateRegisterSimpleDto: CandidateRegisterSimpleDto,
+  ): Promise<RegisterResponseDto> {
+    try {
+      // Validate password confirmation
+      if (candidateRegisterSimpleDto.password !== candidateRegisterSimpleDto.reenterPassword) {
+        throw new BadRequestException('Passwords do not match');
+      }
+
+      // Check if user already exists
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: candidateRegisterSimpleDto.email },
+>>>>>>> 9a6272e20d685382ca12a9bbf7a8e08554fdc161
       });
 
       if (existingUser) {
@@ -576,8 +595,13 @@ export class AuthService {
       }
 
       // Split full name into first and last name
+<<<<<<< HEAD
       const nameParts = candidateSimpleRegisterDto.fullName.trim().split(' ');
       const firstName = nameParts[0];
+=======
+      const nameParts = candidateRegisterSimpleDto.fullName.trim().split(' ');
+      const firstName = nameParts[0] || '';
+>>>>>>> 9a6272e20d685382ca12a9bbf7a8e08554fdc161
       const lastName = nameParts.slice(1).join(' ') || '';
 
       if (!firstName) {
@@ -586,7 +610,11 @@ export class AuthService {
 
       // Hash password
       const hashedPassword = await bcrypt.hash(
+<<<<<<< HEAD
         candidateSimpleRegisterDto.password,
+=======
+        candidateRegisterSimpleDto.password,
+>>>>>>> 9a6272e20d685382ca12a9bbf7a8e08554fdc161
         10,
       );
 
@@ -595,7 +623,11 @@ export class AuthService {
         // Create user
         const user = await prisma.user.create({
           data: {
+<<<<<<< HEAD
             email: candidateSimpleRegisterDto.email,
+=======
+            email: candidateRegisterSimpleDto.email,
+>>>>>>> 9a6272e20d685382ca12a9bbf7a8e08554fdc161
             password: hashedPassword,
             role: UserRole.CANDIDATE,
             status: UserStatus.PENDING_VERIFICATION,
@@ -606,7 +638,11 @@ export class AuthService {
           },
         });
 
+<<<<<<< HEAD
         // Create candidate profile with minimal data
+=======
+        // Create candidate profile
+>>>>>>> 9a6272e20d685382ca12a9bbf7a8e08554fdc161
         const candidate = await prisma.candidate.create({
           data: {
             userId: user.id,
