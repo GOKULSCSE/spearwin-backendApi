@@ -1,9 +1,22 @@
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { JobQueryDto, JobSearchDto } from './dto/job-query.dto';
-import { JobResponseDto, JobListResponseDto, JobFiltersResponseDto, JobViewResponseDto } from './dto/job-response.dto';
+import {
+  JobResponseDto,
+  JobListResponseDto,
+  JobFiltersResponseDto,
+  JobViewResponseDto,
+} from './dto/job-response.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
-import { ApplyForJobDto, ApplicationResponseDto } from '../candidate/dto/job-application.dto';
+import {
+  ApplyForJobDto,
+  ApplicationResponseDto,
+} from '../candidate/dto/job-application.dto';
 import { Prisma, LogAction, LogLevel } from '@prisma/client';
 
 @Injectable()
@@ -76,8 +89,12 @@ export class JobService {
           ...(where.OR || []),
           {
             AND: [
-              salary_min !== undefined ? { minSalary: { gte: salary_min } } : {},
-              salary_max !== undefined ? { maxSalary: { lte: salary_max } } : {},
+              salary_min !== undefined
+                ? { minSalary: { gte: salary_min } }
+                : {},
+              salary_max !== undefined
+                ? { maxSalary: { lte: salary_max } }
+                : {},
             ],
           },
         ];
@@ -142,7 +159,7 @@ export class JobService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        jobs: jobs.map(job => this.mapJobToResponse(job)),
+        jobs: jobs.map((job) => this.mapJobToResponse(job)),
         total,
         page,
         limit,
@@ -275,7 +292,7 @@ export class JobService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        jobs: jobs.map(job => this.mapJobToResponse(job)),
+        jobs: jobs.map((job) => this.mapJobToResponse(job)),
         total,
         page,
         limit,
@@ -303,7 +320,7 @@ export class JobService {
               name: true,
               logo: true,
               industry: true,
-                employeeCount: true,
+              employeeCount: true,
               website: true,
             },
           },
@@ -317,12 +334,12 @@ export class JobService {
             },
           },
         },
-        
+
         orderBy: { publishedAt: 'desc' },
         take: 10,
       });
 
-      return jobs.map(job => this.mapJobToResponse(job));
+      return jobs.map((job) => this.mapJobToResponse(job));
     } catch (error) {
       this.handleException(error);
       throw error;
@@ -344,7 +361,7 @@ export class JobService {
               name: true,
               logo: true,
               industry: true,
-                employeeCount: true,
+              employeeCount: true,
               website: true,
             },
           },
@@ -511,15 +528,15 @@ export class JobService {
 
       return {
         companies,
-        locations: locations.map(location => ({
+        locations: locations.map((location) => ({
           id: location.id,
           name: location.name,
           state: location.state.name,
           country: location.state.country.name,
         })),
-        jobTypes: jobTypes.map(job => job.jobType),
-        experienceLevels: experienceLevels.map(job => job.experienceLevel),
-        workModes: workModes.map(job => job.workMode),
+        jobTypes: jobTypes.map((job) => job.jobType),
+        experienceLevels: experienceLevels.map((job) => job.experienceLevel),
+        workModes: workModes.map((job) => job.workMode),
         skills: [], // Will be processed from skillsRequired
         salaryRanges: {
           min: Number(salaryRanges._min.minSalary) || 0,
@@ -536,7 +553,10 @@ export class JobService {
   // JOB MANAGEMENT
   // =================================================================
 
-  async updateJob(jobId: string, updateJobDto: UpdateJobDto): Promise<JobResponseDto> {
+  async updateJob(
+    jobId: string,
+    updateJobDto: UpdateJobDto,
+  ): Promise<JobResponseDto> {
     try {
       // Check if job exists
       const existingJob = await this.db.job.findUnique({
@@ -563,25 +583,42 @@ export class JobService {
       const updateData: any = {};
 
       // Only update fields that are provided
-      if (updateJobDto.title !== undefined) updateData.title = updateJobDto.title;
-      if (updateJobDto.description !== undefined) updateData.description = updateJobDto.description;
-      if (updateJobDto.requirements !== undefined) updateData.requirements = updateJobDto.requirements;
-      if (updateJobDto.responsibilities !== undefined) updateData.responsibilities = updateJobDto.responsibilities;
-      if (updateJobDto.benefits !== undefined) updateData.benefits = updateJobDto.benefits;
-      if (updateJobDto.minSalary !== undefined) updateData.minSalary = updateJobDto.minSalary;
-      if (updateJobDto.maxSalary !== undefined) updateData.maxSalary = updateJobDto.maxSalary;
-      if (updateJobDto.currency !== undefined) updateData.currency = updateJobDto.currency;
-      if (updateJobDto.jobType !== undefined) updateData.jobType = updateJobDto.jobType;
-      if (updateJobDto.workMode !== undefined) updateData.workMode = updateJobDto.workMode;
-      if (updateJobDto.experienceLevel !== undefined) updateData.experienceLevel = updateJobDto.experienceLevel;
-      if (updateJobDto.companyId !== undefined) updateData.companyId = updateJobDto.companyId;
-      if (updateJobDto.cityId !== undefined) updateData.cityId = updateJobDto.cityId;
-      if (updateJobDto.skillsRequired !== undefined) updateData.skillsRequired = updateJobDto.skillsRequired;
+      if (updateJobDto.title !== undefined)
+        updateData.title = updateJobDto.title;
+      if (updateJobDto.description !== undefined)
+        updateData.description = updateJobDto.description;
+      if (updateJobDto.requirements !== undefined)
+        updateData.requirements = updateJobDto.requirements;
+      if (updateJobDto.responsibilities !== undefined)
+        updateData.responsibilities = updateJobDto.responsibilities;
+      if (updateJobDto.benefits !== undefined)
+        updateData.benefits = updateJobDto.benefits;
+      if (updateJobDto.minSalary !== undefined)
+        updateData.minSalary = updateJobDto.minSalary;
+      if (updateJobDto.maxSalary !== undefined)
+        updateData.maxSalary = updateJobDto.maxSalary;
+      if (updateJobDto.currency !== undefined)
+        updateData.currency = updateJobDto.currency;
+      if (updateJobDto.jobType !== undefined)
+        updateData.jobType = updateJobDto.jobType;
+      if (updateJobDto.workMode !== undefined)
+        updateData.workMode = updateJobDto.workMode;
+      if (updateJobDto.experienceLevel !== undefined)
+        updateData.experienceLevel = updateJobDto.experienceLevel;
+      if (updateJobDto.companyId !== undefined)
+        updateData.companyId = updateJobDto.companyId;
+      if (updateJobDto.cityId !== undefined)
+        updateData.cityId = updateJobDto.cityId;
+      if (updateJobDto.skillsRequired !== undefined)
+        updateData.skillsRequired = updateJobDto.skillsRequired;
       if (updateJobDto.tags !== undefined) updateData.tags = updateJobDto.tags;
       if (updateJobDto.applicationDeadline !== undefined) {
-        updateData.applicationDeadline = new Date(updateJobDto.applicationDeadline);
+        updateData.applicationDeadline = new Date(
+          updateJobDto.applicationDeadline,
+        );
       }
-      if (updateJobDto.status !== undefined) updateData.status = updateJobDto.status;
+      if (updateJobDto.status !== undefined)
+        updateData.status = updateJobDto.status;
 
       // Update the job
       const updatedJob = await this.db.job.update({
@@ -648,22 +685,24 @@ export class JobService {
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
       company: job.company,
-      location: job.city ? {
-        city: {
-          id: job.city.id,
-          name: job.city.name,
-          state: {
-            id: job.city.state.id,
-            name: job.city.state.name,
-            code: job.city.state.code,
-            country: {
-              id: job.city.state.country.id,
-              name: job.city.state.country.name,
-              code: job.city.state.country.code,
+      location: job.city
+        ? {
+            city: {
+              id: job.city.id,
+              name: job.city.name,
+              state: {
+                id: job.city.state.id,
+                name: job.city.state.name,
+                code: job.city.state.code,
+                country: {
+                  id: job.city.state.country.id,
+                  name: job.city.state.country.name,
+                  code: job.city.state.country.code,
+                },
+              },
             },
-          },
-        },
-      } : null,
+          }
+        : null,
       skillsRequired: job.skillsRequired || [],
       tags: job.tags || [],
     };
@@ -673,7 +712,11 @@ export class JobService {
   // JOB APPLICATIONS
   // =================================================================
 
-  async applyForJob(jobId: string, userId: string, applyDto: ApplyForJobDto): Promise<ApplicationResponseDto> {
+  async applyForJob(
+    jobId: string,
+    userId: string,
+    applyDto: ApplyForJobDto,
+  ): Promise<ApplicationResponseDto> {
     try {
       // Check if job exists and is published
       const job = await this.db.job.findFirst({
@@ -718,7 +761,9 @@ export class JobService {
         });
 
         if (!resume) {
-          throw new BadRequestException('Resume not found or does not belong to you');
+          throw new BadRequestException(
+            'Resume not found or does not belong to you',
+          );
         }
       }
 
@@ -774,7 +819,14 @@ export class JobService {
       });
 
       // Log the application
-      await this.logActivity(userId, LogAction.APPLY, LogLevel.INFO, 'JobApplication', application.id, `Applied for job: ${job.title}`);
+      await this.logActivity(
+        userId,
+        LogAction.APPLY,
+        LogLevel.INFO,
+        'JobApplication',
+        application.id,
+        `Applied for job: ${job.title}`,
+      );
 
       return {
         id: application.id,
@@ -798,32 +850,39 @@ export class JobService {
             name: application.job.company.name,
             logo: application.job.company.logo || undefined,
           },
-          location: application.job.city ? {
-            city: {
-              id: application.job.city.id,
-              name: application.job.city.name,
-              state: {
-                id: application.job.city.state.id,
-                name: application.job.city.state.name,
-                code: application.job.city.state.code || undefined,
-                country: {
-                  id: application.job.city.state.country.id,
-                  name: application.job.city.state.country.name,
-                  code: application.job.city.state.country.code,
+          location: application.job.city
+            ? {
+                city: {
+                  id: application.job.city.id,
+                  name: application.job.city.name,
+                  state: {
+                    id: application.job.city.state.id,
+                    name: application.job.city.state.name,
+                    code: application.job.city.state.code || undefined,
+                    country: {
+                      id: application.job.city.state.country.id,
+                      name: application.job.city.state.country.name,
+                      code: application.job.city.state.country.code,
+                    },
+                  },
                 },
-              },
-            },
-          } : undefined,
+              }
+            : undefined,
         },
-        resume: application.resume ? {
-          id: application.resume.id,
-          title: application.resume.title,
-          fileName: application.resume.fileName,
-          uploadedAt: application.resume.uploadedAt,
-        } : undefined,
+        resume: application.resume
+          ? {
+              id: application.resume.id,
+              title: application.resume.title,
+              fileName: application.resume.fileName,
+              uploadedAt: application.resume.uploadedAt,
+            }
+          : undefined,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);

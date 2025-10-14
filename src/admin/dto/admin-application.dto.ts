@@ -1,4 +1,10 @@
-import { IsString, IsOptional, IsEnum, IsNotEmpty, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsNotEmpty,
+  IsDateString,
+} from 'class-validator';
 import { ApplicationStatus } from '@prisma/client';
 
 // =================================================================
@@ -10,7 +16,7 @@ export class UpdateApplicationStatusDto {
   @IsEnum(ApplicationStatus, { message: 'Invalid application status' })
   status: ApplicationStatus;
 }
- 
+
 export class AddApplicationFeedbackDto {
   @IsNotEmpty({ message: 'Feedback is required' })
   @IsString({ message: 'Feedback must be a string' })
@@ -35,11 +41,17 @@ export class ApplicationQueryDto {
   candidateName?: string;
 
   @IsOptional()
-  @IsDateString({}, { message: 'Applied from date must be a valid date (YYYY-MM-DD)' })
+  @IsDateString(
+    {},
+    { message: 'Applied from date must be a valid date (YYYY-MM-DD)' },
+  )
   appliedFrom?: string;
 
   @IsOptional()
-  @IsDateString({}, { message: 'Applied to date must be a valid date (YYYY-MM-DD)' })
+  @IsDateString(
+    {},
+    { message: 'Applied to date must be a valid date (YYYY-MM-DD)' },
+  )
   appliedTo?: string;
 
   @IsOptional()
@@ -207,11 +219,17 @@ export class BulkExportQueryDto {
   candidateName?: string;
 
   @IsOptional()
-  @IsDateString({}, { message: 'Applied from date must be a valid date (YYYY-MM-DD)' })
+  @IsDateString(
+    {},
+    { message: 'Applied from date must be a valid date (YYYY-MM-DD)' },
+  )
   appliedFrom?: string;
 
   @IsOptional()
-  @IsDateString({}, { message: 'Applied to date must be a valid date (YYYY-MM-DD)' })
+  @IsDateString(
+    {},
+    { message: 'Applied to date must be a valid date (YYYY-MM-DD)' },
+  )
   appliedTo?: string;
 
   @IsOptional()

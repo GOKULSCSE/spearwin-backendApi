@@ -1,46 +1,65 @@
-import { 
-  Controller, 
-  Get, 
-  Put, 
-  Post, 
-  Delete, 
-  Body, 
-  Param, 
+import {
+  Controller,
+  Get,
+  Put,
+  Post,
+  Delete,
+  Body,
+  Param,
   Query,
-  UseGuards, 
-  ValidationPipe, 
-  UploadedFile, 
-  UseInterceptors 
+  UseGuards,
+  ValidationPipe,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Multer } from 'multer';
 import { CandidateService } from './candidate.service';
-import { UpdateCandidateProfileDto, UpdateAvailabilityDto, type CandidateProfileResponseDto } from './dto/candidate-profile.dto';
-import { CreateCandidateSkillDto, UpdateCandidateSkillDto, type CandidateSkillResponseDto } from './dto/candidate-skill.dto';
-import { CreateCandidateEducationDto, UpdateCandidateEducationDto, type CandidateEducationResponseDto } from './dto/candidate-education.dto';
-import { CreateCandidateExperienceDto, UpdateCandidateExperienceDto, type CandidateExperienceResponseDto } from './dto/candidate-experience.dto';
-import { 
-  CreateJobAlertDto, 
-  UpdateJobAlertDto, 
-  JobAlertResponseDto, 
-  RecommendedJobsResponseDto, 
-  JobAlertsResponseDto 
+import {
+  UpdateCandidateProfileDto,
+  UpdateAvailabilityDto,
+  type CandidateProfileResponseDto,
+} from './dto/candidate-profile.dto';
+import {
+  CreateCandidateSkillDto,
+  UpdateCandidateSkillDto,
+  type CandidateSkillResponseDto,
+} from './dto/candidate-skill.dto';
+import {
+  CreateCandidateEducationDto,
+  UpdateCandidateEducationDto,
+  type CandidateEducationResponseDto,
+} from './dto/candidate-education.dto';
+import {
+  CreateCandidateExperienceDto,
+  UpdateCandidateExperienceDto,
+  type CandidateExperienceResponseDto,
+} from './dto/candidate-experience.dto';
+import {
+  CreateJobAlertDto,
+  UpdateJobAlertDto,
+  JobAlertResponseDto,
+  RecommendedJobsResponseDto,
+  JobAlertsResponseDto,
 } from './dto/job-alert.dto';
-import { 
-  ApplyForJobDto, 
-  UpdateApplicationDto, 
-  ApplicationResponseDto, 
-  ApplicationsResponseDto, 
-  ApplicationHistoryQueryDto 
+import {
+  ApplyForJobDto,
+  UpdateApplicationDto,
+  ApplicationResponseDto,
+  ApplicationsResponseDto,
+  ApplicationHistoryQueryDto,
 } from './dto/job-application.dto';
-import { 
-  ResumeParseRequestDto, 
-  ResumeParseResponseDto, 
-  ResumeAnalysisResponseDto, 
-  ResumeOptimizationResponseDto 
+import {
+  ResumeParseRequestDto,
+  ResumeParseResponseDto,
+  ResumeAnalysisResponseDto,
+  ResumeOptimizationResponseDto,
 } from './dto/resume-analysis.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { GetCurrentUser, type CurrentUser } from '../auth/decorators/current-user.decorator';
+import {
+  GetCurrentUser,
+  type CurrentUser,
+} from '../auth/decorators/current-user.decorator';
 
 @Controller('candidate')
 @UseGuards(JwtAuthGuard)
@@ -52,7 +71,9 @@ export class CandidateController {
   // =================================================================
 
   @Get('profile')
-  async getCandidateProfile(@GetCurrentUser() user: CurrentUser): Promise<CandidateProfileResponseDto> {
+  async getCandidateProfile(
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<CandidateProfileResponseDto> {
     return this.candidateService.getCandidateProfile(user.id);
   }
 
@@ -74,7 +95,9 @@ export class CandidateController {
   }
 
   @Delete('profile/picture')
-  async deleteProfilePicture(@GetCurrentUser() user: CurrentUser): Promise<{ message: string }> {
+  async deleteProfilePicture(
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<{ message: string }> {
     return this.candidateService.deleteProfilePicture(user.id);
   }
 
@@ -91,7 +114,9 @@ export class CandidateController {
   // =================================================================
 
   @Get('skills')
-  async getCandidateSkills(@GetCurrentUser() user: CurrentUser): Promise<CandidateSkillResponseDto[]> {
+  async getCandidateSkills(
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<CandidateSkillResponseDto[]> {
     return this.candidateService.getCandidateSkills(user.id);
   }
 
@@ -109,7 +134,11 @@ export class CandidateController {
     @Param('id') skillId: string,
     @Body(ValidationPipe) updateDto: UpdateCandidateSkillDto,
   ): Promise<CandidateSkillResponseDto> {
-    return this.candidateService.updateCandidateSkill(user.id, skillId, updateDto);
+    return this.candidateService.updateCandidateSkill(
+      user.id,
+      skillId,
+      updateDto,
+    );
   }
 
   @Delete('skills/:id')
@@ -125,7 +154,9 @@ export class CandidateController {
   // =================================================================
 
   @Get('education')
-  async getCandidateEducation(@GetCurrentUser() user: CurrentUser): Promise<CandidateEducationResponseDto[]> {
+  async getCandidateEducation(
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<CandidateEducationResponseDto[]> {
     return this.candidateService.getCandidateEducation(user.id);
   }
 
@@ -143,7 +174,11 @@ export class CandidateController {
     @Param('id') educationId: string,
     @Body(ValidationPipe) updateDto: UpdateCandidateEducationDto,
   ): Promise<CandidateEducationResponseDto> {
-    return this.candidateService.updateCandidateEducation(user.id, educationId, updateDto);
+    return this.candidateService.updateCandidateEducation(
+      user.id,
+      educationId,
+      updateDto,
+    );
   }
 
   @Delete('education/:id')
@@ -159,7 +194,9 @@ export class CandidateController {
   // =================================================================
 
   @Get('experience')
-  async getCandidateExperience(@GetCurrentUser() user: CurrentUser): Promise<CandidateExperienceResponseDto[]> {
+  async getCandidateExperience(
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<CandidateExperienceResponseDto[]> {
     return this.candidateService.getCandidateExperience(user.id);
   }
 
@@ -177,7 +214,11 @@ export class CandidateController {
     @Param('id') experienceId: string,
     @Body(ValidationPipe) updateDto: UpdateCandidateExperienceDto,
   ): Promise<CandidateExperienceResponseDto> {
-    return this.candidateService.updateCandidateExperience(user.id, experienceId, updateDto);
+    return this.candidateService.updateCandidateExperience(
+      user.id,
+      experienceId,
+      updateDto,
+    );
   }
 
   @Delete('experience/:id')
@@ -185,7 +226,10 @@ export class CandidateController {
     @GetCurrentUser() user: CurrentUser,
     @Param('id') experienceId: string,
   ): Promise<{ message: string }> {
-    return this.candidateService.deleteCandidateExperience(user.id, experienceId);
+    return this.candidateService.deleteCandidateExperience(
+      user.id,
+      experienceId,
+    );
   }
 
   // =================================================================
@@ -259,7 +303,11 @@ export class CandidateController {
     @Param('id') applicationId: string,
     @Body(ValidationPipe) updateDto: UpdateApplicationDto,
   ): Promise<ApplicationResponseDto> {
-    return this.candidateService.updateApplication(user.id, applicationId, updateDto);
+    return this.candidateService.updateApplication(
+      user.id,
+      applicationId,
+      updateDto,
+    );
   }
 
   // =================================================================
