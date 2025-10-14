@@ -4,6 +4,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CandidateRegisterDto } from './dto/candidate-register.dto';
+import { CandidateRegisterSimpleDto } from './dto/candidate-register-simple.dto';
 import { CompanyRegisterDto } from './dto/company-register.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { VerifyPhoneDto } from './dto/verify-phone.dto';
@@ -17,6 +18,7 @@ export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
     candidateRegister(candidateRegisterDto: CandidateRegisterDto): Promise<import("./dto/auth-response.dto").RegisterResponseDto>;
+    candidateRegisterSimple(candidateRegisterSimpleDto: CandidateRegisterSimpleDto): Promise<import("./dto/auth-response.dto").RegisterResponseDto>;
     companyRegister(companyRegisterDto: CompanyRegisterDto): Promise<import("./dto/auth-response.dto").RegisterResponseDto>;
     login(loginDto: LoginDto): Promise<import("./dto/auth-response.dto").LoginResponseDto>;
     logout(user: CurrentUser): Promise<import("./dto/auth-response.dto").LogoutResponseDto>;
