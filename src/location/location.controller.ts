@@ -1,24 +1,44 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Put, 
-  Delete, 
-  Body, 
-  Param, 
-  Query, 
-  UseGuards, 
-  ValidationPipe 
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  ValidationPipe,
 } from '@nestjs/common';
 import { LocationService } from './location.service';
-import { CreateCountryDto, UpdateCountryDto, type CountryResponseDto } from './dto/country.dto';
-import { CreateStateDto, UpdateStateDto, type StateResponseDto } from './dto/state.dto';
-import { CreateCityDto, UpdateCityDto, type CityResponseDto, CitySearchQueryDto } from './dto/city.dto';
-import { CreatePincodeDto, UpdatePincodeDto, type PincodeResponseDto } from './dto/pincode.dto';
+import {
+  CreateCountryDto,
+  UpdateCountryDto,
+  type CountryResponseDto,
+} from './dto/country.dto';
+import {
+  CreateStateDto,
+  UpdateStateDto,
+  type StateResponseDto,
+} from './dto/state.dto';
+import {
+  CreateCityDto,
+  UpdateCityDto,
+  type CityResponseDto,
+  CitySearchQueryDto,
+} from './dto/city.dto';
+import {
+  CreatePincodeDto,
+  UpdatePincodeDto,
+  type PincodeResponseDto,
+} from './dto/pincode.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminRoleGuard } from '../company/guards/admin-role.guard';
 import { SuperAdminRoleGuard } from '../company/guards/super-admin-role.guard';
-import { GetCurrentUser, type CurrentUser } from '../auth/decorators/current-user.decorator';
+import {
+  GetCurrentUser,
+  type CurrentUser,
+} from '../auth/decorators/current-user.decorator';
 
 @Controller('locations')
 @UseGuards(JwtAuthGuard)
@@ -35,7 +55,9 @@ export class LocationController {
   }
 
   @Get('countries/:id')
-  async getCountryById(@Param('id') countryId: string): Promise<CountryResponseDto> {
+  async getCountryById(
+    @Param('id') countryId: string,
+  ): Promise<CountryResponseDto> {
     return this.locationService.getCountryById(countryId);
   }
 
@@ -72,7 +94,9 @@ export class LocationController {
   // =================================================================
 
   @Get('countries/:countryId/states')
-  async getStatesByCountry(@Param('countryId') countryId: string): Promise<StateResponseDto[]> {
+  async getStatesByCountry(
+    @Param('countryId') countryId: string,
+  ): Promise<StateResponseDto[]> {
     return this.locationService.getStatesByCountry(countryId);
   }
 
@@ -114,7 +138,9 @@ export class LocationController {
   // =================================================================
 
   @Get('states/:stateId/cities')
-  async getCitiesByState(@Param('stateId') stateId: string): Promise<CityResponseDto[]> {
+  async getCitiesByState(
+    @Param('stateId') stateId: string,
+  ): Promise<CityResponseDto[]> {
     return this.locationService.getCitiesByState(stateId);
   }
 
@@ -163,12 +189,16 @@ export class LocationController {
   // =================================================================
 
   @Get('cities/:cityId/pincodes')
-  async getPincodesByCity(@Param('cityId') cityId: string): Promise<PincodeResponseDto[]> {
+  async getPincodesByCity(
+    @Param('cityId') cityId: string,
+  ): Promise<PincodeResponseDto[]> {
     return this.locationService.getPincodesByCity(cityId);
   }
 
   @Get('pincodes/:id')
-  async getPincodeById(@Param('id') pincodeId: string): Promise<PincodeResponseDto> {
+  async getPincodeById(
+    @Param('id') pincodeId: string,
+  ): Promise<PincodeResponseDto> {
     return this.locationService.getPincodeById(pincodeId);
   }
 

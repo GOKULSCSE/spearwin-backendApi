@@ -29,7 +29,6 @@ class CandidateRegisterDto {
     githubUrl;
     portfolioUrl;
     cityId;
-    cityName;
     isAvailable;
 }
 exports.CandidateRegisterDto = CandidateRegisterDto;
@@ -117,11 +116,6 @@ __decorate([
     (0, class_validator_1.IsString)({ message: 'City ID must be a string' }),
     __metadata("design:type", String)
 ], CandidateRegisterDto.prototype, "cityId", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'City name must be a string' }),
-    __metadata("design:type", String)
-], CandidateRegisterDto.prototype, "cityName", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsBoolean)({ message: 'Is available must be a boolean' }),
