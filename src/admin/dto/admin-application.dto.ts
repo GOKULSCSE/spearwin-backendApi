@@ -10,7 +10,7 @@ export class UpdateApplicationStatusDto {
   @IsEnum(ApplicationStatus, { message: 'Invalid application status' })
   status: ApplicationStatus;
 }
-
+ 
 export class AddApplicationFeedbackDto {
   @IsNotEmpty({ message: 'Feedback is required' })
   @IsString({ message: 'Feedback must be a string' })
