@@ -59,6 +59,7 @@ let AuthService = class AuthService {
         this.jwtService = jwtService;
     }
     async login(loginDto) {
+        console.log('loginDto ascgaskcja.cjgacha', loginDto);
         const user = await this.prisma.user.findUnique({
             where: { email: loginDto.email },
             include: {
@@ -209,8 +210,12 @@ let AuthService = class AuthService {
                 role: user.role,
                 status: user.status,
             };
-            const accessToken = this.jwtService.sign(newPayload, { expiresIn: '15m' });
-            const newRefreshToken = this.jwtService.sign(newPayload, { expiresIn: '7d' });
+            const accessToken = this.jwtService.sign(newPayload, {
+                expiresIn: '15m',
+            });
+            const newRefreshToken = this.jwtService.sign(newPayload, {
+                expiresIn: '7d',
+            });
             return {
                 success: true,
                 message: 'Token refreshed successfully',
@@ -331,6 +336,7 @@ let AuthService = class AuthService {
     }
     async candidateRegister(candidateRegisterDto) {
         try {
+            console.log('candidateRegisterDto ', candidateRegisterDto);
             const existingUser = await this.prisma.user.findUnique({
                 where: { email: candidateRegisterDto.email },
             });
@@ -345,21 +351,16 @@ let AuthService = class AuthService {
                     throw new common_1.BadRequestException('User with this phone number already exists');
                 }
             }
-            let cityId = candidateRegisterDto.cityId;
-            if (candidateRegisterDto.cityName && !cityId) {
-                const city = await this.prisma.city.findFirst({
-                    where: {
-                        name: {
-                            contains: candidateRegisterDto.cityName,
-                            mode: 'insensitive',
-                        },
-                        isActive: true,
-                    },
+            if (candidateRegisterDto.cityId) {
+                const city = await this.prisma.city.findUnique({
+                    where: { id: candidateRegisterDto.cityId },
                 });
                 if (!city) {
-                    throw new common_1.BadRequestException(`City '${candidateRegisterDto.cityName}' not found`);
+                    throw new common_1.BadRequestException('Invalid city ID provided');
                 }
-                cityId = city.id;
+                if (!city.isActive) {
+                    throw new common_1.BadRequestException('The selected city is not active');
+                }
             }
             const hashedPassword = await bcrypt.hash(candidateRegisterDto.password, 10);
             const result = await this.prisma.$transaction(async (prisma) => {
@@ -381,7 +382,9 @@ let AuthService = class AuthService {
                         userId: user.id,
                         firstName: candidateRegisterDto.firstName,
                         lastName: candidateRegisterDto.lastName,
-                        dateOfBirth: candidateRegisterDto.dateOfBirth ? new Date(candidateRegisterDto.dateOfBirth) : null,
+                        dateOfBirth: candidateRegisterDto.dateOfBirth
+                            ? new Date(candidateRegisterDto.dateOfBirth)
+                            : null,
                         gender: candidateRegisterDto.gender,
                         bio: candidateRegisterDto.bio,
                         currentTitle: candidateRegisterDto.currentTitle,
@@ -389,7 +392,7 @@ let AuthService = class AuthService {
                         linkedinUrl: candidateRegisterDto.linkedinUrl,
                         githubUrl: candidateRegisterDto.githubUrl,
                         portfolioUrl: candidateRegisterDto.portfolioUrl,
-                        cityId: cityId,
+                        cityId: candidateRegisterDto.cityId,
                         isAvailable: candidateRegisterDto.isAvailable ?? true,
                     },
                 });
@@ -442,6 +445,7 @@ let AuthService = class AuthService {
             };
         }
         catch (error) {
+            console.log('actual error', error);
             if (error instanceof common_1.BadRequestException) {
                 throw error;
             }
@@ -456,11 +460,24 @@ let AuthService = class AuthService {
             if (existingUser) {
                 throw new common_1.BadRequestException('User with this email already exists');
             }
+            if (companyRegisterDto.cityId) {
+                const city = await this.prisma.city.findUnique({
+                    where: { id: companyRegisterDto.cityId },
+                });
+                if (!city) {
+                    throw new common_1.BadRequestException('Invalid city ID provided');
+                }
+                if (!city.isActive) {
+                    throw new common_1.BadRequestException('The selected city is not active');
+                }
+            }
             const hashedPassword = await bcrypt.hash(companyRegisterDto.password, 10);
             const slug = companyRegisterDto.name
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
-                .replace(/(^-|-$)/g, '') + '-' + Date.now();
+                .replace(/(^-|-$)/g, '') +
+                '-' +
+                Date.now();
             const result = await this.prisma.$transaction(async (prisma) => {
                 const user = await prisma.user.create({
                     data: {
@@ -752,12 +769,22 @@ let AuthService = class AuthService {
                 await prisma.userSetting.upsert({
                     where: { userId_key: { userId, key: '2fa_secret' } },
                     update: { value: secret.base32 },
-                    create: { userId, key: '2fa_secret', value: secret.base32, category: 'security' },
+                    create: {
+                        userId,
+                        key: '2fa_secret',
+                        value: secret.base32,
+                        category: 'security',
+                    },
                 });
                 await prisma.userSetting.upsert({
                     where: { userId_key: { userId, key: '2fa_backup_codes' } },
                     update: { value: JSON.stringify(backupCodes) },
-                    create: { userId, key: '2fa_backup_codes', value: JSON.stringify(backupCodes), category: 'security' },
+                    create: {
+                        userId,
+                        key: '2fa_backup_codes',
+                        value: JSON.stringify(backupCodes),
+                        category: 'security',
+                    },
                 });
             });
             await this.prisma.activityLog.create({
@@ -852,7 +879,7 @@ let AuthService = class AuthService {
             if (!user.twoFactorEnabled) {
                 throw new common_1.BadRequestException('2FA is not enabled');
             }
-            const secretSetting = user.settings.find(s => s.key === '2fa_secret');
+            const secretSetting = user.settings.find((s) => s.key === '2fa_secret');
             if (!secretSetting) {
                 throw new common_1.BadRequestException('2FA secret not found');
             }
@@ -864,7 +891,12 @@ let AuthService = class AuthService {
             });
             if (!verified) {
                 const backupCodesSetting = await this.prisma.userSetting.findUnique({
-                    where: { userId_key: { userId: verify2FaDto.userId, key: '2fa_backup_codes' } },
+                    where: {
+                        userId_key: {
+                            userId: verify2FaDto.userId,
+                            key: '2fa_backup_codes',
+                        },
+                    },
                 });
                 if (backupCodesSetting) {
                     const backupCodes = JSON.parse(backupCodesSetting.value);
@@ -872,7 +904,12 @@ let AuthService = class AuthService {
                     if (codeIndex !== -1) {
                         backupCodes.splice(codeIndex, 1);
                         await this.prisma.userSetting.update({
-                            where: { userId_key: { userId: verify2FaDto.userId, key: '2fa_backup_codes' } },
+                            where: {
+                                userId_key: {
+                                    userId: verify2FaDto.userId,
+                                    key: '2fa_backup_codes',
+                                },
+                            },
                             data: { value: JSON.stringify(backupCodes) },
                         });
                         await this.prisma.activityLog.create({
@@ -932,13 +969,18 @@ let AuthService = class AuthService {
             }
             const backupCodes = Array.from({ length: 10 }, () => Math.random().toString(36).substring(2, 8).toUpperCase());
             await this.prisma.userSetting.upsert({
-                where: { userId_key: { userId: generateBackupCodesDto.userId, key: '2fa_backup_codes' } },
+                where: {
+                    userId_key: {
+                        userId: generateBackupCodesDto.userId,
+                        key: '2fa_backup_codes',
+                    },
+                },
                 update: { value: JSON.stringify(backupCodes) },
                 create: {
                     userId: generateBackupCodesDto.userId,
                     key: '2fa_backup_codes',
                     value: JSON.stringify(backupCodes),
-                    category: 'security'
+                    category: 'security',
                 },
             });
             await this.prisma.activityLog.create({

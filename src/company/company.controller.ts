@@ -1,14 +1,14 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Put, 
-  Delete, 
-  Body, 
-  Param, 
-  Query, 
-  UseGuards, 
-  ValidationPipe 
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  ValidationPipe,
 } from '@nestjs/common';
 import { CompanyService } from './company.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
@@ -16,11 +16,18 @@ import { UpdateCompanyDto } from './dto/update-company.dto';
 import { CompanyQueryDto } from './dto/company-query.dto';
 import { VerifyCompanyDto } from './dto/verify-company.dto';
 import { UpdateCompanyStatusDto } from './dto/update-company-status.dto';
-import type { CompanyResponseDto, CompanyListResponseDto, CompanyStatsResponseDto } from './dto/company-response.dto';
+import type {
+  CompanyResponseDto,
+  CompanyListResponseDto,
+  CompanyStatsResponseDto,
+} from './dto/company-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminRoleGuard } from './guards/admin-role.guard';
 import { SuperAdminRoleGuard } from './guards/super-admin-role.guard';
-import { GetCurrentUser, type CurrentUser } from '../auth/decorators/current-user.decorator';
+import {
+  GetCurrentUser,
+  type CurrentUser,
+} from '../auth/decorators/current-user.decorator';
 
 @Controller('companies')
 @UseGuards(JwtAuthGuard)
@@ -39,7 +46,9 @@ export class CompanyController {
   }
 
   @Get(':id')
-  async getCompanyById(@Param('id') companyId: string): Promise<CompanyResponseDto> {
+  async getCompanyById(
+    @Param('id') companyId: string,
+  ): Promise<CompanyResponseDto> {
     return this.companyService.getCompanyById(companyId);
   }
 
@@ -88,7 +97,11 @@ export class CompanyController {
     @GetCurrentUser() user: CurrentUser,
     @Body(ValidationPipe) statusDto: UpdateCompanyStatusDto,
   ): Promise<{ message: string }> {
-    return this.companyService.updateCompanyStatus(companyId, statusDto, user.id);
+    return this.companyService.updateCompanyStatus(
+      companyId,
+      statusDto,
+      user.id,
+    );
   }
 
   @Get(':id/jobs')
@@ -101,7 +114,9 @@ export class CompanyController {
   }
 
   @Get(':id/stats')
-  async getCompanyStats(@Param('id') companyId: string): Promise<CompanyStatsResponseDto> {
+  async getCompanyStats(
+    @Param('id') companyId: string,
+  ): Promise<CompanyStatsResponseDto> {
     return this.companyService.getCompanyStats(companyId);
   }
 }
