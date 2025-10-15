@@ -120,15 +120,25 @@ let CandidateService = class CandidateService {
                 userId: candidate.userId,
                 firstName: candidate.firstName,
                 lastName: candidate.lastName,
+                fatherName: candidate.fatherName || undefined,
                 dateOfBirth: candidate.dateOfBirth || undefined,
                 gender: candidate.gender || undefined,
+                maritalStatus: candidate.maritalStatus || undefined,
                 profilePicture: candidate.profilePicture || undefined,
                 bio: candidate.bio || undefined,
                 currentTitle: candidate.currentTitle || undefined,
-                experienceYears: candidate.experienceYears || undefined,
+                currentCompany: candidate.currentCompany || undefined,
+                currentLocation: candidate.currentLocation || undefined,
+                preferredLocation: candidate.preferredLocation || undefined,
+                noticePeriod: candidate.noticePeriod || undefined,
+                currentSalary: candidate.currentSalary
+                    ? Number(candidate.currentSalary)
+                    : undefined,
                 expectedSalary: candidate.expectedSalary
                     ? Number(candidate.expectedSalary)
                     : undefined,
+                profileType: candidate.profileType || undefined,
+                experienceYears: candidate.experienceYears || undefined,
                 address: candidate.address || undefined,
                 linkedinUrl: candidate.linkedinUrl || undefined,
                 githubUrl: candidate.githubUrl || undefined,
@@ -136,6 +146,8 @@ let CandidateService = class CandidateService {
                 isAvailable: candidate.isAvailable,
                 createdAt: candidate.createdAt,
                 updatedAt: candidate.updatedAt,
+                user: candidate.user,
+                city: candidate.city,
             };
         }
         catch (error) {
@@ -880,15 +892,25 @@ let CandidateService = class CandidateService {
                 userId: updatedCandidate.userId,
                 firstName: updatedCandidate.firstName,
                 lastName: updatedCandidate.lastName,
+                fatherName: updatedCandidate.fatherName || undefined,
                 dateOfBirth: updatedCandidate.dateOfBirth || undefined,
                 gender: updatedCandidate.gender || undefined,
+                maritalStatus: updatedCandidate.maritalStatus || undefined,
                 profilePicture: updatedCandidate.profilePicture || undefined,
                 bio: updatedCandidate.bio || undefined,
                 currentTitle: updatedCandidate.currentTitle || undefined,
-                experienceYears: updatedCandidate.experienceYears || undefined,
+                currentCompany: updatedCandidate.currentCompany || undefined,
+                currentLocation: updatedCandidate.currentLocation || undefined,
+                preferredLocation: updatedCandidate.preferredLocation || undefined,
+                noticePeriod: updatedCandidate.noticePeriod || undefined,
+                currentSalary: updatedCandidate.currentSalary
+                    ? Number(updatedCandidate.currentSalary)
+                    : undefined,
                 expectedSalary: updatedCandidate.expectedSalary
                     ? Number(updatedCandidate.expectedSalary)
                     : undefined,
+                profileType: updatedCandidate.profileType || undefined,
+                experienceYears: updatedCandidate.experienceYears || undefined,
                 address: updatedCandidate.address || undefined,
                 linkedinUrl: updatedCandidate.linkedinUrl || undefined,
                 githubUrl: updatedCandidate.githubUrl || undefined,
@@ -896,6 +918,8 @@ let CandidateService = class CandidateService {
                 isAvailable: updatedCandidate.isAvailable,
                 createdAt: updatedCandidate.createdAt,
                 updatedAt: updatedCandidate.updatedAt,
+                user: updatedCandidate.user,
+                city: updatedCandidate.city,
             };
         }
         catch (error) {

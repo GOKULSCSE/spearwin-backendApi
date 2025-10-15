@@ -4,13 +4,32 @@ import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: true });
+  const app = await NestFactory.create(AppModule);
 
-  // Enable CORS
-  app.enableCors(true);
+  // Enhanced CORS configuration
+  app.enableCors({
+    origin: [
+      'http://localhost:3000',  // Your frontend URL
+      'http://localhost:3001',  // Alternative frontend port
+      'http://127.0.0.1:3000', // Alternative localhost format
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+    ],
+    credentials: true, // Important for cookies/auth
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  });
 
-  // Security middleware
-  app.use(helmet());
+  // Security middleware with CORS-friendly settings
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+  }));
 
   // Global validation pipe
   app.useGlobalPipes(

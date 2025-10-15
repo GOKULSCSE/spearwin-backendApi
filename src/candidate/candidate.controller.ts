@@ -66,6 +66,7 @@ import {
 export class CandidateController {
   constructor(private readonly candidateService: CandidateService) {}
 
+
   // =================================================================
   // CANDIDATE PROFILE MANAGEMENT
   // =================================================================

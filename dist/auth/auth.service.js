@@ -263,6 +263,11 @@ let AuthService = class AuthService {
         return {
             success: true,
             message: 'If an account with that email exists, a password reset link has been sent.',
+            data: {
+                email: forgotPasswordDto.email,
+                resetToken: resetToken,
+                expiresAt: expiresAt,
+            },
         };
     }
     async validateUserById(userId) {
