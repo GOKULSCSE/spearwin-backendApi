@@ -41,7 +41,7 @@ import {
 } from '../auth/decorators/current-user.decorator';
 
 @Controller('locations')
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 export class LocationController {
   constructor(private readonly locationService: LocationService) {}
 
@@ -62,7 +62,7 @@ export class LocationController {
   }
 
   @Post('countries')
-  @UseGuards(AdminRoleGuard)
+  // @UseGuards(AdminRoleGuard)
   async createCountry(
     @GetCurrentUser() user: CurrentUser,
     @Body(ValidationPipe) createDto: CreateCountryDto,

@@ -239,7 +239,6 @@ __decorate([
 ], AdminController.prototype, "updateAdminStatus", null);
 __decorate([
     (0, common_1.Get)('jobs'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, common_1.Query)(common_1.ValidationPipe)),
     __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
     __metadata("design:type", Function),
@@ -248,7 +247,6 @@ __decorate([
 ], AdminController.prototype, "getAllJobs", null);
 __decorate([
     (0, common_1.Post)('jobs'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
     __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
     __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
@@ -258,7 +256,6 @@ __decorate([
 ], AdminController.prototype, "createJob", null);
 __decorate([
     (0, common_1.Get)('jobs/:id'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
     __metadata("design:type", Function),
@@ -267,7 +264,6 @@ __decorate([
 ], AdminController.prototype, "getJobById", null);
 __decorate([
     (0, common_1.Put)('jobs/:id'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
     __param(2, (0, current_user_decorator_1.GetCurrentUser)()),
@@ -277,7 +273,6 @@ __decorate([
 ], AdminController.prototype, "updateJob", null);
 __decorate([
     (0, common_1.Delete)('jobs/:id'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
@@ -287,7 +282,6 @@ __decorate([
 ], AdminController.prototype, "deleteJob", null);
 __decorate([
     (0, common_1.Put)('jobs/:id/publish'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
     __metadata("design:type", Function),
@@ -296,7 +290,6 @@ __decorate([
 ], AdminController.prototype, "publishJob", null);
 __decorate([
     (0, common_1.Put)('jobs/:id/close'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
     __metadata("design:type", Function),
@@ -305,7 +298,6 @@ __decorate([
 ], AdminController.prototype, "closeJob", null);
 __decorate([
     (0, common_1.Put)('jobs/:id/archive'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
     __metadata("design:type", Function),
@@ -314,7 +306,6 @@ __decorate([
 ], AdminController.prototype, "archiveJob", null);
 __decorate([
     (0, common_1.Get)('jobs/:id/applications'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Query)(common_1.ValidationPipe)),
     __param(2, (0, current_user_decorator_1.GetCurrentUser)()),
@@ -324,7 +315,6 @@ __decorate([
 ], AdminController.prototype, "getJobApplications", null);
 __decorate([
     (0, common_1.Get)('jobs/:id/stats'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
     __metadata("design:type", Function),

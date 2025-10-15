@@ -163,7 +163,7 @@ export class AdminController {
   // =================================================================
 
   @Get('jobs')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   async getAllJobs(
     @Query(ValidationPipe) query: JobListQueryDto,
     @GetCurrentUser() user: CurrentUser,
@@ -172,7 +172,7 @@ export class AdminController {
   }
 
   @Post('jobs')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async createJob(
     @Body(ValidationPipe) createJobDto: CreateJobDto,
@@ -182,7 +182,7 @@ export class AdminController {
   }
 
   @Get('jobs/:id')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   async getJobById(
     @Param('id') jobId: string,
     @GetCurrentUser() user: CurrentUser,
@@ -191,7 +191,7 @@ export class AdminController {
   }
 
   @Put('jobs/:id')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   async updateJob(
     @Param('id') jobId: string,
     @Body(ValidationPipe) updateJobDto: UpdateJobDto,
@@ -201,7 +201,7 @@ export class AdminController {
   }
 
   @Delete('jobs/:id')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteJob(
     @Param('id') jobId: string,
@@ -211,7 +211,7 @@ export class AdminController {
   }
 
   @Put('jobs/:id/publish')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   async publishJob(
     @Param('id') jobId: string,
     @GetCurrentUser() user: CurrentUser,
@@ -220,7 +220,7 @@ export class AdminController {
   }
 
   @Put('jobs/:id/close')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   async closeJob(
     @Param('id') jobId: string,
     @GetCurrentUser() user: CurrentUser,
@@ -229,7 +229,7 @@ export class AdminController {
   }
 
   @Put('jobs/:id/archive')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   async archiveJob(
     @Param('id') jobId: string,
     @GetCurrentUser() user: CurrentUser,
@@ -238,7 +238,7 @@ export class AdminController {
   }
 
   @Get('jobs/:id/applications')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   async getJobApplications(
     @Param('id') jobId: string,
     @Query(ValidationPipe) query: any,
@@ -248,7 +248,7 @@ export class AdminController {
   }
 
   @Get('jobs/:id/stats')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   async getJobStats(
     @Param('id') jobId: string,
     @GetCurrentUser() user: CurrentUser,

@@ -19,7 +19,6 @@ const country_dto_1 = require("./dto/country.dto");
 const state_dto_1 = require("./dto/state.dto");
 const city_dto_1 = require("./dto/city.dto");
 const pincode_dto_1 = require("./dto/pincode.dto");
-const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const admin_role_guard_1 = require("../company/guards/admin-role.guard");
 const super_admin_role_guard_1 = require("../company/guards/super-admin-role.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
@@ -108,7 +107,6 @@ __decorate([
 ], LocationController.prototype, "getCountryById", null);
 __decorate([
     (0, common_1.Post)('countries'),
-    (0, common_1.UseGuards)(admin_role_guard_1.AdminRoleGuard),
     __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
     __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
     __metadata("design:type", Function),
@@ -269,7 +267,6 @@ __decorate([
 ], LocationController.prototype, "deletePincode", null);
 exports.LocationController = LocationController = __decorate([
     (0, common_1.Controller)('locations'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [location_service_1.LocationService])
 ], LocationController);
 //# sourceMappingURL=location.controller.js.map

@@ -9,9 +9,7 @@ async function bootstrap() {
   // Enhanced CORS configuration
   app.enableCors({
     origin: [
-      'http://localhost:3000',  // Your frontend URL
-      'http://localhost:3001',  // Alternative frontend port
-      'http://127.0.0.1:3000', // Alternative localhost format
+      'http://localhost:3001'  // Alternative frontend port
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
