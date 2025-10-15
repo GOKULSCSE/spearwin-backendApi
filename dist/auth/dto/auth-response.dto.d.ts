@@ -37,6 +37,11 @@ export declare class RefreshResponseDto {
 export declare class ForgotPasswordResponseDto {
     success: boolean;
     message: string;
+    data?: {
+        email: string;
+        resetToken: string;
+        expiresAt: Date;
+    };
 }
 export declare class ResetPasswordResponseDto {
     success: boolean;

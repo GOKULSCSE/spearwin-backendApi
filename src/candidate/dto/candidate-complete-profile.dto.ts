@@ -5,13 +5,21 @@ import {
   IsBoolean,
   IsNumber,
   IsUrl,
+  IsEmail,
   Min,
   Max,
   IsEnum,
+  IsPhoneNumber,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
-export class UpdateCandidateProfileDto {
+export class UpdateCandidateCompleteProfileDto {
+  // Account Information
+  @IsOptional()
+  @IsEmail({}, { message: 'Please provide a valid email address' })
+  email?: string;
+
+  // Personal Information
   @IsOptional()
   @IsString({ message: 'First name must be a string' })
   @Transform(({ value }) => value?.trim())
@@ -28,8 +36,8 @@ export class UpdateCandidateProfileDto {
   fatherName?: string;
 
   @IsOptional()
-  @IsDateString({}, { message: 'Date of birth must be a valid date' })
-  dateOfBirth?: string;
+  @IsPhoneNumber('IN', { message: 'Please provide a valid phone number' })
+  phone?: string;
 
   @IsOptional()
   @IsString({ message: 'Gender must be a string' })
@@ -40,12 +48,13 @@ export class UpdateCandidateProfileDto {
   maritalStatus?: string;
 
   @IsOptional()
-  @IsString({ message: 'Bio must be a string' })
-  bio?: string;
+  @IsDateString({}, { message: 'Date of birth must be a valid date' })
+  dateOfBirth?: string;
 
+  // Career Information
   @IsOptional()
-  @IsString({ message: 'Current title must be a string' })
-  currentTitle?: string;
+  @IsString({ message: 'Job experience must be a string' })
+  jobExperience?: string;
 
   @IsOptional()
   @IsString({ message: 'Current company must be a string' })
@@ -80,20 +89,30 @@ export class UpdateCandidateProfileDto {
   @IsString({ message: 'Profile type must be a string' })
   profileType?: string;
 
+  // Additional Information
   @IsOptional()
-  @IsNumber({}, { message: 'Experience years must be a number' })
-  @Min(0, { message: 'Experience years must be at least 0' })
-  @Max(50, { message: 'Experience years must not exceed 50' })
-  experienceYears?: number;
+  @IsString({ message: 'Country must be a string' })
+  country?: string;
 
   @IsOptional()
-  @IsString({ message: 'City ID must be a string' })
-  cityId?: string;
+  @IsString({ message: 'State must be a string' })
+  state?: string;
 
   @IsOptional()
-  @IsString({ message: 'Address must be a string' })
+  @IsString({ message: 'City must be a string' })
+  city?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Street address must be a string' })
+  @Transform(({ value }) => value?.trim())
   address?: string;
 
+  @IsOptional()
+  @IsString({ message: 'Profile summary must be a string' })
+  @Transform(({ value }) => value?.trim())
+  bio?: string;
+
+  // Professional URLs
   @IsOptional()
   @IsUrl({}, { message: 'LinkedIn URL must be a valid URL' })
   linkedinUrl?: string;
@@ -105,14 +124,14 @@ export class UpdateCandidateProfileDto {
   @IsOptional()
   @IsUrl({}, { message: 'Portfolio URL must be a valid URL' })
   portfolioUrl?: string;
+
+  // Profile Picture
+  @IsOptional()
+  @IsString({ message: 'Profile picture must be a string' })
+  profilePicture?: string;
 }
 
-export class UpdateAvailabilityDto {
-  @IsBoolean({ message: 'Is available must be a boolean value' })
-  isAvailable: boolean;
-}
-
-export class CandidateProfileResponseDto {
+export class CandidateCompleteProfileResponseDto {
   id: string;
   userId: string;
   firstName: string;
@@ -156,4 +175,43 @@ export class CandidateProfileResponseDto {
       };
     };
   } | null;
+  skills?: Array<{
+    id: string;
+    skillName: string;
+    level?: string;
+    yearsUsed?: number;
+  }>;
+  education?: Array<{
+    id: string;
+    institution: string;
+    degree: string;
+    fieldOfStudy?: string;
+    level: string;
+    startDate: Date;
+    endDate?: Date;
+    isCompleted: boolean;
+    grade?: string;
+    description?: string;
+  }>;
+  experience?: Array<{
+    id: string;
+    company: string;
+    position: string;
+    description?: string;
+    startDate: Date;
+    endDate?: Date;
+    isCurrent: boolean;
+    location?: string;
+    achievements?: string;
+  }>;
+  resumes?: Array<{
+    id: string;
+    title: string;
+    fileName: string;
+    filePath: string;
+    fileSize: number;
+    mimeType: string;
+    isDefault: boolean;
+    uploadedAt: Date;
+  }>;
 }

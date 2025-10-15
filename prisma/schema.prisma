@@ -216,13 +216,21 @@ model Candidate {
   userId          String            @unique
   firstName       String
   lastName        String
+  fatherName      String?
   dateOfBirth     DateTime?
   gender          String?
+  maritalStatus   String?
   profilePicture  String?
   bio             String?
   currentTitle    String?
-  experienceYears Int?
+  currentCompany  String?
+  currentLocation String?
+  preferredLocation String?
+  noticePeriod    String?
+  currentSalary   Decimal?
   expectedSalary  Decimal?
+  profileType     String? // FRESHER, EXPERIENCED
+  experienceYears Int?
   cityId          String?
   address         String?
   linkedinUrl     String?
