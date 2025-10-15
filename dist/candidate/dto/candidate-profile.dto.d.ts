@@ -1,12 +1,20 @@
 export declare class UpdateCandidateProfileDto {
     firstName?: string;
     lastName?: string;
+    fatherName?: string;
     dateOfBirth?: string;
     gender?: string;
+    maritalStatus?: string;
     bio?: string;
     currentTitle?: string;
-    experienceYears?: number;
+    currentCompany?: string;
+    currentLocation?: string;
+    preferredLocation?: string;
+    noticePeriod?: string;
+    currentSalary?: number;
     expectedSalary?: number;
+    profileType?: string;
+    experienceYears?: number;
     cityId?: string;
     address?: string;
     linkedinUrl?: string;
@@ -21,13 +29,21 @@ export declare class CandidateProfileResponseDto {
     userId: string;
     firstName: string;
     lastName: string;
+    fatherName?: string;
     dateOfBirth?: Date;
     gender?: string;
+    maritalStatus?: string;
     profilePicture?: string;
     bio?: string;
     currentTitle?: string;
-    experienceYears?: number;
+    currentCompany?: string;
+    currentLocation?: string;
+    preferredLocation?: string;
+    noticePeriod?: string;
+    currentSalary?: number;
     expectedSalary?: number;
+    profileType?: string;
+    experienceYears?: number;
     address?: string;
     linkedinUrl?: string;
     githubUrl?: string;
@@ -35,6 +51,10 @@ export declare class CandidateProfileResponseDto {
     isAvailable: boolean;
     createdAt: Date;
     updatedAt: Date;
+    user?: {
+        email: string;
+        phone?: string | null;
+    };
     city?: {
         id: string;
         name: string;
@@ -47,5 +67,5 @@ export declare class CandidateProfileResponseDto {
                 code: string;
             };
         };
-    };
+    } | null;
 }

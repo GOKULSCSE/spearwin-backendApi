@@ -38,8 +38,8 @@ export class AuthController {
 
   @Post('register/candidate/simple')
   @HttpCode(HttpStatus.CREATED)
-  async candidateRegisterSimple(@Body() candidateRegisterSimpleDto: CandidateRegisterSimpleDto) {
-    return this.authService.candidateRegisterSimple(candidateRegisterSimpleDto);
+  async candidateSimpleRegister(@Body() candidateSimpleRegisterDto: CandidateSimpleRegisterDto) {
+    return this.authService.candidateSimpleRegister(candidateSimpleRegisterDto);
   }
 
   @Post('register/company')
