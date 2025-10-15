@@ -17,6 +17,16 @@ import {
   ApplyForJobDto,
   ApplicationResponseDto,
 } from '../candidate/dto/job-application.dto';
+import {
+  CreateJobAttributeDto,
+  UpdateJobAttributeDto,
+  JobAttributeQueryDto,
+  JobAttributeResponseDto,
+  JobAttributeListResponseDto,
+  JobAttributeCategoriesResponseDto,
+  BulkCreateJobAttributesDto,
+} from './dto/job-attribute.dto';
+import { JobAttributeCategory } from '@prisma/client';
 import { Prisma, LogAction, LogLevel } from '@prisma/client';
 
 @Injectable()
@@ -923,5 +933,337 @@ export class JobService {
 
   private handleException(error: any): void {
     throw new InternalServerErrorException("Can't process job request");
+  }
+
+  // =================================================================
+  // JOB ATTRIBUTES MANAGEMENT
+  // =================================================================
+
+  async createJobAttribute(
+    createJobAttributeDto: CreateJobAttributeDto,
+  ): Promise<JobAttributeResponseDto> {
+    try {
+      // Check if attribute with same name and category already exists
+      const existingAttribute = await this.db.jobAttribute.findFirst({
+        where: {
+          name: createJobAttributeDto.name,
+          category: createJobAttributeDto.category,
+        },
+      });
+
+      if (existingAttribute) {
+        throw new BadRequestException(
+          `Job attribute with name "${createJobAttributeDto.name}" already exists in category "${createJobAttributeDto.category}"`,
+        );
+      }
+
+      const jobAttribute = await this.db.jobAttribute.create({
+        data: {
+          name: createJobAttributeDto.name,
+          category: createJobAttributeDto.category,
+          description: createJobAttributeDto.description,
+          isActive: createJobAttributeDto.isActive ?? true,
+          sortOrder: createJobAttributeDto.sortOrder ?? 0,
+        },
+      });
+
+      return {
+        id: jobAttribute.id,
+        name: jobAttribute.name,
+        category: jobAttribute.category as any,
+        description: jobAttribute.description,
+        isActive: jobAttribute.isActive,
+        sortOrder: jobAttribute.sortOrder,
+        createdAt: jobAttribute.createdAt,
+        updatedAt: jobAttribute.updatedAt,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to create job attribute',
+      );
+    }
+  }
+
+  async updateJobAttribute(
+    id: string,
+    updateJobAttributeDto: UpdateJobAttributeDto,
+  ): Promise<JobAttributeResponseDto> {
+    try {
+      // Check if attribute exists
+      const existingAttribute = await this.db.jobAttribute.findUnique({
+        where: { id },
+      });
+
+      if (!existingAttribute) {
+        throw new NotFoundException('Job attribute not found');
+      }
+
+      // Check for name conflicts if name is being updated
+      if (updateJobAttributeDto.name && updateJobAttributeDto.name !== existingAttribute.name) {
+        const conflictingAttribute = await this.db.jobAttribute.findFirst({
+          where: {
+            name: updateJobAttributeDto.name,
+            category: updateJobAttributeDto.category || existingAttribute.category,
+            id: { not: id },
+          },
+        });
+
+        if (conflictingAttribute) {
+          throw new BadRequestException(
+            `Job attribute with name "${updateJobAttributeDto.name}" already exists in category "${updateJobAttributeDto.category || existingAttribute.category}"`,
+          );
+        }
+      }
+
+      const updatedAttribute = await this.db.jobAttribute.update({
+        where: { id },
+        data: updateJobAttributeDto,
+      });
+
+      return {
+        id: updatedAttribute.id,
+        name: updatedAttribute.name,
+        category: updatedAttribute.category as any,
+        description: updatedAttribute.description,
+        isActive: updatedAttribute.isActive,
+        sortOrder: updatedAttribute.sortOrder,
+        createdAt: updatedAttribute.createdAt,
+        updatedAt: updatedAttribute.updatedAt,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to update job attribute',
+      );
+    }
+  }
+
+  async deleteJobAttribute(id: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const existingAttribute = await this.db.jobAttribute.findUnique({
+        where: { id },
+      });
+
+      if (!existingAttribute) {
+        throw new NotFoundException('Job attribute not found');
+      }
+
+      await this.db.jobAttribute.delete({
+        where: { id },
+      });
+
+      return {
+        success: true,
+        message: 'Job attribute deleted successfully',
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to delete job attribute',
+      );
+    }
+  }
+
+  async getJobAttribute(id: string): Promise<JobAttributeResponseDto> {
+    try {
+      const jobAttribute = await this.db.jobAttribute.findUnique({
+        where: { id },
+      });
+
+      if (!jobAttribute) {
+        throw new NotFoundException('Job attribute not found');
+      }
+
+      return {
+        id: jobAttribute.id,
+        name: jobAttribute.name,
+        category: jobAttribute.category as any,
+        description: jobAttribute.description,
+        isActive: jobAttribute.isActive,
+        sortOrder: jobAttribute.sortOrder,
+        createdAt: jobAttribute.createdAt,
+        updatedAt: jobAttribute.updatedAt,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to get job attribute',
+      );
+    }
+  }
+
+  async getJobAttributes(
+    query: JobAttributeQueryDto,
+  ): Promise<JobAttributeListResponseDto> {
+    try {
+      const {
+        category,
+        isActive,
+        search,
+        page = 1,
+        limit = 20,
+        sortBy = 'sortOrder',
+        sortOrder = 'asc',
+      } = query;
+
+      const skip = (page - 1) * limit;
+
+      // Build where clause
+      const where: Prisma.JobAttributeWhereInput = {};
+
+      if (category) {
+        where.category = category;
+      }
+
+      if (isActive !== undefined) {
+        where.isActive = isActive;
+      }
+
+      if (search) {
+        where.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+
+      // Get total count
+      const total = await this.db.jobAttribute.count({ where });
+
+      // Get attributes
+      const attributes = await this.db.jobAttribute.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+      });
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        success: true,
+        message: 'Job attributes retrieved successfully',
+        data: attributes.map((attr) => ({
+          id: attr.id,
+          name: attr.name,
+          category: attr.category as any,
+          description: attr.description,
+          isActive: attr.isActive,
+          sortOrder: attr.sortOrder,
+          createdAt: attr.createdAt,
+          updatedAt: attr.updatedAt,
+        })),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+        },
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to get job attributes',
+      );
+    }
+  }
+
+  async getJobAttributesByCategory(): Promise<JobAttributeCategoriesResponseDto> {
+    try {
+      const categories = Object.values(JobAttributeCategory);
+      const result: { category: JobAttributeCategory; attributes: JobAttributeResponseDto[] }[] = [];
+
+      for (const category of categories) {
+        const attributes = await this.db.jobAttribute.findMany({
+          where: {
+            category: category as JobAttributeCategory,
+            isActive: true,
+          },
+          orderBy: { sortOrder: 'asc' },
+        });
+
+        result.push({
+          category: category as JobAttributeCategory,
+          attributes: attributes.map((attr) => ({
+            id: attr.id,
+            name: attr.name,
+            category: attr.category as any,
+            description: attr.description,
+            isActive: attr.isActive,
+            sortOrder: attr.sortOrder,
+            createdAt: attr.createdAt,
+            updatedAt: attr.updatedAt,
+          })),
+        });
+      }
+
+      return {
+        success: true,
+        message: 'Job attributes by category retrieved successfully',
+        data: result,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to get job attributes by category',
+      );
+    }
+  }
+
+  async bulkCreateJobAttributes(
+    bulkCreateDto: BulkCreateJobAttributesDto,
+  ): Promise<{ success: boolean; message: string; created: number }> {
+    try {
+      const { category, attributes } = bulkCreateDto;
+
+      // Check for existing attributes to avoid duplicates
+      const existingNames = await this.db.jobAttribute.findMany({
+        where: {
+          category,
+          name: { in: attributes.map((attr) => attr.name) },
+        },
+        select: { name: true },
+      });
+
+      const existingNamesSet = new Set(existingNames.map((attr) => attr.name));
+      const newAttributes = attributes.filter(
+        (attr) => !existingNamesSet.has(attr.name),
+      );
+
+      if (newAttributes.length === 0) {
+        throw new BadRequestException(
+          'All attributes already exist in this category',
+        );
+      }
+
+      // Create new attributes
+      const createdAttributes = await this.db.jobAttribute.createMany({
+        data: newAttributes.map((attr) => ({
+          name: attr.name,
+          category,
+          description: attr.description,
+          sortOrder: attr.sortOrder ?? 0,
+        })),
+      });
+
+      return {
+        success: true,
+        message: `Successfully created ${createdAttributes.count} job attributes`,
+        created: createdAttributes.count,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to bulk create job attributes',
+      );
+    }
   }
 }

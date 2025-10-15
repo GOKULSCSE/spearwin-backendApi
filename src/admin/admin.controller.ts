@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
+import { AdminLoginDto } from '../auth/dto/admin-login.dto';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdatePermissionsDto } from './dto/update-permissions.dto';
 import {
@@ -71,14 +72,22 @@ import type { CurrentUser } from '../auth/decorators/current-user.decorator';
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
+  // =================================================================
+  // ADMIN AUTHENTICATION
+  // =================================================================
+
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  async adminLogin(@Body(ValidationPipe) adminLoginDto: AdminLoginDto) {
+    return this.adminService.adminLogin(adminLoginDto);
+  }
+
   @Post('create-admin')
-  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async createAdmin(
-    @Body() createAdminDto: CreateAdminDto,
-    @GetCurrentUser() user: CurrentUser,
+    @Body(ValidationPipe) createAdminDto: CreateAdminDto,
   ) {
-    return this.adminService.createAdmin(createAdminDto, user);
+    return this.adminService.createAdmin(createAdminDto, null);
   }
 
   @Post('create-company')
