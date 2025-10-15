@@ -107,6 +107,21 @@ enum LogAction {
   REJECT
 }
 
+enum JobAttributeCategory {
+  LANGUAGE_LEVEL
+  CAREER_LEVEL
+  FUNCTIONAL_AREA
+  GENDER
+  INDUSTRY
+  JOB_EXPERIENCE
+  JOB_SKILL
+  JOB_TYPE
+  JOB_SHIFT
+  DEGREE_LEVEL
+  DEGREE_TYPE
+  MAJOR_SUBJECT
+}
+
 // =================================================================
 // LOCATION TABLES
 // =================================================================
@@ -617,4 +632,24 @@ model FCMToken {
   @@index([userId, isActive])
   @@index([token])
   @@map("fcm_tokens")
+}
+
+// =================================================================
+// JOB ATTRIBUTES MANAGEMENT
+// =================================================================
+
+model JobAttribute {
+  id          String               @id @default(cuid())
+  name        String
+  category    JobAttributeCategory
+  description String?
+  isActive    Boolean              @default(true)
+  sortOrder   Int                  @default(0)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@unique([name, category])
+  @@index([category, isActive])
+  @@index([category, sortOrder])
+  @@map("job_attributes")
 }

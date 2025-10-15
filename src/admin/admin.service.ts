@@ -5,8 +5,11 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { DatabaseService } from '../database/database.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
+import { AdminLoginDto } from '../auth/dto/admin-login.dto';
+import { AdminLoginResponseDto, AdminAuthResponseDto } from './dto/admin-auth-response.dto';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdatePermissionsDto } from './dto/update-permissions.dto';
 import {
@@ -65,15 +68,120 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: DatabaseService) {}
+  constructor(
+    private prisma: DatabaseService,
+    private readonly jwtService: JwtService,
+  ) {}
+
+  // =================================================================
+  // ADMIN AUTHENTICATION
+  // =================================================================
+
+  async adminLogin(adminLoginDto: AdminLoginDto): Promise<AdminLoginResponseDto> {
+    try {
+      // Find user with admin role
+      const user = await this.prisma.user.findUnique({
+        where: { email: adminLoginDto.email },
+        include: {
+          admin: true,
+          superAdmin: true,
+        },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('Invalid admin credentials');
+      }
+
+      // Check if user is admin or super admin
+      if (user.role !== UserRole.ADMIN && user.role !== UserRole.SUPER_ADMIN) {
+        throw new UnauthorizedException('Access denied. Admin privileges required.');
+      }
+
+      // Verify password
+      const isPasswordValid = await bcrypt.compare(
+        adminLoginDto.password,
+        user.password,
+      );
+
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Invalid admin credentials');
+      }
+
+      // Check account status
+      if (user.status === UserStatus.SUSPENDED) {
+        throw new UnauthorizedException('Admin account is suspended');
+      }
+
+      if (user.status === UserStatus.INACTIVE) {
+        throw new UnauthorizedException('Admin account is inactive');
+      }
+
+      // Update last login time
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      });
+
+      // Generate JWT tokens
+      const payload = {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+      };
+
+      const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+      const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+      // Log admin login activity
+      await this.prisma.activityLog.create({
+        data: {
+          userId: user.id,
+          action: 'LOGIN',
+          level: 'INFO',
+          description: 'Admin logged in successfully',
+          entity: 'Admin',
+          entityId: user.admin?.id || user.superAdmin?.id || user.id,
+        },
+      });
+
+      const authResponse: AdminAuthResponseDto = {
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          status: user.status,
+          firstName: user.admin?.firstName || user.superAdmin?.firstName || '',
+          lastName: user.admin?.lastName || user.superAdmin?.lastName || '',
+          designation: user.admin?.designation || undefined,
+          department: user.admin?.department || undefined,
+          lastLoginAt: user.lastLoginAt,
+          createdAt: user.createdAt,
+        },
+      };
+
+      return {
+        success: true,
+        message: 'Admin login successful',
+        data: authResponse,
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new BadRequestException('Admin login failed');
+    }
+  }
 
   async createAdmin(
     createAdminDto: CreateAdminDto,
     currentUser: any,
   ): Promise<CreateAdminResponseDto> {
     try {
-      // Check if current user is SUPER_ADMIN
-      if (currentUser.role !== UserRole.SUPER_ADMIN) {
+      // Check if current user is SUPER_ADMIN (skip if no current user - for initial setup)
+      if (currentUser && currentUser.role !== UserRole.SUPER_ADMIN) {
         throw new ForbiddenException('Only SUPER_ADMIN can create admins');
       }
 
@@ -134,17 +242,19 @@ export class AdminService {
         return { user, admin };
       });
 
-      // Log activity
-      await this.prisma.activityLog.create({
-        data: {
-          userId: currentUser.id,
-          action: 'CREATE',
-          level: 'INFO',
-          description: `Admin created: ${result.user.email}`,
-          entity: 'Admin',
-          entityId: result.admin.id,
-        },
-      });
+      // Log activity (skip if no current user - for initial setup)
+      if (currentUser) {
+        await this.prisma.activityLog.create({
+          data: {
+            userId: currentUser.id,
+            action: 'CREATE',
+            level: 'INFO',
+            description: `Admin created: ${result.user.email}`,
+            entity: 'Admin',
+            entityId: result.admin.id,
+          },
+        });
+      }
 
       return {
         success: true,
