@@ -44,18 +44,97 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminService = void 0;
 const common_1 = require("@nestjs/common");
+const jwt_1 = require("@nestjs/jwt");
 const database_service_1 = require("../database/database.service");
 const client_1 = require("@prisma/client");
 const bcrypt = __importStar(require("bcryptjs"));
 const uuid_1 = require("uuid");
 let AdminService = class AdminService {
     prisma;
-    constructor(prisma) {
+    jwtService;
+    constructor(prisma, jwtService) {
         this.prisma = prisma;
+        this.jwtService = jwtService;
+    }
+    async adminLogin(adminLoginDto) {
+        try {
+            const user = await this.prisma.user.findUnique({
+                where: { email: adminLoginDto.email },
+                include: {
+                    admin: true,
+                    superAdmin: true,
+                },
+            });
+            if (!user) {
+                throw new common_1.UnauthorizedException('Invalid admin credentials');
+            }
+            if (user.role !== client_1.UserRole.ADMIN && user.role !== client_1.UserRole.SUPER_ADMIN) {
+                throw new common_1.UnauthorizedException('Access denied. Admin privileges required.');
+            }
+            const isPasswordValid = await bcrypt.compare(adminLoginDto.password, user.password);
+            if (!isPasswordValid) {
+                throw new common_1.UnauthorizedException('Invalid admin credentials');
+            }
+            if (user.status === client_1.UserStatus.SUSPENDED) {
+                throw new common_1.UnauthorizedException('Admin account is suspended');
+            }
+            if (user.status === client_1.UserStatus.INACTIVE) {
+                throw new common_1.UnauthorizedException('Admin account is inactive');
+            }
+            await this.prisma.user.update({
+                where: { id: user.id },
+                data: { lastLoginAt: new Date() },
+            });
+            const payload = {
+                sub: user.id,
+                email: user.email,
+                role: user.role,
+                status: user.status,
+            };
+            const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+            const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+            await this.prisma.activityLog.create({
+                data: {
+                    userId: user.id,
+                    action: 'LOGIN',
+                    level: 'INFO',
+                    description: 'Admin logged in successfully',
+                    entity: 'Admin',
+                    entityId: user.admin?.id || user.superAdmin?.id || user.id,
+                },
+            });
+            const authResponse = {
+                accessToken,
+                refreshToken,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    role: user.role,
+                    status: user.status,
+                    firstName: user.admin?.firstName || user.superAdmin?.firstName || '',
+                    lastName: user.admin?.lastName || user.superAdmin?.lastName || '',
+                    designation: user.admin?.designation || undefined,
+                    department: user.admin?.department || undefined,
+                    lastLoginAt: user.lastLoginAt,
+                    createdAt: user.createdAt,
+                },
+            };
+            return {
+                success: true,
+                message: 'Admin login successful',
+                data: authResponse,
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.UnauthorizedException) {
+                throw error;
+            }
+            throw new common_1.BadRequestException('Admin login failed');
+        }
     }
     async createAdmin(createAdminDto, currentUser) {
         try {
-            if (currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
+            if (currentUser && currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
                 throw new common_1.ForbiddenException('Only SUPER_ADMIN can create admins');
             }
             const existingUser = await this.prisma.user.findUnique({
@@ -99,16 +178,18 @@ let AdminService = class AdminService {
                 });
                 return { user, admin };
             });
-            await this.prisma.activityLog.create({
-                data: {
-                    userId: currentUser.id,
-                    action: 'CREATE',
-                    level: 'INFO',
-                    description: `Admin created: ${result.user.email}`,
-                    entity: 'Admin',
-                    entityId: result.admin.id,
-                },
-            });
+            if (currentUser) {
+                await this.prisma.activityLog.create({
+                    data: {
+                        userId: currentUser.id,
+                        action: 'CREATE',
+                        level: 'INFO',
+                        description: `Admin created: ${result.user.email}`,
+                        entity: 'Admin',
+                        entityId: result.admin.id,
+                    },
+                });
+            }
             return {
                 success: true,
                 message: 'Admin created successfully',
@@ -2781,6 +2862,7 @@ let AdminService = class AdminService {
 exports.AdminService = AdminService;
 exports.AdminService = AdminService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService])
+    __metadata("design:paramtypes", [database_service_1.DatabaseService,
+        jwt_1.JwtService])
 ], AdminService);
 //# sourceMappingURL=admin.service.js.map

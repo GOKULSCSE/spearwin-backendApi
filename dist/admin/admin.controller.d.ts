@@ -1,5 +1,6 @@
 import { AdminService } from './admin.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
+import { AdminLoginDto } from '../auth/dto/admin-login.dto';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdatePermissionsDto } from './dto/update-permissions.dto';
 import { UpdateAdminProfileDto, type AdminProfileResponseDto } from './dto/admin-profile.dto';
@@ -13,7 +14,8 @@ import type { CurrentUser } from '../auth/decorators/current-user.decorator';
 export declare class AdminController {
     private readonly adminService;
     constructor(adminService: AdminService);
-    createAdmin(createAdminDto: CreateAdminDto, user: CurrentUser): Promise<import("./dto/admin-response.dto").CreateAdminResponseDto>;
+    adminLogin(adminLoginDto: AdminLoginDto): Promise<import("./dto/admin-auth-response.dto").AdminLoginResponseDto>;
+    createAdmin(createAdminDto: CreateAdminDto): Promise<import("./dto/admin-response.dto").CreateAdminResponseDto>;
     createCompany(createCompanyDto: CreateCompanyDto, user: CurrentUser): Promise<import("./dto/admin-response.dto").CreateCompanyResponseDto>;
     updatePermissions(updatePermissionsDto: UpdatePermissionsDto, user: CurrentUser): Promise<import("./dto/admin-response.dto").UpdatePermissionsResponseDto>;
     getAdminProfile(user: CurrentUser): Promise<AdminProfileResponseDto>;

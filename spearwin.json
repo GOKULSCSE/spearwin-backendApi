@@ -12,7 +12,7 @@
       },
       {
         "key": "accessToken",
-        "value": "",
+        "value": "",  
         "type": "string"
       },
       {

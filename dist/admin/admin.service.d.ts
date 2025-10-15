@@ -1,5 +1,8 @@
+import { JwtService } from '@nestjs/jwt';
 import { DatabaseService } from '../database/database.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
+import { AdminLoginDto } from '../auth/dto/admin-login.dto';
+import { AdminLoginResponseDto } from './dto/admin-auth-response.dto';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdatePermissionsDto } from './dto/update-permissions.dto';
 import { UpdateAdminProfileDto, AdminProfileResponseDto } from './dto/admin-profile.dto';
@@ -12,7 +15,9 @@ import { SendNotificationDto, BroadcastNotificationDto, CreateNotificationTempla
 import { CreateAdminResponseDto, CreateCompanyResponseDto, UpdatePermissionsResponseDto } from './dto/admin-response.dto';
 export declare class AdminService {
     private prisma;
-    constructor(prisma: DatabaseService);
+    private readonly jwtService;
+    constructor(prisma: DatabaseService, jwtService: JwtService);
+    adminLogin(adminLoginDto: AdminLoginDto): Promise<AdminLoginResponseDto>;
     createAdmin(createAdminDto: CreateAdminDto, currentUser: any): Promise<CreateAdminResponseDto>;
     createCompany(createCompanyDto: CreateCompanyDto, currentUser: any): Promise<CreateCompanyResponseDto>;
     updatePermissions(updatePermissionsDto: UpdatePermissionsDto, currentUser: any): Promise<UpdatePermissionsResponseDto>;
