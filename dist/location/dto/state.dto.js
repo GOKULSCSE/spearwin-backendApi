@@ -34,8 +34,9 @@ __decorate([
     __metadata("design:type", String)
 ], CreateStateDto.prototype, "code", void 0);
 __decorate([
-    (0, class_validator_1.IsString)({ message: 'Country ID must be a string' }),
-    __metadata("design:type", String)
+    (0, class_validator_1.IsInt)({ message: 'Country ID must be a number' }),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
 ], CreateStateDto.prototype, "countryId", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
@@ -66,8 +67,9 @@ __decorate([
 ], UpdateStateDto.prototype, "code", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Country ID must be a string' }),
-    __metadata("design:type", String)
+    (0, class_validator_1.IsInt)({ message: 'Country ID must be a number' }),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
 ], UpdateStateDto.prototype, "countryId", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
@@ -77,8 +79,16 @@ __decorate([
 class StateResponseDto {
     id;
     name;
-    code;
-    countryId;
+    country_id;
+    country_code;
+    country_name;
+    iso2;
+    fips_code;
+    type;
+    level;
+    parent_id;
+    latitude;
+    longitude;
     isActive;
     createdAt;
     updatedAt;

@@ -80,7 +80,7 @@ export class JobService {
 
       // Add city filter
       if (city) {
-        where.cityId = city;
+        where.cityId = parseInt(city);
       }
 
       // Add job type filter
@@ -865,14 +865,57 @@ export class JobService {
                 city: {
                   id: application.job.city.id,
                   name: application.job.city.name,
+                  state_id: application.job.city.state_id,
+                  state_code: application.job.city.state_code,
+                  state_name: application.job.city.state_name,
+                  country_id: application.job.city.country_id,
+                  country_code: application.job.city.country_code,
+                  country_name: application.job.city.country_name,
+                  latitude: application.job.city.latitude,
+                  longitude: application.job.city.longitude,
+                  wikiDataId: application.job.city.wikiDataId,
+                  isActive: application.job.city.isActive,
+                  createdAt: application.job.city.createdAt,
+                  updatedAt: application.job.city.updatedAt,
                   state: {
                     id: application.job.city.state.id,
                     name: application.job.city.state.name,
-                    code: application.job.city.state.code || undefined,
+                    country_id: application.job.city.state.country_id,
+                    country_code: application.job.city.state.country_code,
+                    country_name: application.job.city.state.country_name,
+                    iso2: application.job.city.state.iso2,
+                    fips_code: application.job.city.state.fips_code,
+                    type: application.job.city.state.type,
+                    level: application.job.city.state.level,
+                    parent_id: application.job.city.state.parent_id,
+                    latitude: application.job.city.state.latitude,
+                    longitude: application.job.city.state.longitude,
+                    isActive: application.job.city.state.isActive,
+                    createdAt: application.job.city.state.createdAt,
+                    updatedAt: application.job.city.state.updatedAt,
                     country: {
                       id: application.job.city.state.country.id,
                       name: application.job.city.state.country.name,
-                      code: application.job.city.state.country.code,
+                      iso3: application.job.city.state.country.iso3,
+                      iso2: application.job.city.state.country.iso2,
+                      numeric_code: application.job.city.state.country.numeric_code,
+                      phonecode: application.job.city.state.country.phonecode,
+                      capital: application.job.city.state.country.capital,
+                      currency: application.job.city.state.country.currency,
+                      currency_name: application.job.city.state.country.currency_name,
+                      currency_symbol: application.job.city.state.country.currency_symbol,
+                      tld: application.job.city.state.country.tld,
+                      native: application.job.city.state.country.native,
+                      region: application.job.city.state.country.region,
+                      region_id: application.job.city.state.country.region_id,
+                      subregion: application.job.city.state.country.subregion,
+                      subregion_id: application.job.city.state.country.subregion_id,
+                      nationality: application.job.city.state.country.nationality,
+                      latitude: application.job.city.state.country.latitude,
+                      longitude: application.job.city.state.country.longitude,
+                      isActive: application.job.city.state.country.isActive,
+                      createdAt: application.job.city.state.country.createdAt,
+                      updatedAt: application.job.city.state.country.updatedAt,
                     },
                   },
                 },

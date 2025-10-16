@@ -22,12 +22,12 @@ export declare class LocationService {
     }>;
     getCitiesByState(stateId: string): Promise<CityResponseDto[]>;
     getCityById(cityId: string): Promise<CityResponseDto>;
+    searchCities(query: CitySearchQueryDto): Promise<CityResponseDto[]>;
     createCity(createDto: CreateCityDto, userId: string): Promise<CityResponseDto>;
     updateCity(cityId: string, updateDto: UpdateCityDto, userId: string): Promise<CityResponseDto>;
     deleteCity(cityId: string, userId: string): Promise<{
         message: string;
     }>;
-    searchCities(query: CitySearchQueryDto): Promise<CityResponseDto[]>;
     getPincodesByCity(cityId: string): Promise<PincodeResponseDto[]>;
     getPincodeById(pincodeId: string): Promise<PincodeResponseDto>;
     createPincode(createDto: CreatePincodeDto, userId: string): Promise<PincodeResponseDto>;
@@ -35,6 +35,5 @@ export declare class LocationService {
     deletePincode(pincodeId: string, userId: string): Promise<{
         message: string;
     }>;
-    private logActivity;
     private handleException;
 }

@@ -242,7 +242,7 @@ export class AuthService {
       };
 
       const accessToken = this.jwtService.sign(newPayload, {
-        expiresIn: '15m',
+        expiresIn: '1d',
       });
       const newRefreshToken = this.jwtService.sign(newPayload, {
         expiresIn: '7d',
@@ -442,7 +442,7 @@ export class AuthService {
       // Validate cityId if provided
       if (candidateRegisterDto.cityId) {
         const city = await this.prisma.city.findUnique({
-          where: { id: candidateRegisterDto.cityId },
+          where: { id: parseInt(candidateRegisterDto.cityId) },
         });
 
         if (!city) {
@@ -493,7 +493,7 @@ export class AuthService {
             linkedinUrl: candidateRegisterDto.linkedinUrl,
             githubUrl: candidateRegisterDto.githubUrl,
             portfolioUrl: candidateRegisterDto.portfolioUrl,
-            cityId: candidateRegisterDto.cityId,
+            cityId: candidateRegisterDto.cityId ? parseInt(candidateRegisterDto.cityId) : null,
             isAvailable: candidateRegisterDto.isAvailable ?? true,
           },
         });
@@ -704,7 +704,7 @@ export class AuthService {
       // Validate cityId if provided
       if (companyRegisterDto.cityId) {
         const city = await this.prisma.city.findUnique({
-          where: { id: companyRegisterDto.cityId },
+          where: { id: parseInt(companyRegisterDto.cityId) },
         });
 
         if (!city) {
@@ -757,7 +757,7 @@ export class AuthService {
             employeeCount: companyRegisterDto.employeeCount,
             headquarters: companyRegisterDto.headquarters,
             address: companyRegisterDto.address,
-            cityId: companyRegisterDto.cityId,
+            cityId: companyRegisterDto.cityId ? parseInt(companyRegisterDto.cityId) : null,
             linkedinUrl: companyRegisterDto.linkedinUrl,
             twitterUrl: companyRegisterDto.twitterUrl,
             facebookUrl: companyRegisterDto.facebookUrl,

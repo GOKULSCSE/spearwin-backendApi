@@ -22,6 +22,8 @@ async function bootstrap() {
             'Accept',
             'Origin',
             'X-Requested-With',
+            'X-User-Type',
+            'X-User-Email',
         ],
         credentials: true,
         preflightContinue: false,

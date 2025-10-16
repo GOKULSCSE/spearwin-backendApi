@@ -5,6 +5,8 @@ import {
   IsBoolean,
   IsNumber,
   IsUrl,
+  IsEmail,
+  IsPhoneNumber,
   Min,
   Max,
   IsEnum,
@@ -105,6 +107,39 @@ export class UpdateCandidateProfileDto {
   @IsOptional()
   @IsUrl({}, { message: 'Portfolio URL must be a valid URL' })
   portfolioUrl?: string;
+
+  // Additional fields
+  @IsOptional()
+  @IsEmail({}, { message: 'Email must be a valid email address' })
+  email?: string;
+
+  @IsOptional()
+  @IsPhoneNumber('IN', { message: 'Mobile number must be a valid phone number' })
+  mobileNumber?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Job experience must be a string' })
+  jobExperience?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Country must be a string' })
+  country?: string;
+
+  @IsOptional()
+  @IsString({ message: 'State must be a string' })
+  state?: string;
+
+  @IsOptional()
+  @IsString({ message: 'City name must be a string' })
+  cityName?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Street address must be a string' })
+  streetAddress?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Profile summary must be a string' })
+  profileSummary?: string;
 }
 
 export class UpdateAvailabilityDto {
@@ -137,6 +172,15 @@ export class CandidateProfileResponseDto {
   githubUrl?: string;
   portfolioUrl?: string;
   isAvailable: boolean;
+  // Additional fields
+  email?: string;
+  mobileNumber?: string;
+  jobExperience?: string;
+  country?: string;
+  state?: string;
+  cityName?: string;
+  streetAddress?: string;
+  profileSummary?: string;
   createdAt: Date;
   updatedAt: Date;
   user?: {
@@ -144,15 +188,59 @@ export class CandidateProfileResponseDto {
     phone?: string | null;
   };
   city?: {
-    id: string;
+    id: number;
     name: string;
+    state_id: number;
+    state_code?: string | null;
+    state_name?: string | null;
+    country_id?: number | null;
+    country_code?: string | null;
+    country_name?: string | null;
+    latitude?: string | null;
+    longitude?: string | null;
+    wikiDataId?: string | null;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
     state: {
-      id: string;
+      id: number;
       name: string;
+      country_id: number;
+      country_code?: string | null;
+      country_name?: string | null;
+      iso2?: string | null;
+      fips_code?: string | null;
+      type?: string | null;
+      level?: string | null;
+      parent_id?: number | null;
+      latitude?: string | null;
+      longitude?: string | null;
+      isActive: boolean;
+      createdAt: Date;
+      updatedAt: Date;
       country: {
-        id: string;
+        id: number;
         name: string;
-        code: string;
+        iso3?: string | null;
+        iso2?: string | null;
+        numeric_code?: string | null;
+        phonecode?: string | null;
+        capital?: string | null;
+        currency?: string | null;
+        currency_name?: string | null;
+        currency_symbol?: string | null;
+        tld?: string | null;
+        native?: string | null;
+        region?: string | null;
+        region_id?: number | null;
+        subregion?: string | null;
+        subregion_id?: number | null;
+        nationality?: string | null;
+        latitude?: string | null;
+        longitude?: string | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
       };
     };
   } | null;

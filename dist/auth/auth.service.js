@@ -211,7 +211,7 @@ let AuthService = class AuthService {
                 status: user.status,
             };
             const accessToken = this.jwtService.sign(newPayload, {
-                expiresIn: '15m',
+                expiresIn: '1d',
             });
             const newRefreshToken = this.jwtService.sign(newPayload, {
                 expiresIn: '7d',
@@ -358,7 +358,7 @@ let AuthService = class AuthService {
             }
             if (candidateRegisterDto.cityId) {
                 const city = await this.prisma.city.findUnique({
-                    where: { id: candidateRegisterDto.cityId },
+                    where: { id: parseInt(candidateRegisterDto.cityId) },
                 });
                 if (!city) {
                     throw new common_1.BadRequestException('Invalid city ID provided');
@@ -397,7 +397,7 @@ let AuthService = class AuthService {
                         linkedinUrl: candidateRegisterDto.linkedinUrl,
                         githubUrl: candidateRegisterDto.githubUrl,
                         portfolioUrl: candidateRegisterDto.portfolioUrl,
-                        cityId: candidateRegisterDto.cityId,
+                        cityId: candidateRegisterDto.cityId ? parseInt(candidateRegisterDto.cityId) : null,
                         isAvailable: candidateRegisterDto.isAvailable ?? true,
                     },
                 });
@@ -560,7 +560,7 @@ let AuthService = class AuthService {
             }
             if (companyRegisterDto.cityId) {
                 const city = await this.prisma.city.findUnique({
-                    where: { id: companyRegisterDto.cityId },
+                    where: { id: parseInt(companyRegisterDto.cityId) },
                 });
                 if (!city) {
                     throw new common_1.BadRequestException('Invalid city ID provided');
@@ -601,7 +601,7 @@ let AuthService = class AuthService {
                         employeeCount: companyRegisterDto.employeeCount,
                         headquarters: companyRegisterDto.headquarters,
                         address: companyRegisterDto.address,
-                        cityId: companyRegisterDto.cityId,
+                        cityId: companyRegisterDto.cityId ? parseInt(companyRegisterDto.cityId) : null,
                         linkedinUrl: companyRegisterDto.linkedinUrl,
                         twitterUrl: companyRegisterDto.twitterUrl,
                         facebookUrl: companyRegisterDto.facebookUrl,

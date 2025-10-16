@@ -235,7 +235,7 @@
       "key": "base_url",
       "value": "http://localhost:5000",
       "type": "string",
-      "description": "Base URL for the API"
+      "description": "Base URL for the API - Server running on port 5000"
     }
   ]
 }
