@@ -1,35 +1,74 @@
 export declare class CreateCityDto {
     name: string;
-    stateId: string;
+    stateId: number;
     isActive?: boolean;
 }
 export declare class UpdateCityDto {
     name?: string;
-    stateId?: string;
+    stateId?: number;
     isActive?: boolean;
 }
 export declare class CityResponseDto {
-    id: string;
+    id: number;
     name: string;
-    stateId: string;
+    state_id: number;
+    state_code?: string | null;
+    state_name?: string | null;
+    country_id?: number | null;
+    country_code?: string | null;
+    country_name?: string | null;
+    latitude?: string | null;
+    longitude?: string | null;
+    wikiDataId?: string | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
     state?: {
-        id: string;
+        id: number;
         name: string;
-        code?: string | null;
+        country_id: number;
+        country_code?: string | null;
+        country_name?: string | null;
+        iso2?: string | null;
+        fips_code?: string | null;
+        type?: string | null;
+        level?: string | null;
+        parent_id?: number | null;
+        latitude?: string | null;
+        longitude?: string | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         country: {
-            id: string;
+            id: number;
             name: string;
-            code: string;
+            iso3?: string | null;
+            iso2?: string | null;
+            numeric_code?: string | null;
+            phonecode?: string | null;
+            capital?: string | null;
+            currency?: string | null;
+            currency_name?: string | null;
+            currency_symbol?: string | null;
+            tld?: string | null;
+            native?: string | null;
+            region?: string | null;
+            region_id?: number | null;
+            subregion?: string | null;
+            subregion_id?: number | null;
+            nationality?: string | null;
+            latitude?: string | null;
+            longitude?: string | null;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
         };
     };
     pincodes?: {
         id: string;
         code: string;
         area?: string | null;
-        cityId: string;
+        cityId: number;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -37,6 +76,7 @@ export declare class CityResponseDto {
 }
 export declare class CitySearchQueryDto {
     search?: string;
-    stateId?: string;
-    countryId?: string;
+    stateId?: number;
+    countryId?: number;
+    limit?: number;
 }

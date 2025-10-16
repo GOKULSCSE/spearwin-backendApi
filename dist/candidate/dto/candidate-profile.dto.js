@@ -34,6 +34,14 @@ class UpdateCandidateProfileDto {
     linkedinUrl;
     githubUrl;
     portfolioUrl;
+    email;
+    mobileNumber;
+    jobExperience;
+    country;
+    state;
+    cityName;
+    streetAddress;
+    profileSummary;
 }
 exports.UpdateCandidateProfileDto = UpdateCandidateProfileDto;
 __decorate([
@@ -151,6 +159,46 @@ __decorate([
     (0, class_validator_1.IsUrl)({}, { message: 'Portfolio URL must be a valid URL' }),
     __metadata("design:type", String)
 ], UpdateCandidateProfileDto.prototype, "portfolioUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEmail)({}, { message: 'Email must be a valid email address' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsPhoneNumber)('IN', { message: 'Mobile number must be a valid phone number' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "mobileNumber", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Job experience must be a string' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "jobExperience", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Country must be a string' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "country", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'State must be a string' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "state", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'City name must be a string' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "cityName", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Street address must be a string' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "streetAddress", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Profile summary must be a string' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "profileSummary", void 0);
 class UpdateAvailabilityDto {
     isAvailable;
 }
@@ -184,6 +232,14 @@ class CandidateProfileResponseDto {
     githubUrl;
     portfolioUrl;
     isAvailable;
+    email;
+    mobileNumber;
+    jobExperience;
+    country;
+    state;
+    cityName;
+    streetAddress;
+    profileSummary;
     createdAt;
     updatedAt;
     user;

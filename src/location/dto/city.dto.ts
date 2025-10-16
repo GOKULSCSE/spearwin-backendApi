@@ -2,10 +2,11 @@ import {
   IsString,
   IsOptional,
   IsBoolean,
+  IsInt,
   MinLength,
   MaxLength,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateCityDto {
   @IsString({ message: 'Name must be a string' })
@@ -14,8 +15,9 @@ export class CreateCityDto {
   @Transform(({ value }) => value?.trim())
   name: string;
 
-  @IsString({ message: 'State ID must be a string' })
-  stateId: string;
+  @IsInt({ message: 'State ID must be a number' })
+  @Type(() => Number)
+  stateId: number;
 
   @IsOptional()
   @IsBoolean({ message: 'Is active must be a boolean value' })
@@ -31,8 +33,9 @@ export class UpdateCityDto {
   name?: string;
 
   @IsOptional()
-  @IsString({ message: 'State ID must be a string' })
-  stateId?: string;
+  @IsInt({ message: 'State ID must be a number' })
+  @Type(() => Number)
+  stateId?: number;
 
   @IsOptional()
   @IsBoolean({ message: 'Is active must be a boolean value' })
@@ -40,27 +43,66 @@ export class UpdateCityDto {
 }
 
 export class CityResponseDto {
-  id: string;
+  id: number;
   name: string;
-  stateId: string;
+  state_id: number;
+  state_code?: string | null;
+  state_name?: string | null;
+  country_id?: number | null;
+  country_code?: string | null;
+  country_name?: string | null;
+  latitude?: string | null;
+  longitude?: string | null;
+  wikiDataId?: string | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
   state?: {
-    id: string;
+    id: number;
     name: string;
-    code?: string | null;
+    country_id: number;
+    country_code?: string | null;
+    country_name?: string | null;
+    iso2?: string | null;
+    fips_code?: string | null;
+    type?: string | null;
+    level?: string | null;
+    parent_id?: number | null;
+    latitude?: string | null;
+    longitude?: string | null;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
     country: {
-      id: string;
+      id: number;
       name: string;
-      code: string;
+      iso3?: string | null;
+      iso2?: string | null;
+      numeric_code?: string | null;
+      phonecode?: string | null;
+      capital?: string | null;
+      currency?: string | null;
+      currency_name?: string | null;
+      currency_symbol?: string | null;
+      tld?: string | null;
+      native?: string | null;
+      region?: string | null;
+      region_id?: number | null;
+      subregion?: string | null;
+      subregion_id?: number | null;
+      nationality?: string | null;
+      latitude?: string | null;
+      longitude?: string | null;
+      isActive: boolean;
+      createdAt: Date;
+      updatedAt: Date;
     };
   };
   pincodes?: {
     id: string;
     code: string;
     area?: string | null;
-    cityId: string;
+    cityId: number;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -73,10 +115,17 @@ export class CitySearchQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsString({ message: 'State ID must be a string' })
-  stateId?: string;
+  @IsInt({ message: 'State ID must be a number' })
+  @Type(() => Number)
+  stateId?: number;
 
   @IsOptional()
-  @IsString({ message: 'Country ID must be a string' })
-  countryId?: string;
+  @IsInt({ message: 'Country ID must be a number' })
+  @Type(() => Number)
+  countryId?: number;
+
+  @IsOptional()
+  @IsInt({ message: 'Limit must be a number' })
+  @Type(() => Number)
+  limit?: number;
 }

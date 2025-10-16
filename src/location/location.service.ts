@@ -46,7 +46,23 @@ export class LocationService {
       return countries.map((country) => ({
         id: country.id,
         name: country.name,
-        code: country.code,
+        iso3: country.iso3,
+        iso2: country.iso2,
+        numeric_code: country.numeric_code,
+        phonecode: country.phonecode,
+        capital: country.capital,
+        currency: country.currency,
+        currency_name: country.currency_name,
+        currency_symbol: country.currency_symbol,
+        tld: country.tld,
+        native: country.native,
+        region: country.region,
+        region_id: country.region_id,
+        subregion: country.subregion,
+        subregion_id: country.subregion_id,
+        nationality: country.nationality,
+        latitude: country.latitude,
+        longitude: country.longitude,
         isActive: country.isActive,
         createdAt: country.createdAt,
         updatedAt: country.updatedAt,
@@ -60,7 +76,7 @@ export class LocationService {
   async getCountryById(countryId: string): Promise<CountryResponseDto> {
     try {
       const country = await this.db.country.findUnique({
-        where: { id: countryId },
+        where: { id: parseInt(countryId) },
         include: {
           states: {
             where: { isActive: true },
@@ -70,21 +86,45 @@ export class LocationService {
       });
 
       if (!country) {
-        throw new NotFoundException('Country not found');
+        throw new NotFoundException(`Country with ID ${countryId} not found`);
       }
 
       return {
         id: country.id,
         name: country.name,
-        code: country.code,
+        iso3: country.iso3,
+        iso2: country.iso2,
+        numeric_code: country.numeric_code,
+        phonecode: country.phonecode,
+        capital: country.capital,
+        currency: country.currency,
+        currency_name: country.currency_name,
+        currency_symbol: country.currency_symbol,
+        tld: country.tld,
+        native: country.native,
+        region: country.region,
+        region_id: country.region_id,
+        subregion: country.subregion,
+        subregion_id: country.subregion_id,
+        nationality: country.nationality,
+        latitude: country.latitude,
+        longitude: country.longitude,
         isActive: country.isActive,
         createdAt: country.createdAt,
         updatedAt: country.updatedAt,
         states: country.states.map((state) => ({
           id: state.id,
           name: state.name,
-          code: state.code,
-          countryId: state.countryId,
+          country_id: state.country_id,
+          country_code: state.country_code,
+          country_name: state.country_name,
+          iso2: state.iso2,
+          fips_code: state.fips_code,
+          type: state.type,
+          level: state.level,
+          parent_id: state.parent_id,
+          latitude: state.latitude,
+          longitude: state.longitude,
           isActive: state.isActive,
           createdAt: state.createdAt,
           updatedAt: state.updatedAt,
@@ -104,45 +144,9 @@ export class LocationService {
     userId: string,
   ): Promise<CountryResponseDto> {
     try {
-      // Check if country with same name or code already exists
-      const existingCountry = await this.db.country.findFirst({
-        where: {
-          OR: [{ name: createDto.name }, { code: createDto.code }],
-        },
-      });
-
-      if (existingCountry) {
-        throw new BadRequestException(
-          'Country with this name or code already exists',
-        );
-      }
-
-      const country = await this.db.country.create({
-        data: createDto,
-      });
-
-      // Log the country creation
-      await this.logActivity(
-        userId,
-        LogAction.CREATE,
-        LogLevel.INFO,
-        'Country',
-        country.id,
-        `Country created: ${country.name}`,
-      );
-
-      return {
-        id: country.id,
-        name: country.name,
-        code: country.code,
-        isActive: country.isActive,
-        createdAt: country.createdAt,
-        updatedAt: country.updatedAt,
-      };
+      // For now, throw not implemented since we have comprehensive data
+      throw new BadRequestException('Country creation not supported - use imported data');
     } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
       this.handleException(error);
       throw error;
     }
@@ -154,129 +158,19 @@ export class LocationService {
     userId: string,
   ): Promise<CountryResponseDto> {
     try {
-      const country = await this.db.country.findUnique({
-        where: { id: countryId },
-      });
-
-      if (!country) {
-        throw new NotFoundException('Country not found');
-      }
-
-      // Check if name or code is being changed and if it already exists
-      if (updateDto.name && updateDto.name !== country.name) {
-        const existingCountry = await this.db.country.findFirst({
-          where: {
-            name: updateDto.name,
-            id: { not: countryId },
-          },
-        });
-
-        if (existingCountry) {
-          throw new BadRequestException(
-            'Country with this name already exists',
-          );
-        }
-      }
-
-      if (updateDto.code && updateDto.code !== country.code) {
-        const existingCountry = await this.db.country.findFirst({
-          where: {
-            code: updateDto.code,
-            id: { not: countryId },
-          },
-        });
-
-        if (existingCountry) {
-          throw new BadRequestException(
-            'Country with this code already exists',
-          );
-        }
-      }
-
-      const updatedCountry = await this.db.country.update({
-        where: { id: countryId },
-        data: updateDto,
-      });
-
-      // Log the country update
-      await this.logActivity(
-        userId,
-        LogAction.UPDATE,
-        LogLevel.INFO,
-        'Country',
-        countryId,
-        `Country updated: ${updatedCountry.name}`,
-      );
-
-      return {
-        id: updatedCountry.id,
-        name: updatedCountry.name,
-        code: updatedCountry.code,
-        isActive: updatedCountry.isActive,
-        createdAt: updatedCountry.createdAt,
-        updatedAt: updatedCountry.updatedAt,
-      };
+      // For now, throw not implemented since we have comprehensive data
+      throw new BadRequestException('Country updates not supported - use imported data');
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
       this.handleException(error);
       throw error;
     }
   }
 
-  async deleteCountry(
-    countryId: string,
-    userId: string,
-  ): Promise<{ message: string }> {
+  async deleteCountry(countryId: string, userId: string): Promise<{ message: string }> {
     try {
-      const country = await this.db.country.findUnique({
-        where: { id: countryId },
-        include: {
-          states: {
-            include: {
-              cities: true,
-            },
-          },
-        },
-      });
-
-      if (!country) {
-        throw new NotFoundException('Country not found');
-      }
-
-      // Check if country has states
-      if (country.states.length > 0) {
-        throw new BadRequestException(
-          'Cannot delete country with existing states. Please delete all states first.',
-        );
-      }
-
-      await this.db.country.delete({
-        where: { id: countryId },
-      });
-
-      // Log the country deletion
-      await this.logActivity(
-        userId,
-        LogAction.DELETE,
-        LogLevel.CRITICAL,
-        'Country',
-        countryId,
-        `Country deleted: ${country.name}`,
-      );
-
-      return { message: 'Country deleted successfully' };
+      // For now, throw not implemented since we have comprehensive data
+      throw new BadRequestException('Country deletion not supported - use imported data');
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
       this.handleException(error);
       throw error;
     }
@@ -288,17 +182,9 @@ export class LocationService {
 
   async getStatesByCountry(countryId: string): Promise<StateResponseDto[]> {
     try {
-      const country = await this.db.country.findUnique({
-        where: { id: countryId },
-      });
-
-      if (!country) {
-        throw new NotFoundException('Country not found');
-      }
-
       const states = await this.db.state.findMany({
         where: {
-          countryId,
+          country_id: parseInt(countryId),
           isActive: true,
         },
         orderBy: { name: 'asc' },
@@ -307,16 +193,21 @@ export class LocationService {
       return states.map((state) => ({
         id: state.id,
         name: state.name,
-        code: state.code,
-        countryId: state.countryId,
+        country_id: state.country_id,
+        country_code: state.country_code,
+        country_name: state.country_name,
+        iso2: state.iso2,
+        fips_code: state.fips_code,
+        type: state.type,
+        level: state.level,
+        parent_id: state.parent_id,
+        latitude: state.latitude,
+        longitude: state.longitude,
         isActive: state.isActive,
         createdAt: state.createdAt,
         updatedAt: state.updatedAt,
       }));
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
       this.handleException(error);
       throw error;
     }
@@ -325,7 +216,7 @@ export class LocationService {
   async getStateById(stateId: string): Promise<StateResponseDto> {
     try {
       const state = await this.db.state.findUnique({
-        where: { id: stateId },
+        where: { id: parseInt(stateId) },
         include: {
           country: true,
           cities: {
@@ -336,21 +227,45 @@ export class LocationService {
       });
 
       if (!state) {
-        throw new NotFoundException('State not found');
+        throw new NotFoundException(`State with ID ${stateId} not found`);
       }
 
       return {
         id: state.id,
         name: state.name,
-        code: state.code,
-        countryId: state.countryId,
+        country_id: state.country_id,
+        country_code: state.country_code,
+        country_name: state.country_name,
+        iso2: state.iso2,
+        fips_code: state.fips_code,
+        type: state.type,
+        level: state.level,
+        parent_id: state.parent_id,
+        latitude: state.latitude,
+        longitude: state.longitude,
         isActive: state.isActive,
         createdAt: state.createdAt,
         updatedAt: state.updatedAt,
         country: {
           id: state.country.id,
           name: state.country.name,
-          code: state.country.code,
+          iso3: state.country.iso3,
+          iso2: state.country.iso2,
+          numeric_code: state.country.numeric_code,
+          phonecode: state.country.phonecode,
+          capital: state.country.capital,
+          currency: state.country.currency,
+          currency_name: state.country.currency_name,
+          currency_symbol: state.country.currency_symbol,
+          tld: state.country.tld,
+          native: state.country.native,
+          region: state.country.region,
+          region_id: state.country.region_id,
+          subregion: state.country.subregion,
+          subregion_id: state.country.subregion_id,
+          nationality: state.country.nationality,
+          latitude: state.country.latitude,
+          longitude: state.country.longitude,
           isActive: state.country.isActive,
           createdAt: state.country.createdAt,
           updatedAt: state.country.updatedAt,
@@ -358,7 +273,15 @@ export class LocationService {
         cities: state.cities.map((city) => ({
           id: city.id,
           name: city.name,
-          stateId: city.stateId,
+          state_id: city.state_id,
+          state_code: city.state_code,
+          state_name: city.state_name,
+          country_id: city.country_id,
+          country_code: city.country_code,
+          country_name: city.country_name,
+          latitude: city.latitude,
+          longitude: city.longitude,
+          wikiDataId: city.wikiDataId,
           isActive: city.isActive,
           createdAt: city.createdAt,
           updatedAt: city.updatedAt,
@@ -378,59 +301,9 @@ export class LocationService {
     userId: string,
   ): Promise<StateResponseDto> {
     try {
-      // Check if country exists
-      const country = await this.db.country.findUnique({
-        where: { id: createDto.countryId },
-      });
-
-      if (!country) {
-        throw new NotFoundException('Country not found');
-      }
-
-      // Check if state with same name already exists in the country
-      const existingState = await this.db.state.findFirst({
-        where: {
-          name: createDto.name,
-          countryId: createDto.countryId,
-        },
-      });
-
-      if (existingState) {
-        throw new BadRequestException(
-          'State with this name already exists in the country',
-        );
-      }
-
-      const state = await this.db.state.create({
-        data: createDto,
-      });
-
-      // Log the state creation
-      await this.logActivity(
-        userId,
-        LogAction.CREATE,
-        LogLevel.INFO,
-        'State',
-        state.id,
-        `State created: ${state.name} in ${country.name}`,
-      );
-
-      return {
-        id: state.id,
-        name: state.name,
-        code: state.code,
-        countryId: state.countryId,
-        isActive: state.isActive,
-        createdAt: state.createdAt,
-        updatedAt: state.updatedAt,
-      };
+      // For now, throw not implemented since we have comprehensive data
+      throw new BadRequestException('State creation not supported - use imported data');
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
       this.handleException(error);
       throw error;
     }
@@ -442,113 +315,19 @@ export class LocationService {
     userId: string,
   ): Promise<StateResponseDto> {
     try {
-      const state = await this.db.state.findUnique({
-        where: { id: stateId },
-        include: { country: true },
-      });
-
-      if (!state) {
-        throw new NotFoundException('State not found');
-      }
-
-      // Check if name is being changed and if it already exists in the country
-      if (updateDto.name && updateDto.name !== state.name) {
-        const existingState = await this.db.state.findFirst({
-          where: {
-            name: updateDto.name,
-            countryId: updateDto.countryId || state.countryId,
-            id: { not: stateId },
-          },
-        });
-
-        if (existingState) {
-          throw new BadRequestException(
-            'State with this name already exists in the country',
-          );
-        }
-      }
-
-      const updatedState = await this.db.state.update({
-        where: { id: stateId },
-        data: updateDto,
-      });
-
-      // Log the state update
-      await this.logActivity(
-        userId,
-        LogAction.UPDATE,
-        LogLevel.INFO,
-        'State',
-        stateId,
-        `State updated: ${updatedState.name}`,
-      );
-
-      return {
-        id: updatedState.id,
-        name: updatedState.name,
-        code: updatedState.code,
-        countryId: updatedState.countryId,
-        isActive: updatedState.isActive,
-        createdAt: updatedState.createdAt,
-        updatedAt: updatedState.updatedAt,
-      };
+      // For now, throw not implemented since we have comprehensive data
+      throw new BadRequestException('State updates not supported - use imported data');
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
       this.handleException(error);
       throw error;
     }
   }
 
-  async deleteState(
-    stateId: string,
-    userId: string,
-  ): Promise<{ message: string }> {
+  async deleteState(stateId: string, userId: string): Promise<{ message: string }> {
     try {
-      const state = await this.db.state.findUnique({
-        where: { id: stateId },
-        include: {
-          cities: true,
-        },
-      });
-
-      if (!state) {
-        throw new NotFoundException('State not found');
-      }
-
-      // Check if state has cities
-      if (state.cities.length > 0) {
-        throw new BadRequestException(
-          'Cannot delete state with existing cities. Please delete all cities first.',
-        );
-      }
-
-      await this.db.state.delete({
-        where: { id: stateId },
-      });
-
-      // Log the state deletion
-      await this.logActivity(
-        userId,
-        LogAction.DELETE,
-        LogLevel.CRITICAL,
-        'State',
-        stateId,
-        `State deleted: ${state.name}`,
-      );
-
-      return { message: 'State deleted successfully' };
+      // For now, throw not implemented since we have comprehensive data
+      throw new BadRequestException('State deletion not supported - use imported data');
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
       this.handleException(error);
       throw error;
     }
@@ -560,17 +339,9 @@ export class LocationService {
 
   async getCitiesByState(stateId: string): Promise<CityResponseDto[]> {
     try {
-      const state = await this.db.state.findUnique({
-        where: { id: stateId },
-      });
-
-      if (!state) {
-        throw new NotFoundException('State not found');
-      }
-
       const cities = await this.db.city.findMany({
         where: {
-          stateId,
+          state_id: parseInt(stateId),
           isActive: true,
         },
         orderBy: { name: 'asc' },
@@ -579,15 +350,20 @@ export class LocationService {
       return cities.map((city) => ({
         id: city.id,
         name: city.name,
-        stateId: city.stateId,
+        state_id: city.state_id,
+        state_code: city.state_code,
+        state_name: city.state_name,
+        country_id: city.country_id,
+        country_code: city.country_code,
+        country_name: city.country_name,
+        latitude: city.latitude,
+        longitude: city.longitude,
+        wikiDataId: city.wikiDataId,
         isActive: city.isActive,
         createdAt: city.createdAt,
         updatedAt: city.updatedAt,
       }));
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
       this.handleException(error);
       throw error;
     }
@@ -596,7 +372,7 @@ export class LocationService {
   async getCityById(cityId: string): Promise<CityResponseDto> {
     try {
       const city = await this.db.city.findUnique({
-        where: { id: cityId },
+        where: { id: parseInt(cityId) },
         include: {
           state: {
             include: {
@@ -611,24 +387,63 @@ export class LocationService {
       });
 
       if (!city) {
-        throw new NotFoundException('City not found');
+        throw new NotFoundException(`City with ID ${cityId} not found`);
       }
 
       return {
         id: city.id,
         name: city.name,
-        stateId: city.stateId,
+        state_id: city.state_id,
+        state_code: city.state_code,
+        state_name: city.state_name,
+        country_id: city.country_id,
+        country_code: city.country_code,
+        country_name: city.country_name,
+        latitude: city.latitude,
+        longitude: city.longitude,
+        wikiDataId: city.wikiDataId,
         isActive: city.isActive,
         createdAt: city.createdAt,
         updatedAt: city.updatedAt,
         state: {
           id: city.state.id,
           name: city.state.name,
-          code: city.state.code,
+          country_id: city.state.country_id,
+          country_code: city.state.country_code,
+          country_name: city.state.country_name,
+          iso2: city.state.iso2,
+          fips_code: city.state.fips_code,
+          type: city.state.type,
+          level: city.state.level,
+          parent_id: city.state.parent_id,
+          latitude: city.state.latitude,
+          longitude: city.state.longitude,
+          isActive: city.state.isActive,
+          createdAt: city.state.createdAt,
+          updatedAt: city.state.updatedAt,
           country: {
             id: city.state.country.id,
             name: city.state.country.name,
-            code: city.state.country.code,
+            iso3: city.state.country.iso3,
+            iso2: city.state.country.iso2,
+            numeric_code: city.state.country.numeric_code,
+            phonecode: city.state.country.phonecode,
+            capital: city.state.country.capital,
+            currency: city.state.country.currency,
+            currency_name: city.state.country.currency_name,
+            currency_symbol: city.state.country.currency_symbol,
+            tld: city.state.country.tld,
+            native: city.state.country.native,
+            region: city.state.country.region,
+            region_id: city.state.country.region_id,
+            subregion: city.state.country.subregion,
+            subregion_id: city.state.country.subregion_id,
+            nationality: city.state.country.nationality,
+            latitude: city.state.country.latitude,
+            longitude: city.state.country.longitude,
+            isActive: city.state.country.isActive,
+            createdAt: city.state.country.createdAt,
+            updatedAt: city.state.country.updatedAt,
           },
         },
         pincodes: city.pincodes.map((pincode) => ({
@@ -650,63 +465,98 @@ export class LocationService {
     }
   }
 
+  async searchCities(query: CitySearchQueryDto): Promise<CityResponseDto[]> {
+    try {
+      const cities = await this.db.city.findMany({
+        where: {
+          name: {
+            contains: query.search || '',
+            mode: 'insensitive',
+          },
+          isActive: true,
+        },
+        include: {
+          state: {
+            include: {
+              country: true,
+            },
+          },
+        },
+        orderBy: { name: 'asc' },
+        take: query.limit || 10,
+      });
+
+      return cities.map((city) => ({
+        id: city.id,
+        name: city.name,
+        state_id: city.state_id,
+        state_code: city.state_code,
+        state_name: city.state_name,
+        country_id: city.country_id,
+        country_code: city.country_code,
+        country_name: city.country_name,
+        latitude: city.latitude,
+        longitude: city.longitude,
+        wikiDataId: city.wikiDataId,
+        isActive: city.isActive,
+        createdAt: city.createdAt,
+        updatedAt: city.updatedAt,
+        state: {
+          id: city.state.id,
+          name: city.state.name,
+          country_id: city.state.country_id,
+          country_code: city.state.country_code,
+          country_name: city.state.country_name,
+          iso2: city.state.iso2,
+          fips_code: city.state.fips_code,
+          type: city.state.type,
+          level: city.state.level,
+          parent_id: city.state.parent_id,
+          latitude: city.state.latitude,
+          longitude: city.state.longitude,
+          isActive: city.state.isActive,
+          createdAt: city.state.createdAt,
+          updatedAt: city.state.updatedAt,
+          country: {
+            id: city.state.country.id,
+            name: city.state.country.name,
+            iso3: city.state.country.iso3,
+            iso2: city.state.country.iso2,
+            numeric_code: city.state.country.numeric_code,
+            phonecode: city.state.country.phonecode,
+            capital: city.state.country.capital,
+            currency: city.state.country.currency,
+            currency_name: city.state.country.currency_name,
+            currency_symbol: city.state.country.currency_symbol,
+            tld: city.state.country.tld,
+            native: city.state.country.native,
+            region: city.state.country.region,
+            region_id: city.state.country.region_id,
+            subregion: city.state.country.subregion,
+            subregion_id: city.state.country.subregion_id,
+            nationality: city.state.country.nationality,
+            latitude: city.state.country.latitude,
+            longitude: city.state.country.longitude,
+            isActive: city.state.country.isActive,
+            createdAt: city.state.country.createdAt,
+            updatedAt: city.state.country.updatedAt,
+          },
+        },
+      }));
+    } catch (error) {
+      this.handleException(error);
+      throw error;
+    }
+  }
+
   async createCity(
     createDto: CreateCityDto,
     userId: string,
   ): Promise<CityResponseDto> {
     try {
-      // Check if state exists
-      const state = await this.db.state.findUnique({
-        where: { id: createDto.stateId },
-      });
-
-      if (!state) {
-        throw new NotFoundException('State not found');
-      }
-
-      // Check if city with same name already exists in the state
-      const existingCity = await this.db.city.findFirst({
-        where: {
-          name: createDto.name,
-          stateId: createDto.stateId,
-        },
-      });
-
-      if (existingCity) {
-        throw new BadRequestException(
-          'City with this name already exists in the state',
-        );
-      }
-
-      const city = await this.db.city.create({
-        data: createDto,
-      });
-
-      // Log the city creation
-      await this.logActivity(
-        userId,
-        LogAction.CREATE,
-        LogLevel.INFO,
-        'City',
-        city.id,
-        `City created: ${city.name} in ${state.name}`,
-      );
-
-      return {
-        id: city.id,
-        name: city.name,
-        stateId: city.stateId,
-        isActive: city.isActive,
-        createdAt: city.createdAt,
-        updatedAt: city.updatedAt,
-      };
+      // For now, throw not implemented since we have comprehensive data
+      throw new BadRequestException('City creation not supported - use imported data');
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
       this.handleException(error);
       throw error;
     }
@@ -718,171 +568,18 @@ export class LocationService {
     userId: string,
   ): Promise<CityResponseDto> {
     try {
-      const city = await this.db.city.findUnique({
-        where: { id: cityId },
-        include: { state: true },
-      });
-
-      if (!city) {
-        throw new NotFoundException('City not found');
-      }
-
-      // Check if name is being changed and if it already exists in the state
-      if (updateDto.name && updateDto.name !== city.name) {
-        const existingCity = await this.db.city.findFirst({
-          where: {
-            name: updateDto.name,
-            stateId: updateDto.stateId || city.stateId,
-            id: { not: cityId },
-          },
-        });
-
-        if (existingCity) {
-          throw new BadRequestException(
-            'City with this name already exists in the state',
-          );
-        }
-      }
-
-      const updatedCity = await this.db.city.update({
-        where: { id: cityId },
-        data: updateDto,
-      });
-
-      // Log the city update
-      await this.logActivity(
-        userId,
-        LogAction.UPDATE,
-        LogLevel.INFO,
-        'City',
-        cityId,
-        `City updated: ${updatedCity.name}`,
-      );
-
-      return {
-        id: updatedCity.id,
-        name: updatedCity.name,
-        stateId: updatedCity.stateId,
-        isActive: updatedCity.isActive,
-        createdAt: updatedCity.createdAt,
-        updatedAt: updatedCity.updatedAt,
-      };
+      // For now, throw not implemented since we have comprehensive data
+      throw new BadRequestException('City updates not supported - use imported data');
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
       this.handleException(error);
       throw error;
     }
   }
 
-  async deleteCity(
-    cityId: string,
-    userId: string,
-  ): Promise<{ message: string }> {
+  async deleteCity(cityId: string, userId: string): Promise<{ message: string }> {
     try {
-      const city = await this.db.city.findUnique({
-        where: { id: cityId },
-        include: {
-          pincodes: true,
-        },
-      });
-
-      if (!city) {
-        throw new NotFoundException('City not found');
-      }
-
-      // Check if city has pincodes
-      if (city.pincodes.length > 0) {
-        throw new BadRequestException(
-          'Cannot delete city with existing pincodes. Please delete all pincodes first.',
-        );
-      }
-
-      await this.db.city.delete({
-        where: { id: cityId },
-      });
-
-      // Log the city deletion
-      await this.logActivity(
-        userId,
-        LogAction.DELETE,
-        LogLevel.CRITICAL,
-        'City',
-        cityId,
-        `City deleted: ${city.name}`,
-      );
-
-      return { message: 'City deleted successfully' };
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-      this.handleException(error);
-      throw error;
-    }
-  }
-
-  async searchCities(query: CitySearchQueryDto): Promise<CityResponseDto[]> {
-    try {
-      const { search, stateId, countryId } = query;
-
-      const whereClause: any = { isActive: true };
-
-      if (search) {
-        whereClause.name = {
-          contains: search,
-          mode: 'insensitive',
-        };
-      }
-
-      if (stateId) {
-        whereClause.stateId = stateId;
-      }
-
-      if (countryId) {
-        whereClause.state = {
-          countryId: countryId,
-        };
-      }
-
-      const cities = await this.db.city.findMany({
-        where: whereClause,
-        include: {
-          state: {
-            include: {
-              country: true,
-            },
-          },
-        },
-        orderBy: { name: 'asc' },
-        take: 50, // Limit results
-      });
-
-      return cities.map((city) => ({
-        id: city.id,
-        name: city.name,
-        stateId: city.stateId,
-        isActive: city.isActive,
-        createdAt: city.createdAt,
-        updatedAt: city.updatedAt,
-        state: {
-          id: city.state.id,
-          name: city.state.name,
-          code: city.state.code,
-          country: {
-            id: city.state.country.id,
-            name: city.state.country.name,
-            code: city.state.country.code,
-          },
-        },
-      }));
+      // For now, throw not implemented since we have comprehensive data
+      throw new BadRequestException('City deletion not supported - use imported data');
     } catch (error) {
       this.handleException(error);
       throw error;
@@ -895,17 +592,9 @@ export class LocationService {
 
   async getPincodesByCity(cityId: string): Promise<PincodeResponseDto[]> {
     try {
-      const city = await this.db.city.findUnique({
-        where: { id: cityId },
-      });
-
-      if (!city) {
-        throw new NotFoundException('City not found');
-      }
-
       const pincodes = await this.db.pincode.findMany({
         where: {
-          cityId,
+          cityId: parseInt(cityId),
           isActive: true,
         },
         orderBy: { code: 'asc' },
@@ -921,9 +610,6 @@ export class LocationService {
         updatedAt: pincode.updatedAt,
       }));
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
       this.handleException(error);
       throw error;
     }
@@ -947,7 +633,7 @@ export class LocationService {
       });
 
       if (!pincode) {
-        throw new NotFoundException('Pincode not found');
+        throw new NotFoundException(`Pincode with ID ${pincodeId} not found`);
       }
 
       return {
@@ -961,14 +647,57 @@ export class LocationService {
         city: {
           id: pincode.city.id,
           name: pincode.city.name,
+          state_id: pincode.city.state_id,
+          state_code: pincode.city.state_code,
+          state_name: pincode.city.state_name,
+          country_id: pincode.city.country_id,
+          country_code: pincode.city.country_code,
+          country_name: pincode.city.country_name,
+          latitude: pincode.city.latitude,
+          longitude: pincode.city.longitude,
+          wikiDataId: pincode.city.wikiDataId,
+          isActive: pincode.city.isActive,
+          createdAt: pincode.city.createdAt,
+          updatedAt: pincode.city.updatedAt,
           state: {
             id: pincode.city.state.id,
             name: pincode.city.state.name,
-            code: pincode.city.state.code,
+            country_id: pincode.city.state.country_id,
+            country_code: pincode.city.state.country_code,
+            country_name: pincode.city.state.country_name,
+            iso2: pincode.city.state.iso2,
+            fips_code: pincode.city.state.fips_code,
+            type: pincode.city.state.type,
+            level: pincode.city.state.level,
+            parent_id: pincode.city.state.parent_id,
+            latitude: pincode.city.state.latitude,
+            longitude: pincode.city.state.longitude,
+            isActive: pincode.city.state.isActive,
+            createdAt: pincode.city.state.createdAt,
+            updatedAt: pincode.city.state.updatedAt,
             country: {
               id: pincode.city.state.country.id,
               name: pincode.city.state.country.name,
-              code: pincode.city.state.country.code,
+              iso3: pincode.city.state.country.iso3,
+              iso2: pincode.city.state.country.iso2,
+              numeric_code: pincode.city.state.country.numeric_code,
+              phonecode: pincode.city.state.country.phonecode,
+              capital: pincode.city.state.country.capital,
+              currency: pincode.city.state.country.currency,
+              currency_name: pincode.city.state.country.currency_name,
+              currency_symbol: pincode.city.state.country.currency_symbol,
+              tld: pincode.city.state.country.tld,
+              native: pincode.city.state.country.native,
+              region: pincode.city.state.country.region,
+              region_id: pincode.city.state.country.region_id,
+              subregion: pincode.city.state.country.subregion,
+              subregion_id: pincode.city.state.country.subregion_id,
+              nationality: pincode.city.state.country.nationality,
+              latitude: pincode.city.state.country.latitude,
+              longitude: pincode.city.state.country.longitude,
+              isActive: pincode.city.state.country.isActive,
+              createdAt: pincode.city.state.country.createdAt,
+              updatedAt: pincode.city.state.country.updatedAt,
             },
           },
         },
@@ -987,59 +716,9 @@ export class LocationService {
     userId: string,
   ): Promise<PincodeResponseDto> {
     try {
-      // Check if city exists
-      const city = await this.db.city.findUnique({
-        where: { id: createDto.cityId },
-      });
-
-      if (!city) {
-        throw new NotFoundException('City not found');
-      }
-
-      // Check if pincode with same code already exists in the city
-      const existingPincode = await this.db.pincode.findFirst({
-        where: {
-          code: createDto.code,
-          cityId: createDto.cityId,
-        },
-      });
-
-      if (existingPincode) {
-        throw new BadRequestException(
-          'Pincode with this code already exists in the city',
-        );
-      }
-
-      const pincode = await this.db.pincode.create({
-        data: createDto,
-      });
-
-      // Log the pincode creation
-      await this.logActivity(
-        userId,
-        LogAction.CREATE,
-        LogLevel.INFO,
-        'Pincode',
-        pincode.id,
-        `Pincode created: ${pincode.code} in ${city.name}`,
-      );
-
-      return {
-        id: pincode.id,
-        code: pincode.code,
-        area: pincode.area,
-        cityId: pincode.cityId,
-        isActive: pincode.isActive,
-        createdAt: pincode.createdAt,
-        updatedAt: pincode.updatedAt,
-      };
+      // For now, throw not implemented since we have comprehensive data
+      throw new BadRequestException('Pincode creation not supported - use imported data');
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
       this.handleException(error);
       throw error;
     }
@@ -1051,141 +730,34 @@ export class LocationService {
     userId: string,
   ): Promise<PincodeResponseDto> {
     try {
-      const pincode = await this.db.pincode.findUnique({
-        where: { id: pincodeId },
-        include: { city: true },
-      });
-
-      if (!pincode) {
-        throw new NotFoundException('Pincode not found');
-      }
-
-      // Check if code is being changed and if it already exists in the city
-      if (updateDto.code && updateDto.code !== pincode.code) {
-        const existingPincode = await this.db.pincode.findFirst({
-          where: {
-            code: updateDto.code,
-            cityId: updateDto.cityId || pincode.cityId,
-            id: { not: pincodeId },
-          },
-        });
-
-        if (existingPincode) {
-          throw new BadRequestException(
-            'Pincode with this code already exists in the city',
-          );
-        }
-      }
-
-      const updatedPincode = await this.db.pincode.update({
-        where: { id: pincodeId },
-        data: updateDto,
-      });
-
-      // Log the pincode update
-      await this.logActivity(
-        userId,
-        LogAction.UPDATE,
-        LogLevel.INFO,
-        'Pincode',
-        pincodeId,
-        `Pincode updated: ${updatedPincode.code}`,
-      );
-
-      return {
-        id: updatedPincode.id,
-        code: updatedPincode.code,
-        area: updatedPincode.area,
-        cityId: updatedPincode.cityId,
-        isActive: updatedPincode.isActive,
-        createdAt: updatedPincode.createdAt,
-        updatedAt: updatedPincode.updatedAt,
-      };
+      // For now, throw not implemented since we have comprehensive data
+      throw new BadRequestException('Pincode updates not supported - use imported data');
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
       this.handleException(error);
       throw error;
     }
   }
 
-  async deletePincode(
-    pincodeId: string,
-    userId: string,
-  ): Promise<{ message: string }> {
+  async deletePincode(pincodeId: string, userId: string): Promise<{ message: string }> {
     try {
-      const pincode = await this.db.pincode.findUnique({
-        where: { id: pincodeId },
-      });
-
-      if (!pincode) {
-        throw new NotFoundException('Pincode not found');
-      }
-
-      await this.db.pincode.delete({
-        where: { id: pincodeId },
-      });
-
-      // Log the pincode deletion
-      await this.logActivity(
-        userId,
-        LogAction.DELETE,
-        LogLevel.CRITICAL,
-        'Pincode',
-        pincodeId,
-        `Pincode deleted: ${pincode.code}`,
-      );
-
-      return { message: 'Pincode deleted successfully' };
+      // For now, throw not implemented since we have comprehensive data
+      throw new BadRequestException('Pincode deletion not supported - use imported data');
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
       this.handleException(error);
       throw error;
     }
   }
 
   // =================================================================
-  // HELPER METHODS
+  // UTILITY METHODS
   // =================================================================
-
-  private async logActivity(
-    userId: string,
-    action: LogAction,
-    level: LogLevel,
-    entity: string,
-    entityId: string,
-    description: string,
-    metadata?: any,
-    ipAddress?: string,
-    userAgent?: string,
-  ): Promise<void> {
-    try {
-      await this.db.activityLog.create({
-        data: {
-          userId,
-          action,
-          level,
-          entity,
-          entityId,
-          description,
-          metadata,
-          ipAddress,
-          userAgent,
-        },
-      });
-    } catch (error) {
-      // Don't throw error for logging failures
-      console.error('Failed to log activity:', error);
-    }
-  }
 
   private handleException(error: any): void {
-    throw new InternalServerErrorException("Can't process location request");
+    if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      throw error;
+    }
+
+    console.error('Location Service Error:', error);
+    throw new InternalServerErrorException('An unexpected error occurred');
   }
 }

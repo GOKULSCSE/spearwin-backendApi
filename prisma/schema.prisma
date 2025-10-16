@@ -127,12 +127,28 @@ enum JobAttributeCategory {
 // =================================================================
 
 model Country {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  code      String   @unique // ISO country code (e.g., IN, US)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            Int      @id
+  name          String
+  iso3          String?
+  iso2          String?
+  numeric_code  String?
+  phonecode     String?
+  capital       String?
+  currency      String?
+  currency_name String?
+  currency_symbol String?
+  tld           String?
+  native        String?
+  region        String?
+  region_id     Int?
+  subregion     String?
+  subregion_id  Int?
+  nationality   String?
+  latitude      String?
+  longitude     String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   states State[]
 
@@ -140,36 +156,50 @@ model Country {
 }
 
 model State {
-  id        String   @id @default(cuid())
-  name      String
-  code      String? // State code
-  countryId String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          Int      @id
+  name        String
+  country_id  Int
+  country_code String?
+  country_name String?
+  iso2        String?
+  fips_code   String?
+  type        String?
+  level       String?
+  parent_id   Int?
+  latitude    String?
+  longitude   String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  country Country @relation(fields: [country_id], references: [id], onDelete: Cascade)
   cities  City[]
 
-  @@unique([name, countryId])
   @@map("states")
 }
 
 model City {
-  id        String   @id @default(cuid())
-  name      String
-  stateId   String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            Int      @id
+  name          String
+  state_id      Int
+  state_code    String?
+  state_name    String?
+  country_id    Int?
+  country_code  String?
+  country_name  String?
+  latitude      String?
+  longitude     String?
+  wikiDataId    String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  state     State      @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  state     State      @relation(fields: [state_id], references: [id], onDelete: Cascade)
   pincodes  Pincode[]
   companies Company[]
   jobs      Job[]
   candidates Candidate[]
 
-  @@unique([name, stateId])
   @@map("cities")
 }
 
@@ -177,7 +207,7 @@ model Pincode {
   id        String   @id @default(cuid())
   code      String
   area      String?
-  cityId    String
+  cityId    Int
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -246,12 +276,21 @@ model Candidate {
   expectedSalary  Decimal?
   profileType     String? // FRESHER, EXPERIENCED
   experienceYears Int?
-  cityId          String?
+  cityId          Int?
   address         String?
   linkedinUrl     String?
   githubUrl       String?
   portfolioUrl    String?
   isAvailable     Boolean           @default(true)
+  // Additional fields
+  email           String?
+  mobileNumber    String?
+  jobExperience   String?
+  country         String?
+  state           String?
+  cityName        String?
+  streetAddress   String?
+  profileSummary  String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
@@ -310,7 +349,7 @@ model Company {
   foundedYear     Int?
   employeeCount   String?
   headquarters    String?
-  cityId          String?
+  cityId          Int?
   address         String?
   linkedinUrl     String?
   twitterUrl      String?
@@ -413,7 +452,7 @@ model Job {
   benefits         String?
   companyId        String
   postedById       String? // Admin who posted (if posted by admin)
-  cityId           String?
+  cityId           Int?
   address          String?
   jobType          JobType
   workMode         WorkMode

@@ -2,10 +2,11 @@ import {
   IsString,
   IsOptional,
   IsBoolean,
+  IsInt,
   MinLength,
   MaxLength,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateStateDto {
   @IsString({ message: 'Name must be a string' })
@@ -20,8 +21,9 @@ export class CreateStateDto {
   @Transform(({ value }) => value?.trim().toUpperCase())
   code?: string;
 
-  @IsString({ message: 'Country ID must be a string' })
-  countryId: string;
+  @IsInt({ message: 'Country ID must be a number' })
+  @Type(() => Number)
+  countryId: number;
 
   @IsOptional()
   @IsBoolean({ message: 'Is active must be a boolean value' })
@@ -43,8 +45,9 @@ export class UpdateStateDto {
   code?: string;
 
   @IsOptional()
-  @IsString({ message: 'Country ID must be a string' })
-  countryId?: string;
+  @IsInt({ message: 'Country ID must be a number' })
+  @Type(() => Number)
+  countryId?: number;
 
   @IsOptional()
   @IsBoolean({ message: 'Is active must be a boolean value' })
@@ -52,25 +55,57 @@ export class UpdateStateDto {
 }
 
 export class StateResponseDto {
-  id: string;
+  id: number;
   name: string;
-  code?: string | null;
-  countryId: string;
+  country_id: number;
+  country_code?: string | null;
+  country_name?: string | null;
+  iso2?: string | null;
+  fips_code?: string | null;
+  type?: string | null;
+  level?: string | null;
+  parent_id?: number | null;
+  latitude?: string | null;
+  longitude?: string | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
   country?: {
-    id: string;
+    id: number;
     name: string;
-    code: string;
+    iso3?: string | null;
+    iso2?: string | null;
+    numeric_code?: string | null;
+    phonecode?: string | null;
+    capital?: string | null;
+    currency?: string | null;
+    currency_name?: string | null;
+    currency_symbol?: string | null;
+    tld?: string | null;
+    native?: string | null;
+    region?: string | null;
+    region_id?: number | null;
+    subregion?: string | null;
+    subregion_id?: number | null;
+    nationality?: string | null;
+    latitude?: string | null;
+    longitude?: string | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
   };
   cities?: {
-    id: string;
+    id: number;
     name: string;
-    stateId: string;
+    state_id: number;
+    state_code?: string | null;
+    state_name?: string | null;
+    country_id?: number | null;
+    country_code?: string | null;
+    country_name?: string | null;
+    latitude?: string | null;
+    longitude?: string | null;
+    wikiDataId?: string | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;

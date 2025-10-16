@@ -67,7 +67,23 @@ __decorate([
 class CountryResponseDto {
     id;
     name;
-    code;
+    iso3;
+    iso2;
+    numeric_code;
+    phonecode;
+    capital;
+    currency;
+    currency_name;
+    currency_symbol;
+    tld;
+    native;
+    region;
+    region_id;
+    subregion;
+    subregion_id;
+    nationality;
+    latitude;
+    longitude;
     isActive;
     createdAt;
     updatedAt;
