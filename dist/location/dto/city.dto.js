@@ -26,8 +26,9 @@ __decorate([
     __metadata("design:type", String)
 ], CreateCityDto.prototype, "name", void 0);
 __decorate([
-    (0, class_validator_1.IsString)({ message: 'State ID must be a string' }),
-    __metadata("design:type", String)
+    (0, class_validator_1.IsInt)({ message: 'State ID must be a number' }),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
 ], CreateCityDto.prototype, "stateId", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
@@ -50,8 +51,9 @@ __decorate([
 ], UpdateCityDto.prototype, "name", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'State ID must be a string' }),
-    __metadata("design:type", String)
+    (0, class_validator_1.IsInt)({ message: 'State ID must be a number' }),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
 ], UpdateCityDto.prototype, "stateId", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
@@ -61,7 +63,15 @@ __decorate([
 class CityResponseDto {
     id;
     name;
-    stateId;
+    state_id;
+    state_code;
+    state_name;
+    country_id;
+    country_code;
+    country_name;
+    latitude;
+    longitude;
+    wikiDataId;
     isActive;
     createdAt;
     updatedAt;
@@ -73,6 +83,7 @@ class CitySearchQueryDto {
     search;
     stateId;
     countryId;
+    limit;
 }
 exports.CitySearchQueryDto = CitySearchQueryDto;
 __decorate([
@@ -82,12 +93,20 @@ __decorate([
 ], CitySearchQueryDto.prototype, "search", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'State ID must be a string' }),
-    __metadata("design:type", String)
+    (0, class_validator_1.IsInt)({ message: 'State ID must be a number' }),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
 ], CitySearchQueryDto.prototype, "stateId", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Country ID must be a string' }),
-    __metadata("design:type", String)
+    (0, class_validator_1.IsInt)({ message: 'Country ID must be a number' }),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
 ], CitySearchQueryDto.prototype, "countryId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)({ message: 'Limit must be a number' }),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], CitySearchQueryDto.prototype, "limit", void 0);
 //# sourceMappingURL=city.dto.js.map

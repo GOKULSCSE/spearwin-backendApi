@@ -20,6 +20,8 @@ async function bootstrap() {
       'Accept',
       'Origin',
       'X-Requested-With',
+      'X-User-Type',
+      'X-User-Email',
     ],
     credentials: true, // Important for cookies/auth
     preflightContinue: false,
