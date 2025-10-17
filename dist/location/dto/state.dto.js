@@ -80,13 +80,12 @@ class StateResponseDto {
     id;
     name;
     country_id;
+    state_id;
     country_code;
     country_name;
     iso2;
     fips_code;
     type;
-    level;
-    parent_id;
     latitude;
     longitude;
     isActive;

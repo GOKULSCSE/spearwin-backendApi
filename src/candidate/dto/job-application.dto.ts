@@ -65,8 +65,8 @@ export class ApplicationResponseDto {
         updatedAt: Date;
         state: {
           id: number;
-          name: string;
-          country_id: number;
+          name: string | null;
+          country_id: number | null;
           country_code?: string | null;
           country_name?: string | null;
           iso2?: string | null;
@@ -79,7 +79,7 @@ export class ApplicationResponseDto {
           isActive: boolean;
           createdAt: Date;
           updatedAt: Date;
-          country: {
+          country?: {
             id: number;
             name: string;
             iso3?: string | null;

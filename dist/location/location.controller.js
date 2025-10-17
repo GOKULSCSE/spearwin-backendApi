@@ -43,6 +43,9 @@ let LocationController = class LocationController {
     async deleteCountry(countryId, user) {
         return this.locationService.deleteCountry(countryId, user.id);
     }
+    async getAllStates() {
+        return this.locationService.getAllStates();
+    }
     async getStatesByCountry(countryId) {
         return this.locationService.getStatesByCountry(countryId);
     }
@@ -57,6 +60,9 @@ let LocationController = class LocationController {
     }
     async deleteState(stateId, user) {
         return this.locationService.deleteState(stateId, user.id);
+    }
+    async getAllCities() {
+        return this.locationService.getAllCities();
     }
     async getCitiesByState(stateId) {
         return this.locationService.getCitiesByState(stateId);
@@ -135,6 +141,12 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], LocationController.prototype, "deleteCountry", null);
 __decorate([
+    (0, common_1.Get)('states'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], LocationController.prototype, "getAllStates", null);
+__decorate([
     (0, common_1.Get)('countries/:countryId/states'),
     __param(0, (0, common_1.Param)('countryId')),
     __metadata("design:type", Function),
@@ -176,6 +188,12 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], LocationController.prototype, "deleteState", null);
+__decorate([
+    (0, common_1.Get)('cities'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], LocationController.prototype, "getAllCities", null);
 __decorate([
     (0, common_1.Get)('states/:stateId/cities'),
     __param(0, (0, common_1.Param)('stateId')),

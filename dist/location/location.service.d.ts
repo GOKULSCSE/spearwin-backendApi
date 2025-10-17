@@ -13,10 +13,12 @@ export declare class LocationService {
     deleteCountry(countryId: string, userId: string): Promise<{
         message: string;
     }>;
+    getAllStates(): Promise<StateResponseDto[]>;
     getStatesByCountry(countryId: string): Promise<StateResponseDto[]>;
     getStateById(stateId: string): Promise<StateResponseDto>;
     createState(createDto: CreateStateDto, userId: string): Promise<StateResponseDto>;
     updateState(stateId: string, updateDto: UpdateStateDto, userId: string): Promise<StateResponseDto>;
+    getAllCities(): Promise<CityResponseDto[]>;
     deleteState(stateId: string, userId: string): Promise<{
         message: string;
     }>;

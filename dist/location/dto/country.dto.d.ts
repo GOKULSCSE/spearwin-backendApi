@@ -1,11 +1,43 @@
 export declare class CreateCountryDto {
     name: string;
-    code: string;
+    iso3?: string;
+    iso2?: string;
+    numeric_code?: string;
+    phonecode?: string;
+    capital?: string;
+    currency?: string;
+    currency_name?: string;
+    currency_symbol?: string;
+    tld?: string;
+    native?: string;
+    region?: string;
+    region_id?: number;
+    subregion?: string;
+    subregion_id?: number;
+    nationality?: string;
+    latitude?: string;
+    longitude?: string;
     isActive?: boolean;
 }
 export declare class UpdateCountryDto {
     name?: string;
-    code?: string;
+    iso3?: string;
+    iso2?: string;
+    numeric_code?: string;
+    phonecode?: string;
+    capital?: string;
+    currency?: string;
+    currency_name?: string;
+    currency_symbol?: string;
+    tld?: string;
+    native?: string;
+    region?: string;
+    region_id?: number;
+    subregion?: string;
+    subregion_id?: number;
+    nationality?: string;
+    latitude?: string;
+    longitude?: string;
     isActive?: boolean;
 }
 export declare class CountryResponseDto {
@@ -33,19 +65,16 @@ export declare class CountryResponseDto {
     updatedAt: Date;
     states?: {
         id: number;
-        name: string;
-        country_id: number;
+        name: string | null;
+        country_id: number | null;
         country_code?: string | null;
         country_name?: string | null;
         iso2?: string | null;
         fips_code?: string | null;
         type?: string | null;
-        level?: string | null;
-        parent_id?: number | null;
         latitude?: string | null;
         longitude?: string | null;
         isActive: boolean;
         createdAt: Date;
-        updatedAt: Date;
     }[];
 }
