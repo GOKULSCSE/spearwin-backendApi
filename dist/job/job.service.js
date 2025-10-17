@@ -427,12 +427,16 @@ let JobService = class JobService {
                 }),
             ]);
             return {
-                companies,
+                companies: companies.map((company) => ({
+                    id: Number(company.id),
+                    name: company.name,
+                    logo: company.logo,
+                })),
                 locations: locations.map((location) => ({
                     id: location.id,
                     name: location.name,
                     state: location.state.name,
-                    country: location.state.country.name,
+                    country: location.state.country?.name || 'Unknown',
                 })),
                 jobTypes: jobTypes.map((job) => job.jobType),
                 experienceLevels: experienceLevels.map((job) => job.experienceLevel),
@@ -572,11 +576,11 @@ let JobService = class JobService {
                         state: {
                             id: job.city.state.id,
                             name: job.city.state.name,
-                            code: job.city.state.code,
+                            iso2: job.city.state.iso2,
                             country: {
                                 id: job.city.state.country.id,
                                 name: job.city.state.country.name,
-                                code: job.city.state.country.code,
+                                iso2: job.city.state.country.iso2,
                             },
                         },
                     },
@@ -719,14 +723,12 @@ let JobService = class JobService {
                                     iso2: application.job.city.state.iso2,
                                     fips_code: application.job.city.state.fips_code,
                                     type: application.job.city.state.type,
-                                    level: application.job.city.state.level,
-                                    parent_id: application.job.city.state.parent_id,
                                     latitude: application.job.city.state.latitude,
                                     longitude: application.job.city.state.longitude,
                                     isActive: application.job.city.state.isActive,
                                     createdAt: application.job.city.state.createdAt,
                                     updatedAt: application.job.city.state.updatedAt,
-                                    country: {
+                                    country: application.job.city.state.country ? {
                                         id: application.job.city.state.country.id,
                                         name: application.job.city.state.country.name,
                                         iso3: application.job.city.state.country.iso3,
@@ -749,7 +751,7 @@ let JobService = class JobService {
                                         isActive: application.job.city.state.country.isActive,
                                         createdAt: application.job.city.state.country.createdAt,
                                         updatedAt: application.job.city.state.country.updatedAt,
-                                    },
+                                    } : undefined,
                                 },
                             },
                         }

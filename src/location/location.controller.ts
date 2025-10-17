@@ -93,6 +93,11 @@ export class LocationController {
   // STATE MANAGEMENT
   // =================================================================
 
+  @Get('states')
+  async getAllStates(): Promise<StateResponseDto[]> {
+    return this.locationService.getAllStates();
+  }
+
   @Get('countries/:countryId/states')
   async getStatesByCountry(
     @Param('countryId') countryId: string,
@@ -136,6 +141,11 @@ export class LocationController {
   // =================================================================
   // CITY MANAGEMENT
   // =================================================================
+
+  @Get('cities')
+  async getAllCities(): Promise<CityResponseDto[]> {
+    return this.locationService.getAllCities();
+  }
 
   @Get('states/:stateId/cities')
   async getCitiesByState(

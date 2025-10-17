@@ -64,10 +64,10 @@ export class ApplicationQueryDto {
 }
 
 export class AdminApplicationResponseDto {
-  id: string;
-  jobId: string;
-  candidateId: string;
-  resumeId?: string;
+  id: number;
+  jobId: number;
+  candidateId: number;
+  resumeId?: number;
   coverLetter?: string;
   status: ApplicationStatus;
   appliedAt: Date;
@@ -75,16 +75,16 @@ export class AdminApplicationResponseDto {
   reviewedBy?: string;
   feedback?: string;
   updatedAt: Date;
-  job: {
-    id: string;
-    title: string;
-    slug: string;
-    description: string;
-    company: {
-      id: string;
-      name: string;
-      logo?: string;
-    };
+    job: {
+      id: number;
+      title: string;
+      slug: string;
+      description: string;
+      company: {
+        id: number;
+        name: string;
+        logo?: string;
+      };
     location?: {
       city: {
         id: number;
@@ -103,8 +103,8 @@ export class AdminApplicationResponseDto {
         updatedAt: Date;
         state: {
           id: number;
-          name: string;
-          country_id: number;
+          name: string | null;
+          country_id: number | null;
           country_code?: string | null;
           country_name?: string | null;
           iso2?: string | null;
@@ -117,9 +117,9 @@ export class AdminApplicationResponseDto {
           isActive: boolean;
           createdAt: Date;
           updatedAt: Date;
-          country: {
+          country?: {
             id: number;
-            name: string;
+            name: string | null;
             iso3?: string | null;
             iso2?: string | null;
             numeric_code?: string | null;
@@ -157,7 +157,7 @@ export class AdminApplicationResponseDto {
     city?: {
       id: number;
       name: string;
-      state_id: number;
+      state_id?: number | null;
       state_code?: string | null;
       state_name?: string | null;
       country_id?: number | null;
@@ -168,11 +168,12 @@ export class AdminApplicationResponseDto {
       wikiDataId?: string | null;
       isActive: boolean;
       createdAt: Date;
-      updatedAt: Date;
+        updatedAt: Date;
       state: {
         id: number;
-        name: string;
-        country_id: number;
+        name?: string | null;
+        country_id?: number | null;
+        state_id?: number | null;
         country_code?: string | null;
         country_name?: string | null;
         iso2?: string | null;
@@ -185,9 +186,9 @@ export class AdminApplicationResponseDto {
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        country: {
+        country?: {
           id: number;
-          name: string;
+          name: string | null;
           iso3?: string | null;
           iso2?: string | null;
           numeric_code?: string | null;
@@ -212,12 +213,12 @@ export class AdminApplicationResponseDto {
       };
     };
   };
-  resume?: {
-    id: string;
-    title: string;
-    fileName: string;
-    uploadedAt: Date;
-  };
+    resume?: {
+      id: number;
+      title: string;
+      fileName: string;
+      uploadedAt: Date;
+    };
 }
 
 export class ApplicationsListResponseDto {

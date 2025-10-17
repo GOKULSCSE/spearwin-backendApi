@@ -1,6 +1,6 @@
 export class CompanyResponseDto {
-  id: string;
-  userId?: string | null;
+  id: number;
+  userId?: number | null;
   name: string;
   slug: string;
   description?: string | null;
@@ -16,8 +16,8 @@ export class CompanyResponseDto {
   facebookUrl?: string | null;
   isVerified: boolean;
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+        createdAt: Date;
+        updatedAt?: Date;
   city?: {
     id: number;
     name: string;
@@ -32,24 +32,22 @@ export class CompanyResponseDto {
     wikiDataId?: string | null;
     isActive: boolean;
     createdAt: Date;
-    updatedAt: Date;
-    state: {
+    updatedAt?: Date;
+    state?: {
       id: number;
-      name: string;
-      country_id: number;
+      name: string | null;
+      country_id: number | null;
       country_code?: string | null;
       country_name?: string | null;
       iso2?: string | null;
       fips_code?: string | null;
       type?: string | null;
-      level?: string | null;
-      parent_id?: number | null;
       latitude?: string | null;
       longitude?: string | null;
       isActive: boolean;
       createdAt: Date;
-      updatedAt: Date;
-      country: {
+      updatedAt?: Date;
+      country?: {
         id: number;
         name: string;
         iso3?: string | null;
