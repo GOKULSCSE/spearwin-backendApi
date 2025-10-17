@@ -9,9 +9,20 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateNotificationPreferencesDto = exports.NotificationPreferencesResponseDto = exports.NotificationPreferencesDto = void 0;
+exports.UpdateNotificationPreferencesDto = exports.NotificationPreferencesResponseDto = exports.NotificationPreferencesDto = exports.NotificationType = void 0;
 const class_validator_1 = require("class-validator");
-const client_1 = require("@prisma/client");
+var NotificationType;
+(function (NotificationType) {
+    NotificationType["JOB_ALERT"] = "JOB_ALERT";
+    NotificationType["APPLICATION_UPDATE"] = "APPLICATION_UPDATE";
+    NotificationType["PROFILE_UPDATE"] = "PROFILE_UPDATE";
+    NotificationType["SYSTEM_NOTIFICATION"] = "SYSTEM_NOTIFICATION";
+    NotificationType["SECURITY_ALERT"] = "SECURITY_ALERT";
+    NotificationType["COMPANY_UPDATE"] = "COMPANY_UPDATE";
+    NotificationType["NEW_MESSAGE"] = "NEW_MESSAGE";
+    NotificationType["INTERVIEW_SCHEDULED"] = "INTERVIEW_SCHEDULED";
+    NotificationType["JOB_RECOMMENDATION"] = "JOB_RECOMMENDATION";
+})(NotificationType || (exports.NotificationType = NotificationType = {}));
 class NotificationPreferencesDto {
     type;
     email;
@@ -21,7 +32,7 @@ class NotificationPreferencesDto {
 }
 exports.NotificationPreferencesDto = NotificationPreferencesDto;
 __decorate([
-    (0, class_validator_1.IsEnum)(client_1.NotificationType),
+    (0, class_validator_1.IsEnum)(NotificationType),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], NotificationPreferencesDto.prototype, "type", void 0);
