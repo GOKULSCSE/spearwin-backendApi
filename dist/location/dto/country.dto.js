@@ -14,7 +14,23 @@ const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 class CreateCountryDto {
     name;
-    code;
+    iso3;
+    iso2;
+    numeric_code;
+    phonecode;
+    capital;
+    currency;
+    currency_name;
+    currency_symbol;
+    tld;
+    native;
+    region;
+    region_id;
+    subregion;
+    subregion_id;
+    nationality;
+    latitude;
+    longitude;
     isActive;
 }
 exports.CreateCountryDto = CreateCountryDto;
@@ -26,12 +42,96 @@ __decorate([
     __metadata("design:type", String)
 ], CreateCountryDto.prototype, "name", void 0);
 __decorate([
-    (0, class_validator_1.IsString)({ message: 'Code must be a string' }),
-    (0, class_validator_1.MinLength)(2, { message: 'Code must be at least 2 characters long' }),
-    (0, class_validator_1.MaxLength)(3, { message: 'Code must not exceed 3 characters' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'ISO3 must be a string' }),
+    (0, class_validator_1.MaxLength)(3, { message: 'ISO3 must not exceed 3 characters' }),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim().toUpperCase()),
     __metadata("design:type", String)
-], CreateCountryDto.prototype, "code", void 0);
+], CreateCountryDto.prototype, "iso3", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'ISO2 must be a string' }),
+    (0, class_validator_1.MaxLength)(2, { message: 'ISO2 must not exceed 2 characters' }),
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim().toUpperCase()),
+    __metadata("design:type", String)
+], CreateCountryDto.prototype, "iso2", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Numeric code must be a string' }),
+    __metadata("design:type", String)
+], CreateCountryDto.prototype, "numeric_code", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Phone code must be a string' }),
+    __metadata("design:type", String)
+], CreateCountryDto.prototype, "phonecode", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Capital must be a string' }),
+    __metadata("design:type", String)
+], CreateCountryDto.prototype, "capital", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Currency must be a string' }),
+    __metadata("design:type", String)
+], CreateCountryDto.prototype, "currency", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Currency name must be a string' }),
+    __metadata("design:type", String)
+], CreateCountryDto.prototype, "currency_name", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Currency symbol must be a string' }),
+    __metadata("design:type", String)
+], CreateCountryDto.prototype, "currency_symbol", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'TLD must be a string' }),
+    __metadata("design:type", String)
+], CreateCountryDto.prototype, "tld", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Native must be a string' }),
+    __metadata("design:type", String)
+], CreateCountryDto.prototype, "native", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Region must be a string' }),
+    __metadata("design:type", String)
+], CreateCountryDto.prototype, "region", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsNumber)({}, { message: 'Region ID must be a number' }),
+    __metadata("design:type", Number)
+], CreateCountryDto.prototype, "region_id", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Subregion must be a string' }),
+    __metadata("design:type", String)
+], CreateCountryDto.prototype, "subregion", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsNumber)({}, { message: 'Subregion ID must be a number' }),
+    __metadata("design:type", Number)
+], CreateCountryDto.prototype, "subregion_id", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Nationality must be a string' }),
+    __metadata("design:type", String)
+], CreateCountryDto.prototype, "nationality", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Latitude must be a string' }),
+    __metadata("design:type", String)
+], CreateCountryDto.prototype, "latitude", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Longitude must be a string' }),
+    __metadata("design:type", String)
+], CreateCountryDto.prototype, "longitude", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsBoolean)({ message: 'Is active must be a boolean value' }),
@@ -39,7 +139,23 @@ __decorate([
 ], CreateCountryDto.prototype, "isActive", void 0);
 class UpdateCountryDto {
     name;
-    code;
+    iso3;
+    iso2;
+    numeric_code;
+    phonecode;
+    capital;
+    currency;
+    currency_name;
+    currency_symbol;
+    tld;
+    native;
+    region;
+    region_id;
+    subregion;
+    subregion_id;
+    nationality;
+    latitude;
+    longitude;
     isActive;
 }
 exports.UpdateCountryDto = UpdateCountryDto;
@@ -53,12 +169,95 @@ __decorate([
 ], UpdateCountryDto.prototype, "name", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Code must be a string' }),
-    (0, class_validator_1.MinLength)(2, { message: 'Code must be at least 2 characters long' }),
-    (0, class_validator_1.MaxLength)(3, { message: 'Code must not exceed 3 characters' }),
+    (0, class_validator_1.IsString)({ message: 'ISO3 must be a string' }),
+    (0, class_validator_1.MaxLength)(3, { message: 'ISO3 must not exceed 3 characters' }),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim().toUpperCase()),
     __metadata("design:type", String)
-], UpdateCountryDto.prototype, "code", void 0);
+], UpdateCountryDto.prototype, "iso3", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'ISO2 must be a string' }),
+    (0, class_validator_1.MaxLength)(2, { message: 'ISO2 must not exceed 2 characters' }),
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim().toUpperCase()),
+    __metadata("design:type", String)
+], UpdateCountryDto.prototype, "iso2", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Numeric code must be a string' }),
+    __metadata("design:type", String)
+], UpdateCountryDto.prototype, "numeric_code", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Phone code must be a string' }),
+    __metadata("design:type", String)
+], UpdateCountryDto.prototype, "phonecode", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Capital must be a string' }),
+    __metadata("design:type", String)
+], UpdateCountryDto.prototype, "capital", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Currency must be a string' }),
+    __metadata("design:type", String)
+], UpdateCountryDto.prototype, "currency", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Currency name must be a string' }),
+    __metadata("design:type", String)
+], UpdateCountryDto.prototype, "currency_name", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Currency symbol must be a string' }),
+    __metadata("design:type", String)
+], UpdateCountryDto.prototype, "currency_symbol", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'TLD must be a string' }),
+    __metadata("design:type", String)
+], UpdateCountryDto.prototype, "tld", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Native must be a string' }),
+    __metadata("design:type", String)
+], UpdateCountryDto.prototype, "native", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Region must be a string' }),
+    __metadata("design:type", String)
+], UpdateCountryDto.prototype, "region", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsNumber)({}, { message: 'Region ID must be a number' }),
+    __metadata("design:type", Number)
+], UpdateCountryDto.prototype, "region_id", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Subregion must be a string' }),
+    __metadata("design:type", String)
+], UpdateCountryDto.prototype, "subregion", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsNumber)({}, { message: 'Subregion ID must be a number' }),
+    __metadata("design:type", Number)
+], UpdateCountryDto.prototype, "subregion_id", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Nationality must be a string' }),
+    __metadata("design:type", String)
+], UpdateCountryDto.prototype, "nationality", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Latitude must be a string' }),
+    __metadata("design:type", String)
+], UpdateCountryDto.prototype, "latitude", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Longitude must be a string' }),
+    __metadata("design:type", String)
+], UpdateCountryDto.prototype, "longitude", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsBoolean)({ message: 'Is active must be a boolean value' }),

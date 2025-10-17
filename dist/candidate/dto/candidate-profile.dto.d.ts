@@ -74,7 +74,7 @@ export declare class CandidateProfileResponseDto {
     city?: {
         id: number;
         name: string;
-        state_id: number;
+        state_id?: number | null;
         state_code?: string | null;
         state_name?: string | null;
         country_id?: number | null;
@@ -88,8 +88,9 @@ export declare class CandidateProfileResponseDto {
         updatedAt: Date;
         state: {
             id: number;
-            name: string;
-            country_id: number;
+            name?: string | null;
+            country_id?: number | null;
+            state_id?: number | null;
             country_code?: string | null;
             country_name?: string | null;
             iso2?: string | null;
@@ -102,9 +103,9 @@ export declare class CandidateProfileResponseDto {
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
-            country: {
+            country?: {
                 id: number;
-                name: string;
+                name: string | null;
                 iso3?: string | null;
                 iso2?: string | null;
                 numeric_code?: string | null;

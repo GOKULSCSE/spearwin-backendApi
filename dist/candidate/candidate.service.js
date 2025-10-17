@@ -71,7 +71,7 @@ let CandidateService = class CandidateService {
                         name: candidate.city.name,
                         state_id: candidate.city.state_id,
                         state_code: candidate.city.state_code,
-                        state_name: candidate.city.state_name,
+                        state_name: candidate.city.state?.name,
                         country_id: candidate.city.country_id,
                         country_code: candidate.city.country_code,
                         country_name: candidate.city.country_name,
@@ -90,14 +90,12 @@ let CandidateService = class CandidateService {
                             iso2: candidate.city.state.iso2,
                             fips_code: candidate.city.state.fips_code,
                             type: candidate.city.state.type,
-                            level: candidate.city.state.level,
-                            parent_id: candidate.city.state.parent_id,
                             latitude: candidate.city.state.latitude,
                             longitude: candidate.city.state.longitude,
                             isActive: candidate.city.state.isActive,
                             createdAt: candidate.city.state.createdAt,
                             updatedAt: candidate.city.state.updatedAt,
-                            country: {
+                            country: candidate.city.state.country ? {
                                 id: candidate.city.state.country.id,
                                 name: candidate.city.state.country.name,
                                 iso3: candidate.city.state.country.iso3,
@@ -120,7 +118,7 @@ let CandidateService = class CandidateService {
                                 isActive: candidate.city.state.country.isActive,
                                 createdAt: candidate.city.state.country.createdAt,
                                 updatedAt: candidate.city.state.country.updatedAt,
-                            },
+                            } : undefined,
                         },
                     }
                     : undefined,
@@ -133,32 +131,7 @@ let CandidateService = class CandidateService {
     }
     async getCandidateProfile(userId) {
         try {
-            const candidate = await this.db.candidate.findFirst({
-                where: { userId },
-                include: {
-                    city: {
-                        include: {
-                            state: {
-                                include: {
-                                    country: true,
-                                },
-                            },
-                        },
-                    },
-                    user: {
-                        select: {
-                            email: true,
-                            phone: true,
-                        },
-                    },
-                    skills: true,
-                    education: true,
-                    experience: true,
-                },
-            });
-            if (!candidate) {
-                throw new common_1.NotFoundException('Candidate profile not found');
-            }
+            const candidate = await this.getOrCreateCandidate(userId);
             return {
                 id: candidate.id,
                 userId: candidate.userId,
@@ -259,7 +232,7 @@ let CandidateService = class CandidateService {
                         name: updatedCandidate.city.name,
                         state_id: updatedCandidate.city.state_id,
                         state_code: updatedCandidate.city.state_code,
-                        state_name: updatedCandidate.city.state_name,
+                        state_name: updatedCandidate.city.state?.name,
                         country_id: updatedCandidate.city.country_id,
                         country_code: updatedCandidate.city.country_code,
                         country_name: updatedCandidate.city.country_name,
@@ -278,14 +251,12 @@ let CandidateService = class CandidateService {
                             iso2: updatedCandidate.city.state.iso2,
                             fips_code: updatedCandidate.city.state.fips_code,
                             type: updatedCandidate.city.state.type,
-                            level: updatedCandidate.city.state.level,
-                            parent_id: updatedCandidate.city.state.parent_id,
                             latitude: updatedCandidate.city.state.latitude,
                             longitude: updatedCandidate.city.state.longitude,
                             isActive: updatedCandidate.city.state.isActive,
                             createdAt: updatedCandidate.city.state.createdAt,
                             updatedAt: updatedCandidate.city.state.updatedAt,
-                            country: {
+                            country: updatedCandidate.city.state.country ? {
                                 id: updatedCandidate.city.state.country.id,
                                 name: updatedCandidate.city.state.country.name,
                                 iso3: updatedCandidate.city.state.country.iso3,
@@ -308,7 +279,7 @@ let CandidateService = class CandidateService {
                                 isActive: updatedCandidate.city.state.country.isActive,
                                 createdAt: updatedCandidate.city.state.country.createdAt,
                                 updatedAt: updatedCandidate.city.state.country.updatedAt,
-                            },
+                            } : undefined,
                         },
                     }
                     : undefined,
@@ -368,7 +339,7 @@ let CandidateService = class CandidateService {
                     email: candidate.user.email,
                     phone: candidate.user.phone || '',
                     location: candidate.city
-                        ? `${candidate.city.name}, ${candidate.city.state.name}, ${candidate.city.state.country.name}`
+                        ? `${candidate.city.name}, ${candidate.city.state.name}, ${candidate.city.state.country?.name || 'Unknown'}`
                         : '',
                 },
                 experience: candidate.experience.map((exp) => ({
@@ -938,17 +909,80 @@ let CandidateService = class CandidateService {
             console.error('Failed to log activity:', error);
         }
     }
+    async getOrCreateCandidate(userId) {
+        let candidate = await this.db.candidate.findFirst({
+            where: { userId },
+            include: {
+                city: {
+                    include: {
+                        state: {
+                            include: {
+                                country: true,
+                            },
+                        },
+                    },
+                },
+                user: {
+                    select: {
+                        email: true,
+                        phone: true,
+                    },
+                },
+                skills: true,
+                education: true,
+                experience: true,
+            },
+        });
+        if (!candidate) {
+            candidate = await this.db.candidate.create({
+                data: {
+                    userId,
+                    firstName: '',
+                    lastName: '',
+                    email: '',
+                    mobileNumber: '',
+                    jobExperience: '',
+                    country: '',
+                    state: '',
+                    cityName: '',
+                    streetAddress: '',
+                    profileSummary: '',
+                    isAvailable: true,
+                },
+                include: {
+                    city: {
+                        include: {
+                            state: {
+                                include: {
+                                    country: true,
+                                },
+                            },
+                        },
+                    },
+                    user: {
+                        select: {
+                            email: true,
+                            phone: true,
+                        },
+                    },
+                    skills: true,
+                    education: true,
+                    experience: true,
+                },
+            });
+            await this.logActivity(userId, client_1.LogAction.CREATE, client_1.LogLevel.INFO, 'Candidate', candidate.id, 'Candidate profile auto-created');
+        }
+        return candidate;
+    }
     async updateCandidateProfile(userId, updateDto) {
         try {
-            const candidate = await this.db.candidate.findFirst({
-                where: { userId },
-            });
-            if (!candidate) {
-                throw new common_1.NotFoundException('Candidate profile not found');
-            }
+            const candidate = await this.getOrCreateCandidate(userId);
             const updateData = { ...updateDto };
             if (updateDto.dateOfBirth) {
                 updateData.dateOfBirth = new Date(updateDto.dateOfBirth);
+            }
+            if (updateDto.cityId) {
+                updateData.cityId = parseInt(updateDto.cityId);
             }
             const updatedCandidate = await this.db.candidate.update({
                 where: { id: candidate.id },
@@ -1015,7 +1049,63 @@ let CandidateService = class CandidateService {
                 createdAt: updatedCandidate.createdAt,
                 updatedAt: updatedCandidate.updatedAt,
                 user: updatedCandidate.user,
-                city: updatedCandidate.city,
+                city: updatedCandidate.city ? {
+                    id: updatedCandidate.city.id,
+                    name: updatedCandidate.city.name,
+                    state_id: updatedCandidate.city.state_id,
+                    state_code: updatedCandidate.city.state_code,
+                    state_name: updatedCandidate.city.state_name,
+                    country_id: updatedCandidate.city.country_id,
+                    country_code: updatedCandidate.city.country_code,
+                    country_name: updatedCandidate.city.country_name,
+                    latitude: updatedCandidate.city.latitude,
+                    longitude: updatedCandidate.city.longitude,
+                    wikiDataId: updatedCandidate.city.wikiDataId,
+                    isActive: updatedCandidate.city.isActive,
+                    createdAt: updatedCandidate.city.createdAt,
+                    updatedAt: updatedCandidate.city.updatedAt,
+                    state: {
+                        id: updatedCandidate.city.state.id,
+                        name: updatedCandidate.city.state.name,
+                        country_id: updatedCandidate.city.state.country_id,
+                        country_code: updatedCandidate.city.state.country_code,
+                        country_name: updatedCandidate.city.state.country_name,
+                        iso2: updatedCandidate.city.state.iso2,
+                        fips_code: updatedCandidate.city.state.fips_code,
+                        type: updatedCandidate.city.state.type,
+                        level: updatedCandidate.city.state.level,
+                        parent_id: updatedCandidate.city.state.parent_id,
+                        latitude: updatedCandidate.city.state.latitude,
+                        longitude: updatedCandidate.city.state.longitude,
+                        isActive: updatedCandidate.city.state.isActive,
+                        createdAt: updatedCandidate.city.state.createdAt,
+                        updatedAt: updatedCandidate.city.state.updatedAt,
+                        country: updatedCandidate.city.state.country ? {
+                            id: updatedCandidate.city.state.country.id,
+                            name: updatedCandidate.city.state.country.name,
+                            iso3: updatedCandidate.city.state.country.iso3,
+                            iso2: updatedCandidate.city.state.country.iso2,
+                            numeric_code: updatedCandidate.city.state.country.numeric_code,
+                            phonecode: updatedCandidate.city.state.country.phonecode,
+                            capital: updatedCandidate.city.state.country.capital,
+                            currency: updatedCandidate.city.state.country.currency,
+                            currency_name: updatedCandidate.city.state.country.currency_name,
+                            currency_symbol: updatedCandidate.city.state.country.currency_symbol,
+                            tld: updatedCandidate.city.state.country.tld,
+                            native: updatedCandidate.city.state.country.native,
+                            region: updatedCandidate.city.state.country.region,
+                            region_id: updatedCandidate.city.state.country.region_id,
+                            subregion: updatedCandidate.city.state.country.subregion,
+                            subregion_id: updatedCandidate.city.state.country.subregion_id,
+                            nationality: updatedCandidate.city.state.country.nationality,
+                            latitude: updatedCandidate.city.state.country.latitude,
+                            longitude: updatedCandidate.city.state.country.longitude,
+                            isActive: updatedCandidate.city.state.country.isActive,
+                            createdAt: updatedCandidate.city.state.country.createdAt,
+                            updatedAt: updatedCandidate.city.state.country.updatedAt,
+                        } : undefined,
+                    },
+                } : undefined,
             };
         }
         catch (error) {
@@ -1695,11 +1785,11 @@ let CandidateService = class CandidateService {
                                     id: job.city.state.id,
                                     name: job.city.state.name,
                                     iso2: job.city.state.iso2,
-                                    country: {
+                                    country: job.city.state.country ? {
                                         id: job.city.state.country.id,
                                         name: job.city.state.country.name,
                                         iso2: job.city.state.country.iso2,
-                                    },
+                                    } : undefined,
                                 },
                             },
                         }
@@ -1970,14 +2060,12 @@ let CandidateService = class CandidateService {
                                         iso2: app.job.city.state.iso2,
                                         fips_code: app.job.city.state.fips_code,
                                         type: app.job.city.state.type,
-                                        level: app.job.city.state.level,
-                                        parent_id: app.job.city.state.parent_id,
                                         latitude: app.job.city.state.latitude,
                                         longitude: app.job.city.state.longitude,
                                         isActive: app.job.city.state.isActive,
                                         createdAt: app.job.city.state.createdAt,
                                         updatedAt: app.job.city.state.updatedAt,
-                                        country: {
+                                        country: app.job.city.state.country ? {
                                             id: app.job.city.state.country.id,
                                             name: app.job.city.state.country.name,
                                             iso3: app.job.city.state.country.iso3,
@@ -2000,7 +2088,7 @@ let CandidateService = class CandidateService {
                                             isActive: app.job.city.state.country.isActive,
                                             createdAt: app.job.city.state.country.createdAt,
                                             updatedAt: app.job.city.state.country.updatedAt,
-                                        },
+                                        } : undefined,
                                     },
                                 },
                             }
@@ -2158,14 +2246,12 @@ let CandidateService = class CandidateService {
                                         iso2: app.job.city.state.iso2,
                                         fips_code: app.job.city.state.fips_code,
                                         type: app.job.city.state.type,
-                                        level: app.job.city.state.level,
-                                        parent_id: app.job.city.state.parent_id,
                                         latitude: app.job.city.state.latitude,
                                         longitude: app.job.city.state.longitude,
                                         isActive: app.job.city.state.isActive,
                                         createdAt: app.job.city.state.createdAt,
                                         updatedAt: app.job.city.state.updatedAt,
-                                        country: {
+                                        country: app.job.city.state.country ? {
                                             id: app.job.city.state.country.id,
                                             name: app.job.city.state.country.name,
                                             iso3: app.job.city.state.country.iso3,
@@ -2188,7 +2274,7 @@ let CandidateService = class CandidateService {
                                             isActive: app.job.city.state.country.isActive,
                                             createdAt: app.job.city.state.country.createdAt,
                                             updatedAt: app.job.city.state.country.updatedAt,
-                                        },
+                                        } : undefined,
                                     },
                                 },
                             }
@@ -2321,30 +2407,32 @@ let CandidateService = class CandidateService {
                                     isActive: application.job.city.state.isActive,
                                     createdAt: application.job.city.state.createdAt,
                                     updatedAt: application.job.city.state.updatedAt,
-                                    country: {
-                                        id: application.job.city.state.country.id,
-                                        name: application.job.city.state.country.name,
-                                        iso3: application.job.city.state.country.iso3,
-                                        iso2: application.job.city.state.country.iso2,
-                                        numeric_code: application.job.city.state.country.numeric_code,
-                                        phonecode: application.job.city.state.country.phonecode,
-                                        capital: application.job.city.state.country.capital,
-                                        currency: application.job.city.state.country.currency,
-                                        currency_name: application.job.city.state.country.currency_name,
-                                        currency_symbol: application.job.city.state.country.currency_symbol,
-                                        tld: application.job.city.state.country.tld,
-                                        native: application.job.city.state.country.native,
-                                        region: application.job.city.state.country.region,
-                                        region_id: application.job.city.state.country.region_id,
-                                        subregion: application.job.city.state.country.subregion,
-                                        subregion_id: application.job.city.state.country.subregion_id,
-                                        nationality: application.job.city.state.country.nationality,
-                                        latitude: application.job.city.state.country.latitude,
-                                        longitude: application.job.city.state.country.longitude,
-                                        isActive: application.job.city.state.country.isActive,
-                                        createdAt: application.job.city.state.country.createdAt,
-                                        updatedAt: application.job.city.state.country.updatedAt,
-                                    },
+                                    country: application.job.city.state.country
+                                        ? {
+                                            id: application.job.city.state.country.id,
+                                            name: application.job.city.state.country.name,
+                                            iso3: application.job.city.state.country.iso3,
+                                            iso2: application.job.city.state.country.iso2,
+                                            numeric_code: application.job.city.state.country.numeric_code,
+                                            phonecode: application.job.city.state.country.phonecode,
+                                            capital: application.job.city.state.country.capital,
+                                            currency: application.job.city.state.country.currency,
+                                            currency_name: application.job.city.state.country.currency_name,
+                                            currency_symbol: application.job.city.state.country.currency_symbol,
+                                            tld: application.job.city.state.country.tld,
+                                            native: application.job.city.state.country.native,
+                                            region: application.job.city.state.country.region,
+                                            region_id: application.job.city.state.country.region_id,
+                                            subregion: application.job.city.state.country.subregion,
+                                            subregion_id: application.job.city.state.country.subregion_id,
+                                            nationality: application.job.city.state.country.nationality,
+                                            latitude: application.job.city.state.country.latitude,
+                                            longitude: application.job.city.state.country.longitude,
+                                            isActive: application.job.city.state.country.isActive,
+                                            createdAt: application.job.city.state.country.createdAt,
+                                            updatedAt: application.job.city.state.country.updatedAt,
+                                        }
+                                        : undefined,
                                 },
                             },
                         }
@@ -2482,30 +2570,32 @@ let CandidateService = class CandidateService {
                                     isActive: updatedApplication.job.city.state.isActive,
                                     createdAt: updatedApplication.job.city.state.createdAt,
                                     updatedAt: updatedApplication.job.city.state.updatedAt,
-                                    country: {
-                                        id: updatedApplication.job.city.state.country.id,
-                                        name: updatedApplication.job.city.state.country.name,
-                                        iso3: updatedApplication.job.city.state.country.iso3,
-                                        iso2: updatedApplication.job.city.state.country.iso2,
-                                        numeric_code: updatedApplication.job.city.state.country.numeric_code,
-                                        phonecode: updatedApplication.job.city.state.country.phonecode,
-                                        capital: updatedApplication.job.city.state.country.capital,
-                                        currency: updatedApplication.job.city.state.country.currency,
-                                        currency_name: updatedApplication.job.city.state.country.currency_name,
-                                        currency_symbol: updatedApplication.job.city.state.country.currency_symbol,
-                                        tld: updatedApplication.job.city.state.country.tld,
-                                        native: updatedApplication.job.city.state.country.native,
-                                        region: updatedApplication.job.city.state.country.region,
-                                        region_id: updatedApplication.job.city.state.country.region_id,
-                                        subregion: updatedApplication.job.city.state.country.subregion,
-                                        subregion_id: updatedApplication.job.city.state.country.subregion_id,
-                                        nationality: updatedApplication.job.city.state.country.nationality,
-                                        latitude: updatedApplication.job.city.state.country.latitude,
-                                        longitude: updatedApplication.job.city.state.country.longitude,
-                                        isActive: updatedApplication.job.city.state.country.isActive,
-                                        createdAt: updatedApplication.job.city.state.country.createdAt,
-                                        updatedAt: updatedApplication.job.city.state.country.updatedAt,
-                                    },
+                                    country: updatedApplication.job.city.state.country
+                                        ? {
+                                            id: updatedApplication.job.city.state.country.id,
+                                            name: updatedApplication.job.city.state.country.name,
+                                            iso3: updatedApplication.job.city.state.country.iso3,
+                                            iso2: updatedApplication.job.city.state.country.iso2,
+                                            numeric_code: updatedApplication.job.city.state.country.numeric_code,
+                                            phonecode: updatedApplication.job.city.state.country.phonecode,
+                                            capital: updatedApplication.job.city.state.country.capital,
+                                            currency: updatedApplication.job.city.state.country.currency,
+                                            currency_name: updatedApplication.job.city.state.country.currency_name,
+                                            currency_symbol: updatedApplication.job.city.state.country.currency_symbol,
+                                            tld: updatedApplication.job.city.state.country.tld,
+                                            native: updatedApplication.job.city.state.country.native,
+                                            region: updatedApplication.job.city.state.country.region,
+                                            region_id: updatedApplication.job.city.state.country.region_id,
+                                            subregion: updatedApplication.job.city.state.country.subregion,
+                                            subregion_id: updatedApplication.job.city.state.country.subregion_id,
+                                            nationality: updatedApplication.job.city.state.country.nationality,
+                                            latitude: updatedApplication.job.city.state.country.latitude,
+                                            longitude: updatedApplication.job.city.state.country.longitude,
+                                            isActive: updatedApplication.job.city.state.country.isActive,
+                                            createdAt: updatedApplication.job.city.state.country.createdAt,
+                                            updatedAt: updatedApplication.job.city.state.country.updatedAt,
+                                        }
+                                        : undefined,
                                 },
                             },
                         }

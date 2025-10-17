@@ -1,6 +1,6 @@
 export declare class CompanyResponseDto {
-    id: string;
-    userId?: string | null;
+    id: number;
+    userId?: number | null;
     name: string;
     slug: string;
     description?: string | null;
@@ -17,7 +17,7 @@ export declare class CompanyResponseDto {
     isVerified: boolean;
     isActive: boolean;
     createdAt: Date;
-    updatedAt: Date;
+    updatedAt?: Date;
     city?: {
         id: number;
         name: string;
@@ -32,24 +32,22 @@ export declare class CompanyResponseDto {
         wikiDataId?: string | null;
         isActive: boolean;
         createdAt: Date;
-        updatedAt: Date;
-        state: {
+        updatedAt?: Date;
+        state?: {
             id: number;
-            name: string;
-            country_id: number;
+            name: string | null;
+            country_id: number | null;
             country_code?: string | null;
             country_name?: string | null;
             iso2?: string | null;
             fips_code?: string | null;
             type?: string | null;
-            level?: string | null;
-            parent_id?: number | null;
             latitude?: string | null;
             longitude?: string | null;
             isActive: boolean;
             createdAt: Date;
-            updatedAt: Date;
-            country: {
+            updatedAt?: Date;
+            country?: {
                 id: number;
                 name: string;
                 iso3?: string | null;

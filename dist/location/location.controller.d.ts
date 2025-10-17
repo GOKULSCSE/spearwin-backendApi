@@ -14,6 +14,7 @@ export declare class LocationController {
     deleteCountry(countryId: string, user: CurrentUser): Promise<{
         message: string;
     }>;
+    getAllStates(): Promise<StateResponseDto[]>;
     getStatesByCountry(countryId: string): Promise<StateResponseDto[]>;
     getStateById(stateId: string): Promise<StateResponseDto>;
     createState(user: CurrentUser, createDto: CreateStateDto): Promise<StateResponseDto>;
@@ -21,6 +22,7 @@ export declare class LocationController {
     deleteState(stateId: string, user: CurrentUser): Promise<{
         message: string;
     }>;
+    getAllCities(): Promise<CityResponseDto[]>;
     getCitiesByState(stateId: string): Promise<CityResponseDto[]>;
     getCityById(cityId: string): Promise<CityResponseDto>;
     createCity(user: CurrentUser, createDto: CreateCityDto): Promise<CityResponseDto>;

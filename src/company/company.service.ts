@@ -111,8 +111,8 @@ export class CompanyService {
 
       return {
         companies: companies.map((company) => ({
-          id: company.id,
-          userId: company.userId,
+          id: Number(company.id),
+          userId: company.userId ? Number(company.userId) : undefined,
           name: company.name,
           slug: company.slug,
           description: company.description,
@@ -145,7 +145,6 @@ export class CompanyService {
                 wikiDataId: company.city.wikiDataId,
                 isActive: company.city.isActive,
                 createdAt: company.city.createdAt,
-                updatedAt: company.city.updatedAt,
                 state: {
                   id: company.city.state.id,
                   name: company.city.state.name,
@@ -155,14 +154,11 @@ export class CompanyService {
                   iso2: company.city.state.iso2,
                   fips_code: company.city.state.fips_code,
                   type: company.city.state.type,
-                  level: company.city.state.level,
-                  parent_id: company.city.state.parent_id,
                   latitude: company.city.state.latitude,
                   longitude: company.city.state.longitude,
                   isActive: company.city.state.isActive,
                   createdAt: company.city.state.createdAt,
-                  updatedAt: company.city.state.updatedAt,
-                  country: {
+                  country: company.city.state.country ? {
                     id: company.city.state.country.id,
                     name: company.city.state.country.name,
                     iso3: company.city.state.country.iso3,
@@ -185,7 +181,7 @@ export class CompanyService {
                     isActive: company.city.state.country.isActive,
                     createdAt: company.city.state.country.createdAt,
                     updatedAt: company.city.state.country.updatedAt,
-                  },
+                  } : undefined,
                 },
               }
             : undefined,
@@ -239,8 +235,8 @@ export class CompanyService {
       }
 
       return {
-        id: company.id,
-        userId: company.userId,
+        id: Number(company.id),
+        userId: company.userId ? Number(company.userId) : undefined,
         name: company.name,
         slug: company.slug,
         description: company.description,
@@ -273,7 +269,6 @@ export class CompanyService {
               wikiDataId: company.city.wikiDataId,
               isActive: company.city.isActive,
               createdAt: company.city.createdAt,
-              updatedAt: company.city.updatedAt,
               state: {
                 id: company.city.state.id,
                 name: company.city.state.name,
@@ -283,14 +278,11 @@ export class CompanyService {
                 iso2: company.city.state.iso2,
                 fips_code: company.city.state.fips_code,
                 type: company.city.state.type,
-                level: company.city.state.level,
-                parent_id: company.city.state.parent_id,
                 latitude: company.city.state.latitude,
                 longitude: company.city.state.longitude,
                 isActive: company.city.state.isActive,
                 createdAt: company.city.state.createdAt,
-                updatedAt: company.city.state.updatedAt,
-                country: {
+                country: company.city.state.country ? {
                   id: company.city.state.country.id,
                   name: company.city.state.country.name,
                   iso3: company.city.state.country.iso3,
@@ -313,7 +305,7 @@ export class CompanyService {
                   isActive: company.city.state.country.isActive,
                   createdAt: company.city.state.country.createdAt,
                   updatedAt: company.city.state.country.updatedAt,
-                },
+                } : undefined,
               },
             }
           : undefined,
@@ -386,8 +378,8 @@ export class CompanyService {
       );
 
       return {
-        id: company.id,
-        userId: company.userId,
+        id: Number(company.id),
+        userId: company.userId ? Number(company.userId) : undefined,
         name: company.name,
         slug: company.slug,
         description: company.description,
@@ -420,7 +412,6 @@ export class CompanyService {
               wikiDataId: company.city.wikiDataId,
               isActive: company.city.isActive,
               createdAt: company.city.createdAt,
-              updatedAt: company.city.updatedAt,
               state: {
                 id: company.city.state.id,
                 name: company.city.state.name,
@@ -430,14 +421,11 @@ export class CompanyService {
                 iso2: company.city.state.iso2,
                 fips_code: company.city.state.fips_code,
                 type: company.city.state.type,
-                level: company.city.state.level,
-                parent_id: company.city.state.parent_id,
                 latitude: company.city.state.latitude,
                 longitude: company.city.state.longitude,
                 isActive: company.city.state.isActive,
                 createdAt: company.city.state.createdAt,
-                updatedAt: company.city.state.updatedAt,
-                country: {
+                country: company.city.state.country ? {
                   id: company.city.state.country.id,
                   name: company.city.state.country.name,
                   iso3: company.city.state.country.iso3,
@@ -460,7 +448,7 @@ export class CompanyService {
                   isActive: company.city.state.country.isActive,
                   createdAt: company.city.state.country.createdAt,
                   updatedAt: company.city.state.country.updatedAt,
-                },
+                } : undefined,
               },
             }
           : undefined,
@@ -547,8 +535,8 @@ export class CompanyService {
       );
 
       return {
-        id: updatedCompany.id,
-        userId: updatedCompany.userId,
+        id: Number(updatedCompany.id),
+        userId: updatedCompany.userId ? Number(updatedCompany.userId) : undefined,
         name: updatedCompany.name,
         slug: updatedCompany.slug,
         description: updatedCompany.description,
@@ -581,7 +569,6 @@ export class CompanyService {
               wikiDataId: updatedCompany.city.wikiDataId,
               isActive: updatedCompany.city.isActive,
               createdAt: updatedCompany.city.createdAt,
-              updatedAt: updatedCompany.city.updatedAt,
               state: {
                 id: updatedCompany.city.state.id,
                 name: updatedCompany.city.state.name,
@@ -591,14 +578,11 @@ export class CompanyService {
                 iso2: updatedCompany.city.state.iso2,
                 fips_code: updatedCompany.city.state.fips_code,
                 type: updatedCompany.city.state.type,
-                level: updatedCompany.city.state.level,
-                parent_id: updatedCompany.city.state.parent_id,
                 latitude: updatedCompany.city.state.latitude,
                 longitude: updatedCompany.city.state.longitude,
                 isActive: updatedCompany.city.state.isActive,
                 createdAt: updatedCompany.city.state.createdAt,
-                updatedAt: updatedCompany.city.state.updatedAt,
-                country: {
+                country: updatedCompany.city.state.country ? {
                   id: updatedCompany.city.state.country.id,
                   name: updatedCompany.city.state.country.name,
                   iso3: updatedCompany.city.state.country.iso3,
@@ -621,7 +605,7 @@ export class CompanyService {
                   isActive: updatedCompany.city.state.country.isActive,
                   createdAt: updatedCompany.city.state.country.createdAt,
                   updatedAt: updatedCompany.city.state.country.updatedAt,
-                },
+                } : undefined,
               },
             }
           : undefined,
@@ -860,11 +844,11 @@ export class CompanyService {
                 state: {
                   id: job.city.state.id,
                   name: job.city.state.name,
-                  country: {
+                  country: job.city.state.country ? {
                     id: job.city.state.country.id,
                     name: job.city.state.country.name,
                     iso2: job.city.state.country.iso2,
-                  },
+                  } : undefined,
                 },
               }
             : undefined,
