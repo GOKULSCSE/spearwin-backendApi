@@ -44,6 +44,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserService = void 0;
 const common_1 = require("@nestjs/common");
+const notification_preferences_dto_1 = require("./dto/notification-preferences.dto");
 const client_1 = require("@prisma/client");
 const database_service_1 = require("../database/database.service");
 const bcrypt = __importStar(require("bcryptjs"));
@@ -362,35 +363,35 @@ let UserService = class UserService {
             });
             const defaultPreferences = [
                 {
-                    type: 'JOB_ALERT',
+                    type: notification_preferences_dto_1.NotificationType.JOB_ALERT,
                     email: true,
                     push: true,
                     sms: false,
                     inApp: true,
                 },
                 {
-                    type: 'APPLICATION_UPDATE',
+                    type: notification_preferences_dto_1.NotificationType.APPLICATION_UPDATE,
                     email: true,
                     push: true,
                     sms: false,
                     inApp: true,
                 },
                 {
-                    type: 'SYSTEM_NOTIFICATION',
+                    type: notification_preferences_dto_1.NotificationType.SYSTEM_NOTIFICATION,
                     email: true,
                     push: true,
                     sms: false,
                     inApp: true,
                 },
                 {
-                    type: 'SECURITY_ALERT',
+                    type: notification_preferences_dto_1.NotificationType.SECURITY_ALERT,
                     email: true,
                     push: true,
                     sms: true,
                     inApp: true,
                 },
                 {
-                    type: 'COMPANY_UPDATE',
+                    type: notification_preferences_dto_1.NotificationType.COMPANY_UPDATE,
                     email: true,
                     push: true,
                     sms: false,

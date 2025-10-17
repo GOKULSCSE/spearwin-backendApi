@@ -14,6 +14,7 @@ import {
   UpdateNotificationPreferencesDto,
   NotificationPreferencesDto,
   NotificationPreferencesResponseDto,
+  NotificationType,
 } from './dto/notification-preferences.dto';
 import { UserProfileResponseDto } from './dto/user-profile-response.dto';
 import { ActivityLogsResponseDto } from './dto/activity-logs-response.dto';
@@ -448,35 +449,35 @@ export class UserService {
       // Default preferences if no settings exist
       const defaultPreferences: NotificationPreferencesDto[] = [
         {
-          type: 'JOB_ALERT',
+          type: NotificationType.JOB_ALERT,
           email: true,
           push: true,
           sms: false,
           inApp: true,
         },
         {
-          type: 'APPLICATION_UPDATE',
+          type: NotificationType.APPLICATION_UPDATE,
           email: true,
           push: true,
           sms: false,
           inApp: true,
         },
         {
-          type: 'SYSTEM_NOTIFICATION',
+          type: NotificationType.SYSTEM_NOTIFICATION,
           email: true,
           push: true,
           sms: false,
           inApp: true,
         },
         {
-          type: 'SECURITY_ALERT',
+          type: NotificationType.SECURITY_ALERT,
           email: true,
           push: true,
           sms: true,
           inApp: true,
         },
         {
-          type: 'COMPANY_UPDATE',
+          type: NotificationType.COMPANY_UPDATE,
           email: true,
           push: true,
           sms: false,
