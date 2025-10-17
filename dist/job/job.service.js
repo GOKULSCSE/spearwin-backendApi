@@ -849,7 +849,7 @@ let JobService = class JobService {
                 const conflictingAttribute = await this.db.jobAttribute.findFirst({
                     where: {
                         name: updateJobAttributeDto.name,
-                        category: updateJobAttributeDto.category || existingAttribute.category,
+                        category: (updateJobAttributeDto.category || existingAttribute.category),
                         id: { not: id },
                     },
                 });
@@ -859,7 +859,10 @@ let JobService = class JobService {
             }
             const updatedAttribute = await this.db.jobAttribute.update({
                 where: { id },
-                data: updateJobAttributeDto,
+                data: {
+                    ...updateJobAttributeDto,
+                    category: updateJobAttributeDto.category,
+                },
             });
             return {
                 id: updatedAttribute.id,
@@ -1019,7 +1022,7 @@ let JobService = class JobService {
             const { category, attributes } = bulkCreateDto;
             const existingNames = await this.db.jobAttribute.findMany({
                 where: {
-                    category,
+                    category: category,
                     name: { in: attributes.map((attr) => attr.name) },
                 },
                 select: { name: true },
@@ -1032,7 +1035,7 @@ let JobService = class JobService {
             const createdAttributes = await this.db.jobAttribute.createMany({
                 data: newAttributes.map((attr) => ({
                     name: attr.name,
-                    category,
+                    category: category,
                     description: attr.description,
                     sortOrder: attr.sortOrder ?? 0,
                 })),

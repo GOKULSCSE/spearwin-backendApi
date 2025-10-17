@@ -992,7 +992,7 @@ export class JobService {
       const existingAttribute = await this.db.jobAttribute.findFirst({
         where: {
           name: createJobAttributeDto.name,
-          category: createJobAttributeDto.category,
+          category: createJobAttributeDto.category as any,
         },
       });
 
@@ -1005,7 +1005,7 @@ export class JobService {
       const jobAttribute = await this.db.jobAttribute.create({
         data: {
           name: createJobAttributeDto.name,
-          category: createJobAttributeDto.category,
+          category: createJobAttributeDto.category as any,
           description: createJobAttributeDto.description,
           isActive: createJobAttributeDto.isActive ?? true,
           sortOrder: createJobAttributeDto.sortOrder ?? 0,
@@ -1051,7 +1051,7 @@ export class JobService {
         const conflictingAttribute = await this.db.jobAttribute.findFirst({
           where: {
             name: updateJobAttributeDto.name,
-            category: updateJobAttributeDto.category || existingAttribute.category,
+            category: (updateJobAttributeDto.category || existingAttribute.category) as any,
             id: { not: id },
           },
         });
@@ -1065,7 +1065,10 @@ export class JobService {
 
       const updatedAttribute = await this.db.jobAttribute.update({
         where: { id },
-        data: updateJobAttributeDto,
+        data: {
+          ...updateJobAttributeDto,
+          category: updateJobAttributeDto.category as any,
+        },
       });
 
       return {
@@ -1166,7 +1169,7 @@ export class JobService {
       const where: Prisma.JobAttributeWhereInput = {};
 
       if (category) {
-        where.category = category;
+        where.category = category as any;
       }
 
       if (isActive !== undefined) {
@@ -1235,7 +1238,7 @@ export class JobService {
         });
 
         result.push({
-          category: category as JobAttributeCategory,
+          category: category as any,
           attributes: attributes.map((attr) => ({
             id: attr.id,
             name: attr.name,
@@ -1252,7 +1255,7 @@ export class JobService {
       return {
         success: true,
         message: 'Job attributes by category retrieved successfully',
-        data: result,
+        data: result as any,
       };
     } catch (error) {
       throw new InternalServerErrorException(
@@ -1270,7 +1273,7 @@ export class JobService {
       // Check for existing attributes to avoid duplicates
       const existingNames = await this.db.jobAttribute.findMany({
         where: {
-          category,
+          category: category as any,
           name: { in: attributes.map((attr) => attr.name) },
         },
         select: { name: true },
@@ -1291,7 +1294,7 @@ export class JobService {
       const createdAttributes = await this.db.jobAttribute.createMany({
         data: newAttributes.map((attr) => ({
           name: attr.name,
-          category,
+          category: category as any,
           description: attr.description,
           sortOrder: attr.sortOrder ?? 0,
         })),

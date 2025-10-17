@@ -169,7 +169,7 @@ export class NotificationService {
         notifications: notifications.map((notification) => ({
           id: notification.id,
           userId: notification.userId,
-          type: notification.type,
+          type: notification.type as any,
           title: notification.title,
           message: notification.message,
           data: notification.data,
@@ -210,7 +210,7 @@ export class NotificationService {
       return {
         id: notification.id,
         userId: notification.userId,
-        type: notification.type,
+        type: notification.type as any,
         title: notification.title,
         message: notification.message,
         data: notification.data,
@@ -338,7 +338,7 @@ export class NotificationService {
       const notification = await this.prisma.notification.create({
         data: {
           userId: createDto.userId,
-          type: createDto.type,
+          type: createDto.type as any,
           title: createDto.title,
           message: createDto.message,
           data: createDto.data,
@@ -349,7 +349,7 @@ export class NotificationService {
       return {
         id: notification.id,
         userId: notification.userId,
-        type: notification.type,
+        type: notification.type as any,
         title: notification.title,
         message: notification.message,
         data: notification.data,
@@ -478,7 +478,7 @@ export class NotificationService {
       const notification = await this.prisma.notification.create({
         data: {
           userId: createDto.userId,
-          type: createDto.type,
+          type: createDto.type as any,
           title: createDto.title,
           message: createDto.message,
           data: createDto.data,
@@ -515,7 +515,7 @@ export class NotificationService {
       return {
         id: notification.id,
         userId: notification.userId,
-        type: notification.type,
+        type: notification.type as any,
         title: notification.title,
         message: notification.message,
         data: notification.data,

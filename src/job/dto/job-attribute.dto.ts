@@ -9,7 +9,21 @@ import {
   Max,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { JobAttributeCategory } from '@prisma/client';
+
+// Define JobAttributeCategory enum locally to avoid import issues
+export enum JobAttributeCategory {
+  SKILL = 'SKILL',
+  EXPERIENCE = 'EXPERIENCE',
+  EDUCATION = 'EDUCATION',
+  LOCATION = 'LOCATION',
+  INDUSTRY = 'INDUSTRY',
+  COMPANY_SIZE = 'COMPANY_SIZE',
+  JOB_TYPE = 'JOB_TYPE',
+  SALARY_RANGE = 'SALARY_RANGE',
+  BENEFITS = 'BENEFITS',
+  REQUIREMENTS = 'REQUIREMENTS',
+  PREFERENCES = 'PREFERENCES',
+}
 
 // =================================================================
 // CREATE JOB ATTRIBUTE DTO
@@ -20,7 +34,7 @@ export class CreateJobAttributeDto {
   @IsNotEmpty({ message: 'Name is required' })
   name: string;
 
-  @IsEnum(JobAttributeCategory, {
+  @IsEnum(Object.values(JobAttributeCategory), {
     message: 'Category must be a valid job attribute category',
   })
   category: JobAttributeCategory;
@@ -49,7 +63,7 @@ export class UpdateJobAttributeDto {
   name?: string;
 
   @IsOptional()
-  @IsEnum(JobAttributeCategory, {
+  @IsEnum(Object.values(JobAttributeCategory), {
     message: 'Category must be a valid job attribute category',
   })
   category?: JobAttributeCategory;
@@ -74,7 +88,7 @@ export class UpdateJobAttributeDto {
 
 export class JobAttributeQueryDto {
   @IsOptional()
-  @IsEnum(JobAttributeCategory, {
+  @IsEnum(Object.values(JobAttributeCategory), {
     message: 'Category must be a valid job attribute category',
   })
   category?: JobAttributeCategory;
@@ -115,7 +129,7 @@ export class JobAttributeQueryDto {
 // =================================================================
 
 export class BulkCreateJobAttributesDto {
-  @IsEnum(JobAttributeCategory, {
+  @IsEnum(Object.values(JobAttributeCategory), {
     message: 'Category must be a valid job attribute category',
   })
   category: JobAttributeCategory;
