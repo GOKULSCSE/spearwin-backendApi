@@ -10,7 +10,14 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { UserRole } from '@prisma/client';
+
+// Define UserRole enum locally to avoid import issues
+export enum UserRole {
+  CANDIDATE = 'CANDIDATE',
+  ADMIN = 'ADMIN',
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  COMPANY = 'COMPANY',
+}
 
 export class CreateUserDto {
   @IsEmail({}, { message: 'Please provide a valid email address' })
