@@ -32,7 +32,7 @@ class NotificationPreferencesDto {
 }
 exports.NotificationPreferencesDto = NotificationPreferencesDto;
 __decorate([
-    (0, class_validator_1.IsEnum)(NotificationType),
+    (0, class_validator_1.IsEnum)(Object.values(NotificationType)),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], NotificationPreferencesDto.prototype, "type", void 0);

@@ -45,7 +45,7 @@ export class CreateUserDto {
   )
   password: string;
 
-  @IsEnum(UserRole, {
+  @IsEnum(Object.values(UserRole), {
     message: 'Role must be one of: CANDIDATE, ADMIN, SUPER_ADMIN, COMPANY',
   })
   role: UserRole;

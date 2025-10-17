@@ -54,7 +54,7 @@ __decorate([
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "password", void 0);
 __decorate([
-    (0, class_validator_1.IsEnum)(UserRole, {
+    (0, class_validator_1.IsEnum)(Object.values(UserRole), {
         message: 'Role must be one of: CANDIDATE, ADMIN, SUPER_ADMIN, COMPANY',
     }),
     __metadata("design:type", String)
