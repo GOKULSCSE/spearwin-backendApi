@@ -14,7 +14,7 @@ export enum NotificationType {
 }
 
 export class NotificationPreferencesDto {
-  @IsEnum(NotificationType)
+  @IsEnum(Object.values(NotificationType))
   @IsString()
   type: NotificationType;
 

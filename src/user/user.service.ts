@@ -341,11 +341,11 @@ export class UserService {
       };
 
       if (action) {
-        where.action = action;
+        where.action = action as any;
       }
 
       if (level) {
-        where.level = level;
+        where.level = level as any;
       }
 
       if (entity) {
