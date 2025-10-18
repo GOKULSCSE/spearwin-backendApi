@@ -258,6 +258,7 @@ export class AdminService {
 
       return {
         success: true,
+        
         message: 'Admin created successfully',
         data: {
           user: {
@@ -344,7 +345,9 @@ export class AdminService {
             employeeCount: createCompanyDto.employeeCount,
             headquarters: createCompanyDto.headquarters,
             address: createCompanyDto.address,
-            cityId: createCompanyDto.cityId ? parseInt(createCompanyDto.cityId) : null,
+            country: createCompanyDto.country,
+            state: createCompanyDto.state,
+            city: createCompanyDto.city,
             linkedinUrl: createCompanyDto.linkedinUrl,
             twitterUrl: createCompanyDto.twitterUrl,
             facebookUrl: createCompanyDto.facebookUrl,

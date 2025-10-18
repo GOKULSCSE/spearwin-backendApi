@@ -558,17 +558,6 @@ let AuthService = class AuthService {
             if (existingUser) {
                 throw new common_1.BadRequestException('User with this email already exists');
             }
-            if (companyRegisterDto.cityId) {
-                const city = await this.prisma.city.findUnique({
-                    where: { id: parseInt(companyRegisterDto.cityId) },
-                });
-                if (!city) {
-                    throw new common_1.BadRequestException('Invalid city ID provided');
-                }
-                if (!city.isActive) {
-                    throw new common_1.BadRequestException('The selected city is not active');
-                }
-            }
             const hashedPassword = await bcrypt.hash(companyRegisterDto.password, 10);
             const slug = companyRegisterDto.name
                 .toLowerCase()
@@ -601,7 +590,9 @@ let AuthService = class AuthService {
                         employeeCount: companyRegisterDto.employeeCount,
                         headquarters: companyRegisterDto.headquarters,
                         address: companyRegisterDto.address,
-                        cityId: companyRegisterDto.cityId ? parseInt(companyRegisterDto.cityId) : null,
+                        country: companyRegisterDto.country,
+                        state: companyRegisterDto.state,
+                        city: companyRegisterDto.city,
                         linkedinUrl: companyRegisterDto.linkedinUrl,
                         twitterUrl: companyRegisterDto.twitterUrl,
                         facebookUrl: companyRegisterDto.facebookUrl,

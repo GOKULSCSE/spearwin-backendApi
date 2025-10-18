@@ -34,7 +34,9 @@ export class CompanyService {
       const {
         search,
         industry,
-        cityId,
+        country,
+        state,
+        city,
         isVerified,
         isActive,
         page = 1,
@@ -60,8 +62,16 @@ export class CompanyService {
         where.industry = industry;
       }
 
-      if (cityId) {
-        where.cityId = parseInt(cityId);
+      if (country) {
+        where.country = { contains: country, mode: 'insensitive' };
+      }
+
+      if (state) {
+        where.state = { contains: state, mode: 'insensitive' };
+      }
+
+      if (city) {
+        where.city = { contains: city, mode: 'insensitive' };
       }
 
       if (isVerified !== undefined) {
@@ -82,15 +92,6 @@ export class CompanyService {
         this.db.company.findMany({
           where,
           include: {
-            city: {
-              include: {
-                state: {
-                  include: {
-                    country: true,
-                  },
-                },
-              },
-            },
             user: {
               select: {
                 id: true,
@@ -130,61 +131,9 @@ export class CompanyService {
           isActive: company.isActive,
           createdAt: company.createdAt,
           updatedAt: company.updatedAt,
-          city: company.city
-            ? {
-                id: company.city.id,
-                name: company.city.name,
-                state_id: company.city.state_id,
-                state_code: company.city.state_code,
-                state_name: company.city.state_name,
-                country_id: company.city.country_id,
-                country_code: company.city.country_code,
-                country_name: company.city.country_name,
-                latitude: company.city.latitude,
-                longitude: company.city.longitude,
-                wikiDataId: company.city.wikiDataId,
-                isActive: company.city.isActive,
-                createdAt: company.city.createdAt,
-                state: {
-                  id: company.city.state.id,
-                  name: company.city.state.name,
-                  country_id: company.city.state.country_id,
-                  country_code: company.city.state.country_code,
-                  country_name: company.city.state.country_name,
-                  iso2: company.city.state.iso2,
-                  fips_code: company.city.state.fips_code,
-                  type: company.city.state.type,
-                  latitude: company.city.state.latitude,
-                  longitude: company.city.state.longitude,
-                  isActive: company.city.state.isActive,
-                  createdAt: company.city.state.createdAt,
-                  country: company.city.state.country ? {
-                    id: company.city.state.country.id,
-                    name: company.city.state.country.name,
-                    iso3: company.city.state.country.iso3,
-                    iso2: company.city.state.country.iso2,
-                    numeric_code: company.city.state.country.numeric_code,
-                    phonecode: company.city.state.country.phonecode,
-                    capital: company.city.state.country.capital,
-                    currency: company.city.state.country.currency,
-                    currency_name: company.city.state.country.currency_name,
-                    currency_symbol: company.city.state.country.currency_symbol,
-                    tld: company.city.state.country.tld,
-                    native: company.city.state.country.native,
-                    region: company.city.state.country.region,
-                    region_id: company.city.state.country.region_id,
-                    subregion: company.city.state.country.subregion,
-                    subregion_id: company.city.state.country.subregion_id,
-                    nationality: company.city.state.country.nationality,
-                    latitude: company.city.state.country.latitude,
-                    longitude: company.city.state.country.longitude,
-                    isActive: company.city.state.country.isActive,
-                    createdAt: company.city.state.country.createdAt,
-                    updatedAt: company.city.state.country.updatedAt,
-                  } : undefined,
-                },
-              }
-            : undefined,
+          country: company.country,
+          state: company.state,
+          city: company.city,
           user: company.user
             ? {
                 id: company.user.id,
@@ -210,15 +159,6 @@ export class CompanyService {
       const company = await this.db.company.findUnique({
         where: { id: companyId },
         include: {
-          city: {
-            include: {
-              state: {
-                include: {
-                  country: true,
-                },
-              },
-            },
-          },
           user: {
             select: {
               id: true,
@@ -254,61 +194,9 @@ export class CompanyService {
         isActive: company.isActive,
         createdAt: company.createdAt,
         updatedAt: company.updatedAt,
-        city: company.city
-          ? {
-              id: company.city.id,
-              name: company.city.name,
-              state_id: company.city.state_id,
-              state_code: company.city.state_code,
-              state_name: company.city.state_name,
-              country_id: company.city.country_id,
-              country_code: company.city.country_code,
-              country_name: company.city.country_name,
-              latitude: company.city.latitude,
-              longitude: company.city.longitude,
-              wikiDataId: company.city.wikiDataId,
-              isActive: company.city.isActive,
-              createdAt: company.city.createdAt,
-              state: {
-                id: company.city.state.id,
-                name: company.city.state.name,
-                country_id: company.city.state.country_id,
-                country_code: company.city.state.country_code,
-                country_name: company.city.state.country_name,
-                iso2: company.city.state.iso2,
-                fips_code: company.city.state.fips_code,
-                type: company.city.state.type,
-                latitude: company.city.state.latitude,
-                longitude: company.city.state.longitude,
-                isActive: company.city.state.isActive,
-                createdAt: company.city.state.createdAt,
-                country: company.city.state.country ? {
-                  id: company.city.state.country.id,
-                  name: company.city.state.country.name,
-                  iso3: company.city.state.country.iso3,
-                  iso2: company.city.state.country.iso2,
-                  numeric_code: company.city.state.country.numeric_code,
-                  phonecode: company.city.state.country.phonecode,
-                  capital: company.city.state.country.capital,
-                  currency: company.city.state.country.currency,
-                  currency_name: company.city.state.country.currency_name,
-                  currency_symbol: company.city.state.country.currency_symbol,
-                  tld: company.city.state.country.tld,
-                  native: company.city.state.country.native,
-                  region: company.city.state.country.region,
-                  region_id: company.city.state.country.region_id,
-                  subregion: company.city.state.country.subregion,
-                  subregion_id: company.city.state.country.subregion_id,
-                  nationality: company.city.state.country.nationality,
-                  latitude: company.city.state.country.latitude,
-                  longitude: company.city.state.country.longitude,
-                  isActive: company.city.state.country.isActive,
-                  createdAt: company.city.state.country.createdAt,
-                  updatedAt: company.city.state.country.updatedAt,
-                } : undefined,
-              },
-            }
-          : undefined,
+        country: company.country,
+        state: company.state,
+        city: company.city,
         user: company.user
           ? {
               id: company.user.id,
@@ -344,18 +232,8 @@ export class CompanyService {
       const company = await this.db.company.create({
         data: {
           ...createDto,
-          cityId: createDto.cityId ? parseInt(createDto.cityId) : null,
         },
         include: {
-          city: {
-            include: {
-              state: {
-                include: {
-                  country: true,
-                },
-              },
-            },
-          },
           user: {
             select: {
               id: true,
@@ -397,61 +275,9 @@ export class CompanyService {
         isActive: company.isActive,
         createdAt: company.createdAt,
         updatedAt: company.updatedAt,
-        city: company.city
-          ? {
-              id: company.city.id,
-              name: company.city.name,
-              state_id: company.city.state_id,
-              state_code: company.city.state_code,
-              state_name: company.city.state_name,
-              country_id: company.city.country_id,
-              country_code: company.city.country_code,
-              country_name: company.city.country_name,
-              latitude: company.city.latitude,
-              longitude: company.city.longitude,
-              wikiDataId: company.city.wikiDataId,
-              isActive: company.city.isActive,
-              createdAt: company.city.createdAt,
-              state: {
-                id: company.city.state.id,
-                name: company.city.state.name,
-                country_id: company.city.state.country_id,
-                country_code: company.city.state.country_code,
-                country_name: company.city.state.country_name,
-                iso2: company.city.state.iso2,
-                fips_code: company.city.state.fips_code,
-                type: company.city.state.type,
-                latitude: company.city.state.latitude,
-                longitude: company.city.state.longitude,
-                isActive: company.city.state.isActive,
-                createdAt: company.city.state.createdAt,
-                country: company.city.state.country ? {
-                  id: company.city.state.country.id,
-                  name: company.city.state.country.name,
-                  iso3: company.city.state.country.iso3,
-                  iso2: company.city.state.country.iso2,
-                  numeric_code: company.city.state.country.numeric_code,
-                  phonecode: company.city.state.country.phonecode,
-                  capital: company.city.state.country.capital,
-                  currency: company.city.state.country.currency,
-                  currency_name: company.city.state.country.currency_name,
-                  currency_symbol: company.city.state.country.currency_symbol,
-                  tld: company.city.state.country.tld,
-                  native: company.city.state.country.native,
-                  region: company.city.state.country.region,
-                  region_id: company.city.state.country.region_id,
-                  subregion: company.city.state.country.subregion,
-                  subregion_id: company.city.state.country.subregion_id,
-                  nationality: company.city.state.country.nationality,
-                  latitude: company.city.state.country.latitude,
-                  longitude: company.city.state.country.longitude,
-                  isActive: company.city.state.country.isActive,
-                  createdAt: company.city.state.country.createdAt,
-                  updatedAt: company.city.state.country.updatedAt,
-                } : undefined,
-              },
-            }
-          : undefined,
+        country: company.country,
+        state: company.state,
+        city: company.city,
         user: company.user
           ? {
               id: company.user.id,
@@ -501,18 +327,8 @@ export class CompanyService {
         where: { id: companyId },
         data: {
           ...updateDto,
-          cityId: updateDto.cityId ? parseInt(updateDto.cityId) : undefined,
         },
         include: {
-          city: {
-            include: {
-              state: {
-                include: {
-                  country: true,
-                },
-              },
-            },
-          },
           user: {
             select: {
               id: true,
@@ -554,61 +370,9 @@ export class CompanyService {
         isActive: updatedCompany.isActive,
         createdAt: updatedCompany.createdAt,
         updatedAt: updatedCompany.updatedAt,
-        city: updatedCompany.city
-          ? {
-              id: updatedCompany.city.id,
-              name: updatedCompany.city.name,
-              state_id: updatedCompany.city.state_id,
-              state_code: updatedCompany.city.state_code,
-              state_name: updatedCompany.city.state_name,
-              country_id: updatedCompany.city.country_id,
-              country_code: updatedCompany.city.country_code,
-              country_name: updatedCompany.city.country_name,
-              latitude: updatedCompany.city.latitude,
-              longitude: updatedCompany.city.longitude,
-              wikiDataId: updatedCompany.city.wikiDataId,
-              isActive: updatedCompany.city.isActive,
-              createdAt: updatedCompany.city.createdAt,
-              state: {
-                id: updatedCompany.city.state.id,
-                name: updatedCompany.city.state.name,
-                country_id: updatedCompany.city.state.country_id,
-                country_code: updatedCompany.city.state.country_code,
-                country_name: updatedCompany.city.state.country_name,
-                iso2: updatedCompany.city.state.iso2,
-                fips_code: updatedCompany.city.state.fips_code,
-                type: updatedCompany.city.state.type,
-                latitude: updatedCompany.city.state.latitude,
-                longitude: updatedCompany.city.state.longitude,
-                isActive: updatedCompany.city.state.isActive,
-                createdAt: updatedCompany.city.state.createdAt,
-                country: updatedCompany.city.state.country ? {
-                  id: updatedCompany.city.state.country.id,
-                  name: updatedCompany.city.state.country.name,
-                  iso3: updatedCompany.city.state.country.iso3,
-                  iso2: updatedCompany.city.state.country.iso2,
-                  numeric_code: updatedCompany.city.state.country.numeric_code,
-                  phonecode: updatedCompany.city.state.country.phonecode,
-                  capital: updatedCompany.city.state.country.capital,
-                  currency: updatedCompany.city.state.country.currency,
-                  currency_name: updatedCompany.city.state.country.currency_name,
-                  currency_symbol: updatedCompany.city.state.country.currency_symbol,
-                  tld: updatedCompany.city.state.country.tld,
-                  native: updatedCompany.city.state.country.native,
-                  region: updatedCompany.city.state.country.region,
-                  region_id: updatedCompany.city.state.country.region_id,
-                  subregion: updatedCompany.city.state.country.subregion,
-                  subregion_id: updatedCompany.city.state.country.subregion_id,
-                  nationality: updatedCompany.city.state.country.nationality,
-                  latitude: updatedCompany.city.state.country.latitude,
-                  longitude: updatedCompany.city.state.country.longitude,
-                  isActive: updatedCompany.city.state.country.isActive,
-                  createdAt: updatedCompany.city.state.country.createdAt,
-                  updatedAt: updatedCompany.city.state.country.updatedAt,
-                } : undefined,
-              },
-            }
-          : undefined,
+        country: updatedCompany.country,
+        state: updatedCompany.state,
+        city: updatedCompany.city,
         user: updatedCompany.user
           ? {
               id: updatedCompany.user.id,
