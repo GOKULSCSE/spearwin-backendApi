@@ -8,7 +8,9 @@ export declare class CreateCompanyDto {
     foundedYear?: number;
     employeeCount?: string;
     headquarters?: string;
-    cityId?: string;
+    country?: string;
+    state?: string;
+    city?: string;
     address?: string;
     linkedinUrl?: string;
     twitterUrl?: string;

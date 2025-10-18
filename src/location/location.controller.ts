@@ -41,7 +41,7 @@ import {
 } from '../auth/decorators/current-user.decorator';
 
 @Controller('locations')
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard) // Temporarily disabled for frontend testing
 export class LocationController {
   constructor(private readonly locationService: LocationService) {}
 

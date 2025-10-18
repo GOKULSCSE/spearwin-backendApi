@@ -99,19 +99,7 @@ let UserService = class UserService {
                     },
                     admin: true,
                     superAdmin: true,
-                    company: {
-                        include: {
-                            city: {
-                                include: {
-                                    state: {
-                                        include: {
-                                            country: true,
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
+                    company: true,
                 },
             });
             if (!user) {
@@ -178,19 +166,7 @@ let UserService = class UserService {
                     },
                     admin: true,
                     superAdmin: true,
-                    company: {
-                        include: {
-                            city: {
-                                include: {
-                                    state: {
-                                        include: {
-                                            country: true,
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
+                    company: true,
                 },
             });
             await this.logActivity(userId, client_1.LogAction.UPDATE, client_1.LogLevel.INFO, 'User', userId, 'Profile updated');

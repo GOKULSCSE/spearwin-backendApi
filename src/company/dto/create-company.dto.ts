@@ -53,8 +53,16 @@ export class CreateCompanyDto {
   headquarters?: string;
 
   @IsOptional()
-  @IsString({ message: 'City ID must be a string' })
-  cityId?: string;
+  @IsString({ message: 'Country must be a string' })
+  country?: string;
+
+  @IsOptional()
+  @IsString({ message: 'State must be a string' })
+  state?: string;
+
+  @IsOptional()
+  @IsString({ message: 'City must be a string' })
+  city?: string;
 
   @IsOptional()
   @IsString({ message: 'Address must be a string' })
