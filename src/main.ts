@@ -12,6 +12,7 @@ async function bootstrap() {
       'http://localhost:3000',  // Your frontend URL
       'http://localhost:3001',  // Alternative frontend port 
       'http://127.0.0.1:3000', // Alternative localhost format
+      'http://127.0.0.1:3001', // Alternative localhost format
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
@@ -22,6 +23,13 @@ async function bootstrap() {
       'X-Requested-With',
       'X-User-Type',
       'X-User-Email',
+      'Cache-Control',
+      'Pragma',
+    ],
+    exposedHeaders: [
+      'Authorization',
+      'X-Total-Count',
+      'X-Page-Count',
     ],
     credentials: true, // Important for cookies/auth
     preflightContinue: false,
