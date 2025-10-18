@@ -74,7 +74,6 @@ model City {
   updatedAt    DateTime    @updatedAt
   candidates   Candidate[]
   state        State       @relation(fields: [state_id], references: [id], onDelete: Cascade)
-  companies    Company[]
   jobs         Job[]
   pincodes     Pincode[]
 
@@ -214,7 +213,9 @@ model Company {
   foundedYear   Int?
   employeeCount String?
   headquarters  String?
-  cityId        Int?
+  country       String?
+  state         String?
+  city          String?
   address       String?
   linkedinUrl   String?
   twitterUrl    String?
@@ -223,7 +224,6 @@ model Company {
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  city          City?    @relation(fields: [cityId], references: [id])
   user          User?    @relation(fields: [userId], references: [id])
   jobs          Job[]
 

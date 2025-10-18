@@ -54,8 +54,16 @@ export class CompanyRegisterDto {
   address?: string;
 
   @IsOptional()
-  @IsString({ message: 'City ID must be a string' })
-  cityId?: string;
+  @IsString({ message: 'Country must be a string' })
+  country?: string;
+
+  @IsOptional()
+  @IsString({ message: 'State must be a string' })
+  state?: string;
+
+  @IsOptional()
+  @IsString({ message: 'City must be a string' })
+  city?: string;
 
   @IsOptional()
   @IsUrl({}, { message: 'LinkedIn URL must be a valid URL' })

@@ -701,20 +701,7 @@ export class AuthService {
         throw new BadRequestException('User with this email already exists');
       }
 
-      // Validate cityId if provided
-      if (companyRegisterDto.cityId) {
-        const city = await this.prisma.city.findUnique({
-          where: { id: parseInt(companyRegisterDto.cityId) },
-        });
-
-        if (!city) {
-          throw new BadRequestException('Invalid city ID provided');
-        }
-
-        if (!city.isActive) {
-          throw new BadRequestException('The selected city is not active');
-        }
-      }
+      // No need to validate city since we're using string fields now
 
       // Hash password
       const hashedPassword = await bcrypt.hash(companyRegisterDto.password, 10);
@@ -757,7 +744,9 @@ export class AuthService {
             employeeCount: companyRegisterDto.employeeCount,
             headquarters: companyRegisterDto.headquarters,
             address: companyRegisterDto.address,
-            cityId: companyRegisterDto.cityId ? parseInt(companyRegisterDto.cityId) : null,
+            country: companyRegisterDto.country,
+            state: companyRegisterDto.state,
+            city: companyRegisterDto.city,
             linkedinUrl: companyRegisterDto.linkedinUrl,
             twitterUrl: companyRegisterDto.twitterUrl,
             facebookUrl: companyRegisterDto.facebookUrl,

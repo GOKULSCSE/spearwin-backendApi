@@ -43,7 +43,15 @@ export class CreateCompanyDto {
 
   @IsOptional()
   @IsString()
-  cityId?: string;
+  country?: string;
+
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
 
   @IsOptional()
   @IsUrl()

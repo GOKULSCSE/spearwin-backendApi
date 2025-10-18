@@ -81,19 +81,7 @@ export class UserService {
           },
           admin: true,
           superAdmin: true,
-          company: {
-            include: {
-              city: {
-                include: {
-                  state: {
-                    include: {
-                      country: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
+          company: true,
         },
       });
 
@@ -176,19 +164,7 @@ export class UserService {
           },
           admin: true,
           superAdmin: true,
-          company: {
-            include: {
-              city: {
-                include: {
-                  state: {
-                    include: {
-                      country: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
+          company: true,
         },
       });
 
