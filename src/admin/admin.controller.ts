@@ -66,6 +66,7 @@ import {
 } from './dto/admin-notification.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetCurrentUser } from '../auth/decorators/current-user.decorator';
+import { ChangePasswordDto } from '../user/dto/change-password.dto';
 import type { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('api/admin')
@@ -129,6 +130,15 @@ export class AdminController {
     @Body(ValidationPipe) updateDto: UpdateAdminProfileDto,
   ): Promise<AdminProfileResponseDto> {
     return this.adminService.updateAdminProfile(user.id, updateDto);
+  }
+
+  @Put('change-password')
+  @UseGuards(JwtAuthGuard)
+  async changeAdminPassword(
+    @GetCurrentUser() user: CurrentUser,
+    @Body(ValidationPipe) changePasswordDto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    return this.adminService.changeAdminPassword(user.id, changePasswordDto);
   }
 
   @Get('admins')

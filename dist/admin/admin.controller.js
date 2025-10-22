@@ -28,6 +28,7 @@ const admin_resume_dto_1 = require("./dto/admin-resume.dto");
 const admin_notification_dto_1 = require("./dto/admin-notification.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
+const change_password_dto_1 = require("../user/dto/change-password.dto");
 let AdminController = class AdminController {
     adminService;
     constructor(adminService) {
@@ -50,6 +51,9 @@ let AdminController = class AdminController {
     }
     async updateAdminProfile(user, updateDto) {
         return this.adminService.updateAdminProfile(user.id, updateDto);
+    }
+    async changeAdminPassword(user, changePasswordDto) {
+        return this.adminService.changeAdminPassword(user.id, changePasswordDto);
     }
     async getAllAdmins(query) {
         return this.adminService.getAllAdmins(query);
@@ -211,6 +215,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, admin_profile_dto_1.UpdateAdminProfileDto]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "updateAdminProfile", null);
+__decorate([
+    (0, common_1.Put)('change-password'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
+    __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, change_password_dto_1.ChangePasswordDto]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "changeAdminPassword", null);
 __decorate([
     (0, common_1.Get)('admins'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

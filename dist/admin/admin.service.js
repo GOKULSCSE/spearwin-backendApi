@@ -553,6 +553,34 @@ let AdminService = class AdminService {
             throw new common_1.BadRequestException('Failed to update admin profile');
         }
     }
+    async changeAdminPassword(adminId, changePasswordDto) {
+        try {
+            const user = await this.prisma.user.findUnique({
+                where: { id: adminId },
+            });
+            if (!user) {
+                throw new common_1.NotFoundException('Admin not found');
+            }
+            const isCurrentPasswordValid = await bcrypt.compare(changePasswordDto.currentPassword, user.password);
+            if (!isCurrentPasswordValid) {
+                throw new common_1.UnauthorizedException('Current password is incorrect');
+            }
+            const hashedNewPassword = await bcrypt.hash(changePasswordDto.newPassword, 12);
+            await this.prisma.user.update({
+                where: { id: adminId },
+                data: { password: hashedNewPassword },
+            });
+            await this.logActivity(adminId, 'UPDATE', 'INFO', 'Admin', adminId, 'Admin password changed');
+            return { message: 'Password changed successfully' };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.UnauthorizedException) {
+                throw error;
+            }
+            throw new common_1.InternalServerErrorException('Failed to change password');
+        }
+    }
     async getAllAdmins(query) {
         try {
             const { search, department, role, status, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc', } = query;
