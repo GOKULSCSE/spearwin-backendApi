@@ -13,7 +13,7 @@ async function bootstrap() {
       'http://localhost:3001',  // Alternative frontend port 
       'http://127.0.0.1:3000', // Alternative localhost format
       'http://127.0.0.1:3001', 
-      'https://backend.spearwin.com/', // Production backend URL
+      'https://backend.spearwin.com', // Production backend URL
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
