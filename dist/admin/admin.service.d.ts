@@ -1,5 +1,6 @@
 import { JwtService } from '@nestjs/jwt';
 import { DatabaseService } from '../database/database.service';
+import { ChangePasswordDto } from '../user/dto/change-password.dto';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { AdminLoginDto } from '../auth/dto/admin-login.dto';
 import { AdminLoginResponseDto } from './dto/admin-auth-response.dto';
@@ -23,6 +24,9 @@ export declare class AdminService {
     updatePermissions(updatePermissionsDto: UpdatePermissionsDto, currentUser: any): Promise<UpdatePermissionsResponseDto>;
     getAdminProfile(userId: string): Promise<AdminProfileResponseDto>;
     updateAdminProfile(userId: string, updateDto: UpdateAdminProfileDto): Promise<AdminProfileResponseDto>;
+    changeAdminPassword(adminId: string, changePasswordDto: ChangePasswordDto): Promise<{
+        message: string;
+    }>;
     getAllAdmins(query: AdminListQueryDto): Promise<AdminListResponseDto>;
     getAdminById(adminId: string): Promise<AdminProfileResponseDto>;
     updateAdminStatus(adminId: string, statusDto: UpdateAdminStatusDto, currentUserId: string): Promise<{

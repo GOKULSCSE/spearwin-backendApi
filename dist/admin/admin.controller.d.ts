@@ -10,6 +10,7 @@ import { CreateJobDto, UpdateJobDto, JobListQueryDto, JobStatsResponseDto, JobAp
 import { UpdateApplicationStatusDto, AddApplicationFeedbackDto, ApplicationQueryDto, AdminApplicationResponseDto, ApplicationsListResponseDto, ApplicationStatsResponseDto, BulkUpdateApplicationsDto, BulkUpdateResponseDto, BulkExportQueryDto, BulkExportResponseDto } from './dto/admin-application.dto';
 import { ResumeQueryDto, AdminResumeResponseDto, ResumesListResponseDto, ResumeStatsResponseDto, BulkDownloadDto, BulkDownloadResponseDto } from './dto/admin-resume.dto';
 import { SendNotificationDto, BroadcastNotificationDto, CreateNotificationTemplateDto, NotificationTemplateResponseDto, SendNotificationResponseDto, BroadcastNotificationResponseDto, NotificationTemplatesListResponseDto, NotificationQueryDto } from './dto/admin-notification.dto';
+import { ChangePasswordDto } from '../user/dto/change-password.dto';
 import type { CurrentUser } from '../auth/decorators/current-user.decorator';
 export declare class AdminController {
     private readonly adminService;
@@ -20,6 +21,9 @@ export declare class AdminController {
     updatePermissions(updatePermissionsDto: UpdatePermissionsDto, user: CurrentUser): Promise<import("./dto/admin-response.dto").UpdatePermissionsResponseDto>;
     getAdminProfile(user: CurrentUser): Promise<AdminProfileResponseDto>;
     updateAdminProfile(user: CurrentUser, updateDto: UpdateAdminProfileDto): Promise<AdminProfileResponseDto>;
+    changeAdminPassword(user: CurrentUser, changePasswordDto: ChangePasswordDto): Promise<{
+        message: string;
+    }>;
     getAllAdmins(query: AdminListQueryDto): Promise<AdminListResponseDto>;
     getAdminById(adminId: string): Promise<AdminProfileResponseDto>;
     updateAdminPermissions(adminId: string, user: CurrentUser, updateDto: UpdatePermissionsDto): Promise<import("./dto/admin-response.dto").UpdatePermissionsResponseDto>;
