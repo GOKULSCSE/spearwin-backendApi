@@ -29,26 +29,28 @@ let JwtStrategy = JwtStrategy_1 = class JwtStrategy extends (0, passport_1.Passp
         this.authService = authService;
     }
     async validate(payload) {
-        this.logger.debug(`Validating JWT payload: ${JSON.stringify(payload)}`);
+        this.logger.log(`🔍 Validating JWT payload: ${JSON.stringify(payload)}`);
+        this.logger.log(`🔑 JWT Secret being used: ${process.env.JWT_SECRET ? 'SET (length: ' + process.env.JWT_SECRET.length + ')' : 'NOT SET (using default)'}`);
         if (!payload || !payload.sub) {
-            this.logger.warn('Invalid JWT payload: missing sub field');
+            this.logger.warn('❌ Invalid JWT payload: missing sub field');
             throw new common_1.UnauthorizedException('Invalid token payload');
         }
         try {
             const user = await this.authService.validateUserById(payload.sub);
             if (!user) {
-                this.logger.warn(`User not found for ID: ${payload.sub}`);
+                this.logger.warn(`❌ User not found for ID: ${payload.sub}`);
                 throw new common_1.UnauthorizedException('User not found');
             }
+            this.logger.log(`👤 Found user: ${user.email} with role: ${user.role}`);
             if (user.status === client_1.UserStatus.SUSPENDED) {
-                this.logger.warn(`Account suspended for user: ${user.email}`);
+                this.logger.warn(`❌ Account suspended for user: ${user.email}`);
                 throw new common_1.UnauthorizedException('Account is suspended');
             }
             if (user.status === client_1.UserStatus.INACTIVE) {
-                this.logger.warn(`Account inactive for user: ${user.email}`);
+                this.logger.warn(`❌ Account inactive for user: ${user.email}`);
                 throw new common_1.UnauthorizedException('Account is inactive');
             }
-            this.logger.debug(`Successfully validated user: ${user.email}`);
+            this.logger.log(`✅ Successfully validated user: ${user.email} (Role: ${user.role})`);
             return {
                 id: user.id,
                 email: user.email,
@@ -61,7 +63,7 @@ let JwtStrategy = JwtStrategy_1 = class JwtStrategy extends (0, passport_1.Passp
             };
         }
         catch (error) {
-            this.logger.error(`JWT validation error: ${error.message}`);
+            this.logger.error(`❌ JWT validation error: ${error.message}`, error.stack);
             throw error;
         }
     }
