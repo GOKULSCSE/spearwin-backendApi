@@ -4,9 +4,11 @@ import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { DatabaseService } from '../database/database.service';
+import { ChangePasswordDto } from '../user/dto/change-password.dto';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { AdminLoginDto } from '../auth/dto/admin-login.dto';
 import { AdminLoginResponseDto, AdminAuthResponseDto } from './dto/admin-auth-response.dto';
@@ -698,6 +700,62 @@ export class AdminService {
         throw error;
       }
       throw new BadRequestException('Failed to update admin profile');
+    }
+  }
+
+  async changeAdminPassword(
+    adminId: string,
+    changePasswordDto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: adminId },
+      });
+
+      if (!user) {
+        throw new NotFoundException('Admin not found');
+      }
+
+      // Verify current password
+      const isCurrentPasswordValid = await bcrypt.compare(
+        changePasswordDto.currentPassword,
+        user.password,
+      );
+      if (!isCurrentPasswordValid) {
+        throw new UnauthorizedException('Current password is incorrect');
+      }
+
+      // Hash new password
+      const hashedNewPassword = await bcrypt.hash(
+        changePasswordDto.newPassword,
+        12,
+      );
+
+      // Update password
+      await this.prisma.user.update({
+        where: { id: adminId },
+        data: { password: hashedNewPassword },
+      });
+
+      // Log the password change activity
+      await this.logActivity(
+        adminId,
+        'UPDATE',
+        'INFO',
+        'Admin',
+        adminId,
+        'Admin password changed',
+      );
+
+      return { message: 'Password changed successfully' };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof UnauthorizedException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to change password');
     }
   }
 
