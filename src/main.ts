@@ -10,10 +10,9 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000',  // Your frontend URL
-      'http://localhost:3001',  // Alternative frontend port 
-      'http://127.0.0.1:3000', // Alternative localhost format
-      'http://127.0.0.1:3001', 
-      'https://backend.spearwin.com', // Production backend URL
+      'http://localhost:3001',  // Alternative frontend port  
+      'https://admin.spearwin.com', 
+      'https://frontend.spearwin.com'// Production backend URL
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [

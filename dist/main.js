@@ -13,9 +13,8 @@ async function bootstrap() {
         origin: [
             'http://localhost:3000',
             'http://localhost:3001',
-            'http://127.0.0.1:3000',
-            'http://127.0.0.1:3001',
-            'https://backend.spearwin.com',
+            'https://admin.spearwin.com',
+            'https://frontend.spearwin.com'
         ],
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
         allowedHeaders: [
