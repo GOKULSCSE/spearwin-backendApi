@@ -62,7 +62,7 @@ export class LocationController {
   }
 
   @Post('countries')
-  @UseGuards(AdminRoleGuard)
+  @UseGuards(JwtAuthGuard)
   async createCountry(
     @GetCurrentUser() user: CurrentUser,
     @Body(ValidationPipe) createDto: CreateCountryDto,
@@ -71,7 +71,7 @@ export class LocationController {
   }
 
   @Put('countries/:id')
-  @UseGuards(AdminRoleGuard)
+  @UseGuards(JwtAuthGuard, AdminRoleGuard)
   async updateCountry(
     @Param('id') countryId: string,
     @GetCurrentUser() user: CurrentUser,
@@ -81,7 +81,7 @@ export class LocationController {
   }
 
   @Delete('countries/:id')
-  @UseGuards(SuperAdminRoleGuard)
+  @UseGuards(JwtAuthGuard, SuperAdminRoleGuard)
   async deleteCountry(
     @Param('id') countryId: string,
     @GetCurrentUser() user: CurrentUser,
@@ -111,7 +111,7 @@ export class LocationController {
   }
 
   @Post('states')
-  @UseGuards(AdminRoleGuard)
+  @UseGuards(JwtAuthGuard, AdminRoleGuard)
   async createState(
     @GetCurrentUser() user: CurrentUser,
     @Body(ValidationPipe) createDto: CreateStateDto,
@@ -120,7 +120,7 @@ export class LocationController {
   }
 
   @Put('states/:id')
-  @UseGuards(AdminRoleGuard)
+  @UseGuards(JwtAuthGuard, AdminRoleGuard)
   async updateState(
     @Param('id') stateId: string,
     @GetCurrentUser() user: CurrentUser,
@@ -130,7 +130,7 @@ export class LocationController {
   }
 
   @Delete('states/:id')
-  @UseGuards(SuperAdminRoleGuard)
+  @UseGuards(JwtAuthGuard, SuperAdminRoleGuard)
   async deleteState(
     @Param('id') stateId: string,
     @GetCurrentUser() user: CurrentUser,
@@ -160,7 +160,7 @@ export class LocationController {
   }
 
   @Post('cities')
-  @UseGuards(AdminRoleGuard)
+  @UseGuards(JwtAuthGuard, AdminRoleGuard)
   async createCity(
     @GetCurrentUser() user: CurrentUser,
     @Body(ValidationPipe) createDto: CreateCityDto,
@@ -169,7 +169,7 @@ export class LocationController {
   }
 
   @Put('cities/:id')
-  @UseGuards(AdminRoleGuard)
+  @UseGuards(JwtAuthGuard, AdminRoleGuard)
   async updateCity(
     @Param('id') cityId: string,
     @GetCurrentUser() user: CurrentUser,
@@ -179,7 +179,7 @@ export class LocationController {
   }
 
   @Delete('cities/:id')
-  @UseGuards(SuperAdminRoleGuard)
+  @UseGuards(JwtAuthGuard, SuperAdminRoleGuard)
   async deleteCity(
     @Param('id') cityId: string,
     @GetCurrentUser() user: CurrentUser,
@@ -213,7 +213,7 @@ export class LocationController {
   }
 
   @Post('pincodes')
-  @UseGuards(AdminRoleGuard)
+  @UseGuards(JwtAuthGuard, AdminRoleGuard)
   async createPincode(
     @GetCurrentUser() user: CurrentUser,
     @Body(ValidationPipe) createDto: CreatePincodeDto,
@@ -222,7 +222,7 @@ export class LocationController {
   }
 
   @Put('pincodes/:id')
-  @UseGuards(AdminRoleGuard)
+  @UseGuards(JwtAuthGuard, AdminRoleGuard)
   async updatePincode(
     @Param('id') pincodeId: string,
     @GetCurrentUser() user: CurrentUser,
@@ -232,7 +232,7 @@ export class LocationController {
   }
 
   @Delete('pincodes/:id')
-  @UseGuards(SuperAdminRoleGuard)
+  @UseGuards(JwtAuthGuard, SuperAdminRoleGuard)
   async deletePincode(
     @Param('id') pincodeId: string,
     @GetCurrentUser() user: CurrentUser,
