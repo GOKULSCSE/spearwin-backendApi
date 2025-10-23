@@ -19,7 +19,9 @@ import {
 import {
   CreateStateDto,
   UpdateStateDto,
+  StateListQueryDto,
   type StateResponseDto,
+  type StateListResponseDto,
 } from './dto/state.dto';
 import {
   CreateCityDto,
@@ -94,8 +96,10 @@ export class LocationController {
   // =================================================================
 
   @Get('states')
-  async getAllStates(): Promise<StateResponseDto[]> {
-    return this.locationService.getAllStates();
+  async getAllStates(
+    @Query(ValidationPipe) query: StateListQueryDto,
+  ): Promise<StateListResponseDto> {
+    return this.locationService.getAllStates(query);
   }
 
   @Get('countries/:countryId/states')
