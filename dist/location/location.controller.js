@@ -114,7 +114,7 @@ __decorate([
 ], LocationController.prototype, "getCountryById", null);
 __decorate([
     (0, common_1.Post)('countries'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, admin_role_guard_1.AdminRoleGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
     __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
     __metadata("design:type", Function),
