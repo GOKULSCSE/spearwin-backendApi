@@ -10,6 +10,14 @@ export declare class UpdateStateDto {
     countryId?: number;
     isActive?: boolean;
 }
+export declare class StateListQueryDto {
+    search?: string;
+    countryId?: number;
+    limit?: number;
+    offset?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+}
 export declare class StateResponseDto {
     id: number;
     name?: string | null;
@@ -64,4 +72,11 @@ export declare class StateResponseDto {
         isActive: boolean;
         createdAt: Date;
     }[];
+}
+export declare class StateListResponseDto {
+    states: StateResponseDto[];
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
 }

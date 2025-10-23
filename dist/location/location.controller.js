@@ -43,8 +43,8 @@ let LocationController = class LocationController {
     async deleteCountry(countryId, user) {
         return this.locationService.deleteCountry(countryId, user.id);
     }
-    async getAllStates() {
-        return this.locationService.getAllStates();
+    async getAllStates(query) {
+        return this.locationService.getAllStates(query);
     }
     async getStatesByCountry(countryId) {
         return this.locationService.getStatesByCountry(countryId);
@@ -142,8 +142,9 @@ __decorate([
 ], LocationController.prototype, "deleteCountry", null);
 __decorate([
     (0, common_1.Get)('states'),
+    __param(0, (0, common_1.Query)(common_1.ValidationPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [state_dto_1.StateListQueryDto]),
     __metadata("design:returntype", Promise)
 ], LocationController.prototype, "getAllStates", null);
 __decorate([
