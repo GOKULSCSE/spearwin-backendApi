@@ -8,27 +8,27 @@ datasource db {
 }
 
 model Country {
-  id              Int      @id
   name            String
-  iso3            String?
-  iso2            String?
-  numeric_code    String?
-  phonecode       String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
   capital         String?
   currency        String?
   currency_name   String?
   currency_symbol String?
-  tld             String?
+  iso2            String?
+  iso3            String?
+  latitude        String?
+  longitude       String?
+  nationality     String?
   native          String?
+  numeric_code    String?
+  phonecode       String?
   region          String?
   region_id       Int?
   subregion       String?
   subregion_id    Int?
-  nationality     String?
-  latitude        String?
-  longitude       String?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
+  tld             String?
+  id              Int      @id
   updatedAt       DateTime @updatedAt
   states          State[]
 
@@ -36,20 +36,20 @@ model Country {
 }
 
 model State {
-  id           Int      @id
   name         String?
-  country_id   Int?
-  country_code String?
-  country_name String?
-  iso2         String?
-  fips_code    String?
-  type         String?
-  level        String?
-  parent_id    Int?
-  latitude     String?
-  longitude    String?
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
+  country_code String?
+  country_id   Int?
+  country_name String?
+  fips_code    String?
+  iso2         String?
+  latitude     String?
+  level        String?
+  longitude    String?
+  parent_id    Int?
+  type         String?
+  id           Int      @id
   updatedAt    DateTime @updatedAt
   cities       City[]
   country      Country? @relation(fields: [country_id], references: [id], onDelete: Cascade)
@@ -58,19 +58,19 @@ model State {
 }
 
 model City {
-  id           Int         @id
   name         String
-  state_id     Int
-  state_code   String?
-  state_name   String?
-  country_id   Int?
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
   country_code String?
+  country_id   Int?
   country_name String?
   latitude     String?
   longitude    String?
+  state_code   String?
+  state_id     Int
+  state_name   String?
   wikiDataId   String?
-  isActive     Boolean     @default(true)
-  createdAt    DateTime    @default(now())
+  id           Int         @id
   updatedAt    DateTime    @updatedAt
   candidates   Candidate[]
   state        State       @relation(fields: [state_id], references: [id], onDelete: Cascade)
@@ -84,10 +84,10 @@ model Pincode {
   id        String   @id @default(cuid())
   code      String
   area      String?
-  cityId    Int
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  cityId    Int
   city      City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
 
   @@unique([code, cityId])
@@ -129,37 +129,37 @@ model Candidate {
   userId            String                @unique
   firstName         String
   lastName          String
-  fatherName        String?
   dateOfBirth       DateTime?
   gender            String?
-  maritalStatus     String?
   profilePicture    String?
   bio               String?
   currentTitle      String?
-  currentCompany    String?
-  currentLocation   String?
-  preferredLocation String?
-  noticePeriod      String?
-  currentSalary     Decimal?
-  expectedSalary    Decimal?
-  profileType       String?
   experienceYears   Int?
-  cityId            Int?
+  expectedSalary    Decimal?
   address           String?
   linkedinUrl       String?
   githubUrl         String?
   portfolioUrl      String?
   isAvailable       Boolean               @default(true)
-  email             String?
-  mobileNumber      String?
-  jobExperience     String?
-  country           String?
-  state             String?
-  cityName          String?
-  streetAddress     String?
-  profileSummary    String?
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
+  cityName          String?
+  country           String?
+  currentCompany    String?
+  currentLocation   String?
+  currentSalary     Decimal?
+  email             String?
+  fatherName        String?
+  jobExperience     String?
+  maritalStatus     String?
+  mobileNumber      String?
+  noticePeriod      String?
+  preferredLocation String?
+  profileSummary    String?
+  profileType       String?
+  state             String?
+  streetAddress     String?
+  cityId            Int?
   education         CandidateEducation[]
   experience        CandidateExperience[]
   skills            CandidateSkill[]
@@ -213,9 +213,6 @@ model Company {
   foundedYear   Int?
   employeeCount String?
   headquarters  String?
-  country       String?
-  state         String?
-  city          String?
   address       String?
   linkedinUrl   String?
   twitterUrl    String?
@@ -224,6 +221,9 @@ model Company {
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  city          String?
+  country       String?
+  state         String?
   user          User?    @relation(fields: [userId], references: [id])
   jobs          Job[]
 
@@ -304,7 +304,6 @@ model Job {
   benefits         String?
   companyId        String
   postedById       String?
-  cityId           Int?
   address          String?
   jobType          JobType
   workMode         WorkMode
@@ -324,6 +323,7 @@ model Job {
   closedAt         DateTime?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+  cityId           Int?
   applications     JobApplication[]
   city             City?            @relation(fields: [cityId], references: [id])
   company          Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -508,20 +508,53 @@ model FCMToken {
   @@map("fcm_tokens")
 }
 
-model JobAttribute {
-  id          String               @id @default(cuid())
+model FAQ {
+  id        Int      @id @default(autoincrement())
+  question  String
+  answer    String
+  active    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model job_attributes {
+  id          String               @id
   name        String
   category    JobAttributeCategory
   description String?
   isActive    Boolean              @default(true)
   sortOrder   Int                  @default(0)
   createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
+  updatedAt   DateTime
 
   @@unique([name, category])
   @@index([category, isActive])
   @@index([category, sortOrder])
-  @@map("job_attributes")
+}
+
+// JOB ATTRIBUITES - LATEST
+
+model JobAttributes {
+  id String @id @default(cuid())
+  attributeName String
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  subAttributes JobSubAttributes[]
+}
+
+model JobSubAttributes {
+  id String @id @default(cuid())
+  attributeId String
+  subAttributeName String
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  attribute JobAttributes @relation(fields: [attributeId], references: [id], onDelete: Cascade)
 }
 
 enum UserRole {

@@ -9,6 +9,7 @@ import {
   Max,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { Model } from 'firebase-admin/machine-learning';
 
 // Define JobAttributeCategory enum locally to avoid import issues
 export enum JobAttributeCategory {
@@ -185,3 +186,6 @@ export class JobAttributeCategoriesResponseDto {
     attributes: JobAttributeResponseDto[];
   }[];
 }
+
+
+
