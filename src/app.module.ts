@@ -13,6 +13,7 @@ import { CompanyModule } from './company/company.module';
 import { LocationModule } from './location/location.module';
 import { JobModule } from './job/job.module';
 import { NotificationModule } from './notification/notification.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { NotificationModule } from './notification/notification.module';
     LocationModule,
     JobModule,
     NotificationModule,
+    DashboardModule,
     ThrottlerModule.forRoot([
       {
         name: 'short',

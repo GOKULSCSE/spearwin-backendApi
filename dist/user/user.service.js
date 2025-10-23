@@ -530,6 +530,244 @@ let UserService = class UserService {
     handleException(error) {
         throw new common_1.InternalServerErrorException("Can't fetch user Details");
     }
+    async getRecentUsers(query) {
+        try {
+            const { role, status, startDate, endDate, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc', days = 7 } = query;
+            const skip = (page - 1) * limit;
+            const currentDate = new Date();
+            const daysAgo = new Date(currentDate.getTime() - (days * 24 * 60 * 60 * 1000));
+            const where = {
+                createdAt: {
+                    gte: startDate ? new Date(startDate) : daysAgo,
+                    lte: endDate ? new Date(endDate) : currentDate
+                }
+            };
+            if (role)
+                where.role = role;
+            if (status)
+                where.status = status;
+            const [users, total, totalUsers, newUsers, activeUsers, inactiveUsers] = await Promise.all([
+                this.db.user.findMany({
+                    where,
+                    select: {
+                        id: true,
+                        email: true,
+                        role: true,
+                        status: true,
+                        emailVerified: true,
+                        phoneVerified: true,
+                        profileCompleted: true,
+                        twoFactorEnabled: true,
+                        lastLoginAt: true,
+                        createdAt: true,
+                        updatedAt: true
+                    },
+                    orderBy: { [sortBy]: sortOrder },
+                    skip,
+                    take: limit,
+                }),
+                this.db.user.count({ where }),
+                this.db.user.count(),
+                this.db.user.count({
+                    where: {
+                        createdAt: {
+                            gte: new Date(currentDate.getTime() - (7 * 24 * 60 * 60 * 1000))
+                        }
+                    }
+                }),
+                this.db.user.count({
+                    where: {
+                        lastLoginAt: {
+                            gte: new Date(currentDate.getTime() - (30 * 24 * 60 * 60 * 1000))
+                        }
+                    }
+                }),
+                this.db.user.count({
+                    where: {
+                        lastLoginAt: null
+                    }
+                })
+            ]);
+            const [roleStats, statusStats] = await Promise.all([
+                this.db.user.groupBy({
+                    by: ['role'],
+                    _count: { role: true }
+                }),
+                this.db.user.groupBy({
+                    by: ['status'],
+                    _count: { status: true }
+                })
+            ]);
+            const totalPages = Math.ceil(total / limit);
+            const transformedUsers = users.map(user => {
+                const daysSinceRegistration = Math.floor((currentDate.getTime() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+                return {
+                    ...user,
+                    daysSinceRegistration,
+                    isNewUser: daysSinceRegistration <= 7,
+                    hasLoggedIn: user.lastLoginAt !== null,
+                    lastActivityAt: user.lastLoginAt
+                };
+            });
+            const byRole = roleStats.reduce((acc, stat) => {
+                acc[stat.role] = stat._count.role;
+                return acc;
+            }, {});
+            const byStatus = statusStats.reduce((acc, stat) => {
+                acc[stat.status] = stat._count.status;
+                return acc;
+            }, {});
+            return {
+                users: transformedUsers,
+                total,
+                page,
+                limit,
+                totalPages,
+                statistics: {
+                    totalUsers,
+                    newUsers,
+                    activeUsers,
+                    inactiveUsers,
+                    byRole,
+                    byStatus
+                },
+                timeRange: {
+                    startDate: startDate ? new Date(startDate) : daysAgo,
+                    endDate: endDate ? new Date(endDate) : currentDate,
+                    days
+                }
+            };
+        }
+        catch (error) {
+            throw new common_1.BadRequestException('Failed to get recent users');
+        }
+    }
+    async getRecentUsersStats(query) {
+        try {
+            const { status, startDate, endDate, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc', days = 7 } = query;
+            const skip = (page - 1) * limit;
+            const currentDate = new Date();
+            const last7Days = new Date(currentDate.getTime() - (7 * 24 * 60 * 60 * 1000));
+            const last30Days = new Date(currentDate.getTime() - (30 * 24 * 60 * 60 * 1000));
+            const daysAgo = new Date(currentDate.getTime() - (days * 24 * 60 * 60 * 1000));
+            const where = {
+                createdAt: {
+                    gte: startDate ? new Date(startDate) : daysAgo,
+                    lte: endDate ? new Date(endDate) : currentDate
+                },
+                role: 'CANDIDATE'
+            };
+            if (status)
+                where.status = status;
+            const [totalUsers, newUsers7Days, newUsers30Days, activeUsers7Days, activeUsers30Days, roleStats, statusStats, registrationTrends, users, total] = await Promise.all([
+                this.db.user.count({
+                    where: { role: 'CANDIDATE' }
+                }),
+                this.db.user.count({
+                    where: {
+                        createdAt: { gte: last7Days },
+                        role: 'CANDIDATE'
+                    }
+                }),
+                this.db.user.count({
+                    where: {
+                        createdAt: { gte: last30Days },
+                        role: 'CANDIDATE'
+                    }
+                }),
+                this.db.user.count({
+                    where: {
+                        lastLoginAt: { gte: last7Days },
+                        role: 'CANDIDATE'
+                    }
+                }),
+                this.db.user.count({
+                    where: {
+                        lastLoginAt: { gte: last30Days },
+                        role: 'CANDIDATE'
+                    }
+                }),
+                this.db.user.groupBy({
+                    by: ['role'],
+                    _count: { role: true },
+                    where: { role: 'CANDIDATE' }
+                }),
+                this.db.user.groupBy({
+                    by: ['status'],
+                    _count: { status: true },
+                    where: { role: 'CANDIDATE' }
+                }),
+                this.db.user.groupBy({
+                    by: ['createdAt'],
+                    _count: { createdAt: true },
+                    where: {
+                        createdAt: { gte: last30Days },
+                        role: 'CANDIDATE'
+                    }
+                }),
+                this.db.user.findMany({
+                    where,
+                    select: {
+                        id: true,
+                        email: true,
+                        role: true,
+                        status: true,
+                        emailVerified: true,
+                        phoneVerified: true,
+                        profileCompleted: true,
+                        twoFactorEnabled: true,
+                        lastLoginAt: true,
+                        createdAt: true,
+                        updatedAt: true
+                    },
+                    orderBy: { [sortBy]: sortOrder },
+                    skip,
+                    take: limit,
+                }),
+                this.db.user.count({ where })
+            ]);
+            const totalPages = Math.ceil(total / limit);
+            const transformedUsers = users.map(user => {
+                const daysSinceRegistration = Math.floor((currentDate.getTime() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+                return {
+                    ...user,
+                    daysSinceRegistration,
+                    isNewUser: daysSinceRegistration <= 7,
+                    hasLoggedIn: user.lastLoginAt !== null,
+                    lastActivityAt: user.lastLoginAt
+                };
+            });
+            return {
+                users: transformedUsers,
+                total,
+                page,
+                limit,
+                totalPages,
+                statistics: {
+                    totalUsers,
+                    newUsers: newUsers7Days,
+                    activeUsers: activeUsers7Days,
+                    inactiveUsers: totalUsers - activeUsers7Days,
+                    byRole: roleStats.reduce((acc, stat) => {
+                        acc[stat.role] = stat._count.role;
+                        return acc;
+                    }, {}),
+                    byStatus: statusStats.reduce((acc, stat) => {
+                        acc[stat.status] = stat._count.status;
+                        return acc;
+                    }, {})
+                },
+                timeRange: {
+                    startDate: startDate ? new Date(startDate) : daysAgo,
+                    endDate: endDate ? new Date(endDate) : currentDate,
+                    days
+                }
+            };
+        }
+        catch (error) {
+            throw new common_1.BadRequestException('Failed to get recent users statistics');
+        }
+    }
 };
 exports.UserService = UserService;
 exports.UserService = UserService = __decorate([
