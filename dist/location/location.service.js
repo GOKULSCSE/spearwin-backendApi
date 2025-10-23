@@ -209,29 +209,54 @@ let LocationService = class LocationService {
             throw error;
         }
     }
-    async getAllStates() {
+    async getAllStates(query) {
         try {
-            const states = await this.db.state.findMany({
-                include: {
-                    country: true,
-                },
-                orderBy: { name: 'asc' },
-            });
-            return states.map((state) => ({
-                id: state.id,
-                name: state.name,
-                country_id: state.country_id,
-                country_code: state.country_code,
-                country_name: state.country_name,
-                iso2: state.iso2,
-                fips_code: state.fips_code,
-                type: state.type,
-                latitude: state.latitude,
-                longitude: state.longitude,
-                isActive: state.isActive,
-                createdAt: state.createdAt,
-                updatedAt: state.updatedAt,
-            }));
+            const limit = query.limit || 10;
+            const offset = query.offset || 0;
+            const search = query.search?.trim();
+            const where = {};
+            if (search) {
+                where.OR = [
+                    { name: { contains: search, mode: 'insensitive' } },
+                    { country_name: { contains: search, mode: 'insensitive' } },
+                ];
+            }
+            if (query.countryId) {
+                where.country_id = query.countryId;
+            }
+            const [total, states] = await Promise.all([
+                this.db.state.count({ where }),
+                this.db.state.findMany({
+                    where,
+                    include: {
+                        country: true,
+                    },
+                    orderBy: { name: 'asc' },
+                    skip: offset,
+                    take: limit,
+                }),
+            ]);
+            return {
+                states: states.map((state) => ({
+                    id: state.id,
+                    name: state.name,
+                    country_id: state.country_id,
+                    country_code: state.country_code,
+                    country_name: state.country_name,
+                    iso2: state.iso2,
+                    fips_code: state.fips_code,
+                    type: state.type,
+                    latitude: state.latitude,
+                    longitude: state.longitude,
+                    isActive: state.isActive,
+                    createdAt: state.createdAt,
+                    updatedAt: state.updatedAt,
+                })),
+                total,
+                limit,
+                offset,
+                hasMore: offset + limit < total,
+            };
         }
         catch (error) {
             this.handleException(error);
