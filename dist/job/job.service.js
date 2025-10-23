@@ -801,7 +801,7 @@ let JobService = class JobService {
     }
     async createJobAttribute(createJobAttributeDto) {
         try {
-            const existingAttribute = await this.db.jobAttribute.findFirst({
+            const existingAttribute = await this.db.job_attributes.findFirst({
                 where: {
                     name: createJobAttributeDto.name,
                     category: createJobAttributeDto.category,
@@ -810,13 +810,15 @@ let JobService = class JobService {
             if (existingAttribute) {
                 throw new common_1.BadRequestException(`Job attribute with name "${createJobAttributeDto.name}" already exists in category "${createJobAttributeDto.category}"`);
             }
-            const jobAttribute = await this.db.jobAttribute.create({
+            const jobAttribute = await this.db.job_attributes.create({
                 data: {
+                    id: `attr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                     name: createJobAttributeDto.name,
                     category: createJobAttributeDto.category,
                     description: createJobAttributeDto.description,
                     isActive: createJobAttributeDto.isActive ?? true,
                     sortOrder: createJobAttributeDto.sortOrder ?? 0,
+                    updatedAt: new Date(),
                 },
             });
             return {
@@ -839,14 +841,14 @@ let JobService = class JobService {
     }
     async updateJobAttribute(id, updateJobAttributeDto) {
         try {
-            const existingAttribute = await this.db.jobAttribute.findUnique({
+            const existingAttribute = await this.db.job_attributes.findUnique({
                 where: { id },
             });
             if (!existingAttribute) {
                 throw new common_1.NotFoundException('Job attribute not found');
             }
             if (updateJobAttributeDto.name && updateJobAttributeDto.name !== existingAttribute.name) {
-                const conflictingAttribute = await this.db.jobAttribute.findFirst({
+                const conflictingAttribute = await this.db.job_attributes.findFirst({
                     where: {
                         name: updateJobAttributeDto.name,
                         category: (updateJobAttributeDto.category || existingAttribute.category),
@@ -857,7 +859,7 @@ let JobService = class JobService {
                     throw new common_1.BadRequestException(`Job attribute with name "${updateJobAttributeDto.name}" already exists in category "${updateJobAttributeDto.category || existingAttribute.category}"`);
                 }
             }
-            const updatedAttribute = await this.db.jobAttribute.update({
+            const updatedAttribute = await this.db.job_attributes.update({
                 where: { id },
                 data: {
                     ...updateJobAttributeDto,
@@ -884,13 +886,13 @@ let JobService = class JobService {
     }
     async deleteJobAttribute(id) {
         try {
-            const existingAttribute = await this.db.jobAttribute.findUnique({
+            const existingAttribute = await this.db.job_attributes.findUnique({
                 where: { id },
             });
             if (!existingAttribute) {
                 throw new common_1.NotFoundException('Job attribute not found');
             }
-            await this.db.jobAttribute.delete({
+            await this.db.job_attributes.delete({
                 where: { id },
             });
             return {
@@ -907,7 +909,7 @@ let JobService = class JobService {
     }
     async getJobAttribute(id) {
         try {
-            const jobAttribute = await this.db.jobAttribute.findUnique({
+            const jobAttribute = await this.db.job_attributes.findUnique({
                 where: { id },
             });
             if (!jobAttribute) {
@@ -948,8 +950,8 @@ let JobService = class JobService {
                     { description: { contains: search, mode: 'insensitive' } },
                 ];
             }
-            const total = await this.db.jobAttribute.count({ where });
-            const attributes = await this.db.jobAttribute.findMany({
+            const total = await this.db.job_attributes.count({ where });
+            const attributes = await this.db.job_attributes.findMany({
                 where,
                 skip,
                 take: limit,
@@ -986,7 +988,7 @@ let JobService = class JobService {
             const categories = Object.values(client_1.JobAttributeCategory);
             const result = [];
             for (const category of categories) {
-                const attributes = await this.db.jobAttribute.findMany({
+                const attributes = await this.db.job_attributes.findMany({
                     where: {
                         category: category,
                         isActive: true,
@@ -1020,7 +1022,7 @@ let JobService = class JobService {
     async bulkCreateJobAttributes(bulkCreateDto) {
         try {
             const { category, attributes } = bulkCreateDto;
-            const existingNames = await this.db.jobAttribute.findMany({
+            const existingNames = await this.db.job_attributes.findMany({
                 where: {
                     category: category,
                     name: { in: attributes.map((attr) => attr.name) },
@@ -1032,12 +1034,14 @@ let JobService = class JobService {
             if (newAttributes.length === 0) {
                 throw new common_1.BadRequestException('All attributes already exist in this category');
             }
-            const createdAttributes = await this.db.jobAttribute.createMany({
+            const createdAttributes = await this.db.job_attributes.createMany({
                 data: newAttributes.map((attr) => ({
+                    id: `attr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                     name: attr.name,
                     category: category,
                     description: attr.description,
                     sortOrder: attr.sortOrder ?? 0,
+                    updatedAt: new Date(),
                 })),
             });
             return {

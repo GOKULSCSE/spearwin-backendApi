@@ -21,8 +21,11 @@ import {
   UpdateNotificationPreferencesDto,
   NotificationPreferencesResponseDto,
 } from './dto/notification-preferences.dto';
+import { RecentUsersQueryDto } from './dto/recent-users-query.dto';
+import { RecentUsersStatsQueryDto } from './dto/recent-users-stats-query.dto';
 import type { UserProfileResponseDto } from './dto/user-profile-response.dto';
 import type { ActivityLogsResponseDto } from './dto/activity-logs-response.dto';
+import type { RecentUsersResponseDto } from './dto/recent-users-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
   GetCurrentUser,
@@ -130,5 +133,27 @@ export class UserController {
     @GetCurrentUser() user: CurrentUser,
   ): Promise<{ message: string }> {
     return this.userService.testNotificationSettings(user.id);
+  }
+
+  // =================================================================
+  // RECENT USERS API (Admin Only)
+  // =================================================================
+
+  @Get('recent')
+  @UseGuards(JwtAuthGuard)
+  async getRecentUsers(
+    @GetCurrentUser() user: CurrentUser,
+    @Query(ValidationPipe) query: RecentUsersQueryDto,
+  ): Promise<RecentUsersResponseDto> {
+    return this.userService.getRecentUsers(query);
+  }
+
+  @Get('recent/stats')
+  @UseGuards(JwtAuthGuard)
+  async getRecentUsersStats(
+    @GetCurrentUser() user: CurrentUser,
+    @Query(ValidationPipe) query: RecentUsersStatsQueryDto,
+  ): Promise<RecentUsersResponseDto> {
+    return this.userService.getRecentUsersStats(query);
   }
 }

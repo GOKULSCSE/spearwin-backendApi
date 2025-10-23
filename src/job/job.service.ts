@@ -989,7 +989,7 @@ export class JobService {
   ): Promise<JobAttributeResponseDto> {
     try {
       // Check if attribute with same name and category already exists
-      const existingAttribute = await this.db.jobAttribute.findFirst({
+      const existingAttribute = await this.db.job_attributes.findFirst({
         where: {
           name: createJobAttributeDto.name,
           category: createJobAttributeDto.category as any,
@@ -1002,13 +1002,15 @@ export class JobService {
         );
       }
 
-      const jobAttribute = await this.db.jobAttribute.create({
+      const jobAttribute = await this.db.job_attributes.create({
         data: {
+          id: `attr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           name: createJobAttributeDto.name,
           category: createJobAttributeDto.category as any,
           description: createJobAttributeDto.description,
           isActive: createJobAttributeDto.isActive ?? true,
           sortOrder: createJobAttributeDto.sortOrder ?? 0,
+          updatedAt: new Date(),
         },
       });
 
@@ -1038,7 +1040,7 @@ export class JobService {
   ): Promise<JobAttributeResponseDto> {
     try {
       // Check if attribute exists
-      const existingAttribute = await this.db.jobAttribute.findUnique({
+      const existingAttribute = await this.db.job_attributes.findUnique({
         where: { id },
       });
 
@@ -1048,7 +1050,7 @@ export class JobService {
 
       // Check for name conflicts if name is being updated
       if (updateJobAttributeDto.name && updateJobAttributeDto.name !== existingAttribute.name) {
-        const conflictingAttribute = await this.db.jobAttribute.findFirst({
+        const conflictingAttribute = await this.db.job_attributes.findFirst({
           where: {
             name: updateJobAttributeDto.name,
             category: (updateJobAttributeDto.category || existingAttribute.category) as any,
@@ -1063,7 +1065,7 @@ export class JobService {
         }
       }
 
-      const updatedAttribute = await this.db.jobAttribute.update({
+      const updatedAttribute = await this.db.job_attributes.update({
         where: { id },
         data: {
           ...updateJobAttributeDto,
@@ -1093,7 +1095,7 @@ export class JobService {
 
   async deleteJobAttribute(id: string): Promise<{ success: boolean; message: string }> {
     try {
-      const existingAttribute = await this.db.jobAttribute.findUnique({
+      const existingAttribute = await this.db.job_attributes.findUnique({
         where: { id },
       });
 
@@ -1101,7 +1103,7 @@ export class JobService {
         throw new NotFoundException('Job attribute not found');
       }
 
-      await this.db.jobAttribute.delete({
+      await this.db.job_attributes.delete({
         where: { id },
       });
 
@@ -1121,7 +1123,7 @@ export class JobService {
 
   async getJobAttribute(id: string): Promise<JobAttributeResponseDto> {
     try {
-      const jobAttribute = await this.db.jobAttribute.findUnique({
+      const jobAttribute = await this.db.job_attributes.findUnique({
         where: { id },
       });
 
@@ -1166,7 +1168,7 @@ export class JobService {
       const skip = (page - 1) * limit;
 
       // Build where clause
-      const where: Prisma.JobAttributeWhereInput = {};
+      const where: Prisma.job_attributesWhereInput = {};
 
       if (category) {
         where.category = category as any;
@@ -1184,10 +1186,10 @@ export class JobService {
       }
 
       // Get total count
-      const total = await this.db.jobAttribute.count({ where });
+      const total = await this.db.job_attributes.count({ where });
 
       // Get attributes
-      const attributes = await this.db.jobAttribute.findMany({
+      const attributes = await this.db.job_attributes.findMany({
         where,
         skip,
         take: limit,
@@ -1229,7 +1231,7 @@ export class JobService {
       const result: { category: JobAttributeCategory; attributes: JobAttributeResponseDto[] }[] = [];
 
       for (const category of categories) {
-        const attributes = await this.db.jobAttribute.findMany({
+        const attributes = await this.db.job_attributes.findMany({
           where: {
             category: category as JobAttributeCategory,
             isActive: true,
@@ -1271,7 +1273,7 @@ export class JobService {
       const { category, attributes } = bulkCreateDto;
 
       // Check for existing attributes to avoid duplicates
-      const existingNames = await this.db.jobAttribute.findMany({
+      const existingNames = await this.db.job_attributes.findMany({
         where: {
           category: category as any,
           name: { in: attributes.map((attr) => attr.name) },
@@ -1291,12 +1293,14 @@ export class JobService {
       }
 
       // Create new attributes
-      const createdAttributes = await this.db.jobAttribute.createMany({
+      const createdAttributes = await this.db.job_attributes.createMany({
         data: newAttributes.map((attr) => ({
+          id: `attr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           name: attr.name,
           category: category as any,
           description: attr.description,
           sortOrder: attr.sortOrder ?? 0,
+          updatedAt: new Date(),
         })),
       });
 

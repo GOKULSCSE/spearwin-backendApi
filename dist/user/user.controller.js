@@ -21,6 +21,8 @@ const update_profile_dto_1 = require("./dto/update-profile.dto");
 const change_password_dto_1 = require("./dto/change-password.dto");
 const activity_logs_query_dto_1 = require("./dto/activity-logs-query.dto");
 const notification_preferences_dto_1 = require("./dto/notification-preferences.dto");
+const recent_users_query_dto_1 = require("./dto/recent-users-query.dto");
+const recent_users_stats_query_dto_1 = require("./dto/recent-users-stats-query.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
 let UserController = class UserController {
@@ -66,6 +68,12 @@ let UserController = class UserController {
     }
     async testNotificationSettings(user) {
         return this.userService.testNotificationSettings(user.id);
+    }
+    async getRecentUsers(user, query) {
+        return this.userService.getRecentUsers(query);
+    }
+    async getRecentUsersStats(user, query) {
+        return this.userService.getRecentUsersStats(query);
     }
 };
 exports.UserController = UserController;
@@ -172,6 +180,24 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "testNotificationSettings", null);
+__decorate([
+    (0, common_1.Get)('recent'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
+    __param(1, (0, common_1.Query)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, recent_users_query_dto_1.RecentUsersQueryDto]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "getRecentUsers", null);
+__decorate([
+    (0, common_1.Get)('recent/stats'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
+    __param(1, (0, common_1.Query)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, recent_users_stats_query_dto_1.RecentUsersStatsQueryDto]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "getRecentUsersStats", null);
 exports.UserController = UserController = __decorate([
     (0, common_1.Controller)('user'),
     __metadata("design:paramtypes", [user_service_1.UserService])

@@ -22,6 +22,7 @@ const company_module_1 = require("./company/company.module");
 const location_module_1 = require("./location/location.module");
 const job_module_1 = require("./job/job.module");
 const notification_module_1 = require("./notification/notification.module");
+const dashboard_module_1 = require("./dashboard/dashboard.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -37,6 +38,7 @@ exports.AppModule = AppModule = __decorate([
             location_module_1.LocationModule,
             job_module_1.JobModule,
             notification_module_1.NotificationModule,
+            dashboard_module_1.DashboardModule,
             throttler_1.ThrottlerModule.forRoot([
                 {
                     name: 'short',
