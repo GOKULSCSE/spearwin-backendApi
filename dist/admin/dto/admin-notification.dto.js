@@ -8,6 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var _a, _b, _c, _d, _e;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationQueryDto = exports.NotificationTemplatesListResponseDto = exports.BroadcastNotificationResponseDto = exports.SendNotificationResponseDto = exports.NotificationTemplateResponseDto = exports.UpdateNotificationTemplateDto = exports.CreateNotificationTemplateDto = exports.BroadcastNotificationDto = exports.SendNotificationDto = void 0;
 const class_validator_1 = require("class-validator");
@@ -31,7 +32,7 @@ __decorate([
 ], SendNotificationDto.prototype, "userIds", void 0);
 __decorate([
     (0, class_validator_1.IsEnum)(client_1.NotificationType),
-    __metadata("design:type", String)
+    __metadata("design:type", typeof (_a = typeof client_1.NotificationType !== "undefined" && client_1.NotificationType) === "function" ? _a : Object)
 ], SendNotificationDto.prototype, "type", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
@@ -100,7 +101,7 @@ __decorate([
 ], BroadcastNotificationDto.prototype, "excludeUserIds", void 0);
 __decorate([
     (0, class_validator_1.IsEnum)(client_1.NotificationType),
-    __metadata("design:type", String)
+    __metadata("design:type", typeof (_b = typeof client_1.NotificationType !== "undefined" && client_1.NotificationType) === "function" ? _b : Object)
 ], BroadcastNotificationDto.prototype, "type", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
@@ -156,7 +157,7 @@ __decorate([
 ], CreateNotificationTemplateDto.prototype, "description", void 0);
 __decorate([
     (0, class_validator_1.IsEnum)(client_1.NotificationType),
-    __metadata("design:type", String)
+    __metadata("design:type", typeof (_c = typeof client_1.NotificationType !== "undefined" && client_1.NotificationType) === "function" ? _c : Object)
 ], CreateNotificationTemplateDto.prototype, "type", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
@@ -206,7 +207,7 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(client_1.NotificationType),
-    __metadata("design:type", String)
+    __metadata("design:type", typeof (_d = typeof client_1.NotificationType !== "undefined" && client_1.NotificationType) === "function" ? _d : Object)
 ], UpdateNotificationTemplateDto.prototype, "type", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
@@ -288,7 +289,7 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(client_1.NotificationType),
-    __metadata("design:type", String)
+    __metadata("design:type", typeof (_e = typeof client_1.NotificationType !== "undefined" && client_1.NotificationType) === "function" ? _e : Object)
 ], NotificationQueryDto.prototype, "type", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
