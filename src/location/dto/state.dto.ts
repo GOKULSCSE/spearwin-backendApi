@@ -3,8 +3,11 @@ import {
   IsOptional,
   IsBoolean,
   IsInt,
+  IsNumber,
   MinLength,
   MaxLength,
+  Min,
+  Max,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
@@ -52,6 +55,38 @@ export class UpdateStateDto {
   @IsOptional()
   @IsBoolean({ message: 'Is active must be a boolean value' })
   isActive?: boolean;
+}
+
+export class StateListQueryDto {
+  @IsOptional()
+  @IsString({ message: 'Search must be a string' })
+  search?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'Country ID must be an integer' })
+  countryId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Limit must be a number' })
+  @Min(1, { message: 'Limit must be at least 1' })
+  @Max(1000, { message: 'Limit must not exceed 1000' })
+  limit?: number = 100;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Offset must be a number' })
+  @Min(0, { message: 'Offset must be at least 0' })
+  offset?: number = 0;
+
+  @IsOptional()
+  @IsString({ message: 'Sort by must be a string' })
+  sortBy?: string = 'name';
+
+  @IsOptional()
+  @IsString({ message: 'Sort order must be a string' })
+  sortOrder?: 'asc' | 'desc' = 'asc';
 }
 
 export class StateResponseDto {
@@ -108,4 +143,12 @@ export class StateResponseDto {
     isActive: boolean;
     createdAt: Date;
   }[];
+}
+
+export class StateListResponseDto {
+  states: StateResponseDto[];
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
 }

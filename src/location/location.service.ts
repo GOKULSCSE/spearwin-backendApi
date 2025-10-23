@@ -14,6 +14,8 @@ import {
   CreateStateDto,
   UpdateStateDto,
   StateResponseDto,
+  StateListQueryDto,
+  StateListResponseDto,
 } from './dto/state.dto';
 import {
   CreateCityDto,
@@ -254,30 +256,66 @@ export class LocationService {
   // STATE MANAGEMENT
   // =================================================================
 
-  async getAllStates(): Promise<StateResponseDto[]> {
+  async getAllStates(query: StateListQueryDto): Promise<StateListResponseDto> {
     try {
-      const states = await this.db.state.findMany({
-        include: {
-          country: true,
-        },
-        orderBy: { name: 'asc' },
-      });
+      const limit = query.limit || 10;
+      const offset = query.offset || 0;
+      const search = query.search?.trim();
+      // const sortBy = query.sortBy || 'name';
+      // const sortOrder = query.sortOrder || 'asc';
 
-      return states.map((state) => ({
-        id: state.id,
-        name: state.name,
-        country_id: state.country_id,
-        country_code: state.country_code,
-        country_name: state.country_name,
-        iso2: state.iso2,
-        fips_code: state.fips_code,
-        type: state.type,
-        latitude: state.latitude,
-        longitude: state.longitude,
-        isActive: state.isActive,
-        createdAt: state.createdAt,
-        updatedAt: state.updatedAt,
-      }));
+      // Build where clause
+      const where: any = {};
+
+      // Add search filter
+      if (search) {
+        where.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { country_name: { contains: search, mode: 'insensitive' } },
+          
+        ];
+      }
+
+      // Add country filter if provided
+      if (query.countryId) {
+        where.country_id = query.countryId;
+      }
+
+      // Get total count and states
+      const [total, states] = await Promise.all([
+        this.db.state.count({ where }),
+        this.db.state.findMany({
+          where,
+          include: {
+            country: true,
+          },
+          orderBy: { [sortBy]: sortOrder },
+          skip: offset,
+          take: limit,
+        }),
+      ]);
+
+      return {
+        states: states.map((state) => ({
+          id: state.id,
+          name: state.name,
+          country_id: state.country_id,
+          country_code: state.country_code,
+          country_name: state.country_name,
+          iso2: state.iso2,
+          fips_code: state.fips_code,
+          type: state.type,
+          latitude: state.latitude,
+          longitude: state.longitude,
+          isActive: state.isActive,
+          createdAt: state.createdAt,
+          updatedAt: state.updatedAt,
+        })),
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total,
+      };
     } catch (error) {
       this.handleException(error);
       throw error;
