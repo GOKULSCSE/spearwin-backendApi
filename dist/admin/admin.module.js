@@ -12,6 +12,7 @@ const jwt_1 = require("@nestjs/jwt");
 const admin_controller_1 = require("./admin.controller");
 const admin_service_1 = require("./admin.service");
 const database_module_1 = require("../database/database.module");
+const faq_module_1 = require("../faq/faq.module");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
@@ -19,6 +20,7 @@ exports.AdminModule = AdminModule = __decorate([
     (0, common_1.Module)({
         imports: [
             database_module_1.DatabaseModule,
+            faq_module_1.FaqModule,
             jwt_1.JwtModule.register({
                 secret: process.env.JWT_SECRET || 'your-secret-key',
                 signOptions: { expiresIn: '15m' },
