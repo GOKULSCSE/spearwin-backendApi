@@ -231,7 +231,7 @@ let LocationService = class LocationService {
                     include: {
                         country: true,
                     },
-                    orderBy: { [sortBy]: sortOrder },
+                    orderBy: { name: 'asc' },
                     skip: offset,
                     take: limit,
                 }),

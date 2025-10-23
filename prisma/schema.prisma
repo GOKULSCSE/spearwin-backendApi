@@ -633,3 +633,12 @@ enum JobAttributeCategory {
   DEGREE_TYPE
   MAJOR_SUBJECT
 }
+
+model FAQ {
+  id        Int      @id @default(autoincrement())
+  question  String
+  answer    String
+  active    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
