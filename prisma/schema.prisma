@@ -514,7 +514,7 @@ model FAQ {
   answer    String
   active    Boolean  @default(false)
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
 }
 
 model job_attributes {
@@ -667,11 +667,3 @@ enum JobAttributeCategory {
   MAJOR_SUBJECT
 }
 
-model FAQ {
-  id        Int      @id @default(autoincrement())
-  question  String
-  answer    String
-  active    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
