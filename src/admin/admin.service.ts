@@ -1135,6 +1135,47 @@ export class AdminService {
         throw new ForbiddenException('Only admins can create jobs');
       }
 
+      console.log('createJobDto', createJobDto);
+
+      // Get admin record for the current user
+      const admin = await this.prisma.admin.findUnique({
+        where: { userId: currentUser.id },
+        select: { id: true, firstName: true, lastName: true }
+      });
+
+      if (!admin) {
+        throw new BadRequestException('Admin profile not found for current user');
+      }
+
+      // Validate company exists by ID
+      const company = await this.prisma.company.findUnique({
+        where: { 
+          id: createJobDto.companyId,
+          isActive: true
+        },
+        select: { id: true, name: true, isActive: true }
+      });
+
+      if (!company) {
+        throw new BadRequestException(`Company with ID "${createJobDto.companyId}" not found or is not active`);
+      }
+
+      // Validate city exists if provided
+      if (createJobDto.cityId) {
+        const city = await this.prisma.city.findUnique({
+          where: { id: parseInt(createJobDto.cityId) },
+          select: { id: true, name: true, isActive: true }
+        });
+
+        if (!city) {
+          throw new BadRequestException(`City with ID ${createJobDto.cityId} not found`);
+        }
+
+        if (!city.isActive) {
+          throw new BadRequestException(`City ${city.name} is not active`);
+        }
+      }
+
       // Generate unique slug
       const slug =
         createJobDto.title
@@ -1153,8 +1194,8 @@ export class AdminService {
           requirements: createJobDto.requirements,
           responsibilities: createJobDto.responsibilities,
           benefits: createJobDto.benefits,
-          companyId: createJobDto.companyId,
-          postedById: currentUser.id, // Admin who posted the job
+          companyId: company.id,
+          postedById: admin.id, // Admin who posted the job
           cityId: createJobDto.cityId ? parseInt(createJobDto.cityId) : null,
           address: createJobDto.address,
           jobType: createJobDto.jobType as any,
@@ -1220,10 +1261,35 @@ export class AdminService {
         data: this.mapJobToResponse(job),
       };
     } catch (error) {
-      if (error instanceof ForbiddenException) {
+      console.log('error', error);
+      
+      // Re-throw known exceptions
+      if (error instanceof ForbiddenException || error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException('Failed to create job');
+      
+      // Handle Prisma foreign key constraint errors
+      if (error.code === 'P2003') {
+        if (error.meta?.constraint === 'jobs_companyId_fkey') {
+          throw new BadRequestException('Invalid company ID provided');
+        }
+        if (error.meta?.constraint === 'jobs_cityId_fkey') {
+          throw new BadRequestException('Invalid city ID provided');
+        }
+        if (error.meta?.constraint === 'jobs_postedById_fkey') {
+          throw new BadRequestException('Invalid user ID for job posting');
+        }
+      }
+      
+      // Handle Prisma unique constraint errors
+      if (error.code === 'P2002') {
+        if (error.meta?.target?.includes('slug')) {
+          throw new BadRequestException('A job with this title already exists');
+        }
+      }
+      
+      // Generic error fallback
+      throw new BadRequestException(`Failed to create job: ${error.message || 'Unknown error'}`);
     }
   }
 

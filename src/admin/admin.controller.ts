@@ -187,6 +187,7 @@ export class AdminController {
     @Query(ValidationPipe) query: JobListQueryDto,
     @GetCurrentUser() user: CurrentUser,
   ) {
+    console.log('user', user);
     return this.adminService.getAllJobs(query, user);
   }
 
