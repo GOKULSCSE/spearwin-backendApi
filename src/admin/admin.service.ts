@@ -1135,6 +1135,20 @@ export class AdminService {
         throw new ForbiddenException('Only admins can create jobs');
       }
 
+      // Find company by name
+      const company = await this.prisma.company.findFirst({
+        where: {
+          name: {
+            equals: createJobDto.companyName,
+            mode: 'insensitive'
+          }
+        }
+      });
+
+      if (!company) {
+        throw new BadRequestException(`Company with name "${createJobDto.companyName}" not found`);
+      }
+
       // Generate unique slug
       const slug =
         createJobDto.title
@@ -1153,7 +1167,7 @@ export class AdminService {
           requirements: createJobDto.requirements,
           responsibilities: createJobDto.responsibilities,
           benefits: createJobDto.benefits,
-          companyId: createJobDto.companyId,
+          companyId: company.id,
           postedById: currentUser.id, // Admin who posted the job
           cityId: createJobDto.cityId ? parseInt(createJobDto.cityId) : null,
           address: createJobDto.address,
@@ -1313,8 +1327,23 @@ export class AdminService {
         updateData.responsibilities = updateJobDto.responsibilities;
       if (updateJobDto.benefits !== undefined)
         updateData.benefits = updateJobDto.benefits;
-      if (updateJobDto.companyId !== undefined)
-        updateData.companyId = updateJobDto.companyId;
+      if (updateJobDto.companyName !== undefined) {
+        // Find company by name
+        const company = await this.prisma.company.findFirst({
+          where: {
+            name: {
+              equals: updateJobDto.companyName,
+              mode: 'insensitive'
+            }
+          }
+        });
+
+        if (!company) {
+          throw new BadRequestException(`Company with name "${updateJobDto.companyName}" not found`);
+        }
+        
+        updateData.companyId = company.id;
+      }
       if (updateJobDto.cityId !== undefined)
         updateData.cityId = updateJobDto.cityId;
       if (updateJobDto.address !== undefined)

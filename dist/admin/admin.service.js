@@ -883,6 +883,17 @@ let AdminService = class AdminService {
             if (![client_1.UserRole.ADMIN, client_1.UserRole.SUPER_ADMIN].includes(currentUser.role)) {
                 throw new common_1.ForbiddenException('Only admins can create jobs');
             }
+            const company = await this.prisma.company.findFirst({
+                where: {
+                    name: {
+                        equals: createJobDto.companyName,
+                        mode: 'insensitive'
+                    }
+                }
+            });
+            if (!company) {
+                throw new common_1.BadRequestException(`Company with name "${createJobDto.companyName}" not found`);
+            }
             const slug = createJobDto.title
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
@@ -897,7 +908,7 @@ let AdminService = class AdminService {
                     requirements: createJobDto.requirements,
                     responsibilities: createJobDto.responsibilities,
                     benefits: createJobDto.benefits,
-                    companyId: createJobDto.companyId,
+                    companyId: company.id,
                     postedById: currentUser.id,
                     cityId: createJobDto.cityId ? parseInt(createJobDto.cityId) : null,
                     address: createJobDto.address,
@@ -1034,8 +1045,20 @@ let AdminService = class AdminService {
                 updateData.responsibilities = updateJobDto.responsibilities;
             if (updateJobDto.benefits !== undefined)
                 updateData.benefits = updateJobDto.benefits;
-            if (updateJobDto.companyId !== undefined)
-                updateData.companyId = updateJobDto.companyId;
+            if (updateJobDto.companyName !== undefined) {
+                const company = await this.prisma.company.findFirst({
+                    where: {
+                        name: {
+                            equals: updateJobDto.companyName,
+                            mode: 'insensitive'
+                        }
+                    }
+                });
+                if (!company) {
+                    throw new common_1.BadRequestException(`Company with name "${updateJobDto.companyName}" not found`);
+                }
+                updateData.companyId = company.id;
+            }
             if (updateJobDto.cityId !== undefined)
                 updateData.cityId = updateJobDto.cityId;
             if (updateJobDto.address !== undefined)

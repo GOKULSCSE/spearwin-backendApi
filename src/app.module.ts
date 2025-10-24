@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
@@ -14,9 +15,14 @@ import { LocationModule } from './location/location.module';
 import { JobModule } from './job/job.module';
 import { NotificationModule } from './notification/notification.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { CandidateUpdateModule } from './candidate/candidate-update.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
     UserModule,
     DatabaseModule,
     AuthModule,
@@ -27,6 +33,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     JobModule,
     NotificationModule,
     DashboardModule,
+    CandidateUpdateModule,
     ThrottlerModule.forRoot([
       {
         name: 'short',

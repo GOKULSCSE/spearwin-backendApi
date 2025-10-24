@@ -24,7 +24,7 @@ class UpdateJobDto {
     jobType;
     workMode;
     experienceLevel;
-    companyId;
+    companyName;
     cityId;
     skillsRequired;
     tags;
@@ -113,9 +113,9 @@ __decorate([
 ], UpdateJobDto.prototype, "experienceLevel", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Company ID must be a string' }),
+    (0, class_validator_1.IsString)({ message: 'Company name must be a string' }),
     __metadata("design:type", String)
-], UpdateJobDto.prototype, "companyId", void 0);
+], UpdateJobDto.prototype, "companyName", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'City ID must be a string' }),
