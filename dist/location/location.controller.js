@@ -61,8 +61,8 @@ let LocationController = class LocationController {
     async deleteState(stateId, user) {
         return this.locationService.deleteState(stateId, user.id);
     }
-    async getAllCities() {
-        return this.locationService.getAllCities();
+    async getAllCities(query) {
+        return this.locationService.getAllCities(query);
     }
     async getCitiesByState(stateId) {
         return this.locationService.getCitiesByState(stateId);
@@ -191,8 +191,9 @@ __decorate([
 ], LocationController.prototype, "deleteState", null);
 __decorate([
     (0, common_1.Get)('cities'),
+    __param(0, (0, common_1.Query)(common_1.ValidationPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [city_dto_1.CityListQueryDto]),
     __metadata("design:returntype", Promise)
 ], LocationController.prototype, "getAllCities", null);
 __decorate([

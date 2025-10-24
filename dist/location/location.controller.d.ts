@@ -1,7 +1,7 @@
 import { LocationService } from './location.service';
 import { CreateCountryDto, UpdateCountryDto, type CountryResponseDto } from './dto/country.dto';
 import { CreateStateDto, UpdateStateDto, StateListQueryDto, type StateResponseDto, type StateListResponseDto } from './dto/state.dto';
-import { CreateCityDto, UpdateCityDto, type CityResponseDto, CitySearchQueryDto } from './dto/city.dto';
+import { CreateCityDto, UpdateCityDto, type CityResponseDto, CitySearchQueryDto, CityListQueryDto, type CityListResponseDto } from './dto/city.dto';
 import { CreatePincodeDto, UpdatePincodeDto, type PincodeResponseDto } from './dto/pincode.dto';
 import { type CurrentUser } from '../auth/decorators/current-user.decorator';
 export declare class LocationController {
@@ -22,7 +22,7 @@ export declare class LocationController {
     deleteState(stateId: string, user: CurrentUser): Promise<{
         message: string;
     }>;
-    getAllCities(): Promise<CityResponseDto[]>;
+    getAllCities(query: CityListQueryDto): Promise<CityListResponseDto>;
     getCitiesByState(stateId: string): Promise<CityResponseDto[]>;
     getCityById(cityId: string): Promise<CityResponseDto>;
     createCity(user: CurrentUser, createDto: CreateCityDto): Promise<CityResponseDto>;

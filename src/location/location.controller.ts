@@ -28,6 +28,8 @@ import {
   UpdateCityDto,
   type CityResponseDto,
   CitySearchQueryDto,
+  CityListQueryDto,
+  type CityListResponseDto,
 } from './dto/city.dto';
 import {
   CreatePincodeDto,
@@ -147,8 +149,10 @@ export class LocationController {
   // =================================================================
 
   @Get('cities')
-  async getAllCities(): Promise<CityResponseDto[]> {
-    return this.locationService.getAllCities();
+  async getAllCities(
+    @Query(ValidationPipe) query: CityListQueryDto,
+  ): Promise<CityListResponseDto> {
+    return this.locationService.getAllCities(query);
   }
 
   @Get('states/:stateId/cities')

@@ -72,7 +72,7 @@ export class StateListQueryDto {
   @IsNumber({}, { message: 'Limit must be a number' })
   @Min(1, { message: 'Limit must be at least 1' })
   @Max(1000, { message: 'Limit must not exceed 1000' })
-  limit?: number = 100;
+  limit?: number = 10;
 
   @IsOptional()
   @Type(() => Number)
