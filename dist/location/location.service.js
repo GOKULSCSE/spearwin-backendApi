@@ -458,88 +458,117 @@ let LocationService = class LocationService {
             throw error;
         }
     }
-    async getAllCities() {
+    async getAllCities(query) {
         try {
-            const cities = await this.db.city.findMany({
-                include: {
-                    state: {
-                        include: {
-                            country: true,
+            const limit = query.limit || 10;
+            const offset = query.offset || 0;
+            const search = query.search?.trim();
+            const where = {};
+            if (search) {
+                where.OR = [
+                    { name: { contains: search, mode: 'insensitive' } },
+                    { state_name: { contains: search, mode: 'insensitive' } },
+                    { country_name: { contains: search, mode: 'insensitive' } },
+                ];
+            }
+            if (query.stateId) {
+                where.state_id = query.stateId;
+            }
+            if (query.countryId) {
+                where.country_id = query.countryId;
+            }
+            const [total, cities] = await Promise.all([
+                this.db.city.count({ where }),
+                this.db.city.findMany({
+                    where,
+                    include: {
+                        state: {
+                            include: {
+                                country: true,
+                            },
+                        },
+                        pincodes: {
+                            where: { isActive: true },
+                            orderBy: { code: 'asc' },
                         },
                     },
-                    pincodes: {
-                        where: { isActive: true },
-                        orderBy: { code: 'asc' },
-                    },
-                },
-                orderBy: { name: 'asc' },
-            });
-            return cities.map((city) => ({
-                id: city.id,
-                name: city.name,
-                state_id: city.state_id,
-                state_code: city.state_code,
-                state_name: city.state_name,
-                country_id: city.country_id,
-                country_code: city.country_code,
-                country_name: city.country_name,
-                latitude: city.latitude,
-                longitude: city.longitude,
-                wikiDataId: city.wikiDataId,
-                isActive: city.isActive,
-                createdAt: city.createdAt,
-                updatedAt: city.updatedAt,
-                state: city.state ? {
-                    id: city.state.id,
-                    name: city.state.name,
-                    country_id: city.state.country_id,
-                    country_code: city.state.country_code,
-                    country_name: city.state.country_name,
-                    iso2: city.state.iso2,
-                    fips_code: city.state.fips_code,
-                    type: city.state.type,
-                    latitude: city.state.latitude,
-                    longitude: city.state.longitude,
-                    isActive: city.state.isActive,
-                    createdAt: city.state.createdAt,
-                    updatedAt: city.state.updatedAt,
-                    country: city.state.country
-                        ? {
-                            id: city.state.country.id,
-                            name: city.state.country.name,
-                            iso3: city.state.country.iso3,
-                            iso2: city.state.country.iso2,
-                            numeric_code: city.state.country.numeric_code,
-                            phonecode: city.state.country.phonecode,
-                            capital: city.state.country.capital,
-                            currency: city.state.country.currency,
-                            currency_name: city.state.country.currency_name,
-                            currency_symbol: city.state.country.currency_symbol,
-                            tld: city.state.country.tld,
-                            native: city.state.country.native,
-                            region: city.state.country.region,
-                            region_id: city.state.country.region_id,
-                            subregion: city.state.country.subregion,
-                            subregion_id: city.state.country.subregion_id,
-                            nationality: city.state.country.nationality,
-                            latitude: city.state.country.latitude,
-                            longitude: city.state.country.longitude,
-                            isActive: city.state.country.isActive,
-                            createdAt: city.state.country.createdAt,
-                            updatedAt: city.state.country.updatedAt,
-                        }
-                        : undefined,
-                } : undefined,
-                pincodes: city.pincodes.map((pincode) => ({
-                    id: pincode.id,
-                    code: pincode.code,
-                    area: pincode.area,
-                    cityId: pincode.cityId,
-                    isActive: pincode.isActive,
-                    createdAt: pincode.createdAt,
-                    updatedAt: pincode.updatedAt,
+                    orderBy: { name: 'asc' },
+                    skip: offset,
+                    take: limit,
+                }),
+            ]);
+            return {
+                cities: cities.map((city) => ({
+                    id: city.id,
+                    name: city.name,
+                    state_id: city.state_id,
+                    state_code: city.state_code,
+                    state_name: city.state_name,
+                    country_id: city.country_id,
+                    country_code: city.country_code,
+                    country_name: city.country_name,
+                    latitude: city.latitude,
+                    longitude: city.longitude,
+                    wikiDataId: city.wikiDataId,
+                    isActive: city.isActive,
+                    createdAt: city.createdAt,
+                    updatedAt: city.updatedAt,
+                    state: city.state ? {
+                        id: city.state.id,
+                        name: city.state.name,
+                        country_id: city.state.country_id,
+                        country_code: city.state.country_code,
+                        country_name: city.state.country_name,
+                        iso2: city.state.iso2,
+                        fips_code: city.state.fips_code,
+                        type: city.state.type,
+                        latitude: city.state.latitude,
+                        longitude: city.state.longitude,
+                        isActive: city.state.isActive,
+                        createdAt: city.state.createdAt,
+                        updatedAt: city.state.updatedAt,
+                        country: city.state.country
+                            ? {
+                                id: city.state.country.id,
+                                name: city.state.country.name,
+                                iso3: city.state.country.iso3,
+                                iso2: city.state.country.iso2,
+                                numeric_code: city.state.country.numeric_code,
+                                phonecode: city.state.country.phonecode,
+                                capital: city.state.country.capital,
+                                currency: city.state.country.currency,
+                                currency_name: city.state.country.currency_name,
+                                currency_symbol: city.state.country.currency_symbol,
+                                tld: city.state.country.tld,
+                                native: city.state.country.native,
+                                region: city.state.country.region,
+                                region_id: city.state.country.region_id,
+                                subregion: city.state.country.subregion,
+                                subregion_id: city.state.country.subregion_id,
+                                nationality: city.state.country.nationality,
+                                latitude: city.state.country.latitude,
+                                longitude: city.state.country.longitude,
+                                isActive: city.state.country.isActive,
+                                createdAt: city.state.country.createdAt,
+                                updatedAt: city.state.country.updatedAt,
+                            }
+                            : undefined,
+                    } : undefined,
+                    pincodes: city.pincodes.map((pincode) => ({
+                        id: pincode.id,
+                        code: pincode.code,
+                        area: pincode.area,
+                        cityId: pincode.cityId,
+                        isActive: pincode.isActive,
+                        createdAt: pincode.createdAt,
+                        updatedAt: pincode.updatedAt,
+                    })),
                 })),
-            }));
+                total,
+                limit,
+                offset,
+                hasMore: offset + limit < total,
+            };
         }
         catch (error) {
             this.handleException(error);
