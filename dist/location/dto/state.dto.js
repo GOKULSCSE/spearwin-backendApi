@@ -79,7 +79,7 @@ __decorate([
 class StateListQueryDto {
     search;
     countryId;
-    limit = 100;
+    limit = 10;
     offset = 0;
     sortBy = 'name';
     sortOrder = 'asc';

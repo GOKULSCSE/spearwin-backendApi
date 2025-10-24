@@ -79,3 +79,19 @@ export declare class CitySearchQueryDto {
     countryId?: number;
     limit?: number;
 }
+export declare class CityListQueryDto {
+    search?: string;
+    stateId?: number;
+    countryId?: number;
+    limit?: number;
+    offset?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+}
+export declare class CityListResponseDto {
+    cities: CityResponseDto[];
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+}

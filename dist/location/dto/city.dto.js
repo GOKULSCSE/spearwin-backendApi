@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CitySearchQueryDto = exports.CityResponseDto = exports.UpdateCityDto = exports.CreateCityDto = void 0;
+exports.CityListResponseDto = exports.CityListQueryDto = exports.CitySearchQueryDto = exports.CityResponseDto = exports.UpdateCityDto = exports.CreateCityDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 class CreateCityDto {
@@ -109,4 +109,64 @@ __decorate([
     (0, class_transformer_1.Type)(() => Number),
     __metadata("design:type", Number)
 ], CitySearchQueryDto.prototype, "limit", void 0);
+class CityListQueryDto {
+    search;
+    stateId;
+    countryId;
+    limit = 10;
+    offset = 0;
+    sortBy = 'name';
+    sortOrder = 'asc';
+}
+exports.CityListQueryDto = CityListQueryDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Search must be a string' }),
+    __metadata("design:type", String)
+], CityListQueryDto.prototype, "search", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)({ message: 'State ID must be an integer' }),
+    __metadata("design:type", Number)
+], CityListQueryDto.prototype, "stateId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)({ message: 'Country ID must be an integer' }),
+    __metadata("design:type", Number)
+], CityListQueryDto.prototype, "countryId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsNumber)({}, { message: 'Limit must be a number' }),
+    (0, class_validator_1.Min)(1, { message: 'Limit must be at least 1' }),
+    (0, class_validator_1.Max)(1000, { message: 'Limit must not exceed 1000' }),
+    __metadata("design:type", Number)
+], CityListQueryDto.prototype, "limit", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsNumber)({}, { message: 'Offset must be a number' }),
+    (0, class_validator_1.Min)(0, { message: 'Offset must be at least 0' }),
+    __metadata("design:type", Number)
+], CityListQueryDto.prototype, "offset", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Sort by must be a string' }),
+    __metadata("design:type", String)
+], CityListQueryDto.prototype, "sortBy", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Sort order must be a string' }),
+    __metadata("design:type", String)
+], CityListQueryDto.prototype, "sortOrder", void 0);
+class CityListResponseDto {
+    cities;
+    total;
+    limit;
+    offset;
+    hasMore;
+}
+exports.CityListResponseDto = CityListResponseDto;
 //# sourceMappingURL=city.dto.js.map
