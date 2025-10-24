@@ -619,8 +619,23 @@ export class JobService {
         updateData.workMode = updateJobDto.workMode;
       if (updateJobDto.experienceLevel !== undefined)
         updateData.experienceLevel = updateJobDto.experienceLevel;
-      if (updateJobDto.companyId !== undefined)
-        updateData.companyId = updateJobDto.companyId;
+      if (updateJobDto.companyName !== undefined) {
+        // Find company by name
+        const company = await this.db.company.findFirst({
+          where: {
+            name: {
+              equals: updateJobDto.companyName,
+              mode: 'insensitive'
+            }
+          }
+        });
+
+        if (!company) {
+          throw new BadRequestException(`Company with name "${updateJobDto.companyName}" not found`);
+        }
+        
+        updateData.companyId = company.id;
+      }
       if (updateJobDto.cityId !== undefined)
         updateData.cityId = updateJobDto.cityId;
       if (updateJobDto.skillsRequired !== undefined)

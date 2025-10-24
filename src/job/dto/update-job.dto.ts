@@ -84,8 +84,8 @@ export class UpdateJobDto {
   experienceLevel?: string;
 
   @IsOptional()
-  @IsString({ message: 'Company ID must be a string' })
-  companyId?: string;
+  @IsString({ message: 'Company name must be a string' })
+  companyName?: string;
 
   @IsOptional()
   @IsString({ message: 'City ID must be a string' })
