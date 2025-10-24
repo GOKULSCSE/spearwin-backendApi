@@ -68,6 +68,7 @@ let AdminController = class AdminController {
         return this.adminService.updateAdminStatus(adminId, statusDto, user.id);
     }
     async getAllJobs(query, user) {
+        console.log('user', user);
         return this.adminService.getAllJobs(query, user);
     }
     async createJob(createJobDto, user) {

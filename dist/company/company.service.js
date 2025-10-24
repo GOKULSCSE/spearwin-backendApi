@@ -73,8 +73,8 @@ let CompanyService = class CompanyService {
             const totalPages = Math.ceil(total / limit);
             return {
                 companies: companies.map((company) => ({
-                    id: Number(company.id),
-                    userId: company.userId ? Number(company.userId) : undefined,
+                    id: company.id,
+                    userId: company.userId,
                     name: company.name,
                     slug: company.slug,
                     description: company.description,
@@ -134,8 +134,8 @@ let CompanyService = class CompanyService {
                 throw new common_1.NotFoundException('Company not found');
             }
             return {
-                id: Number(company.id),
-                userId: company.userId ? Number(company.userId) : undefined,
+                id: company.id,
+                userId: company.userId,
                 name: company.name,
                 slug: company.slug,
                 description: company.description,
@@ -199,8 +199,8 @@ let CompanyService = class CompanyService {
             });
             await this.logActivity(adminUserId, client_1.LogAction.CREATE, client_1.LogLevel.INFO, 'Company', company.id, `Company created: ${company.name}`);
             return {
-                id: Number(company.id),
-                userId: company.userId ? Number(company.userId) : undefined,
+                id: company.id,
+                userId: company.userId,
                 name: company.name,
                 slug: company.slug,
                 description: company.description,
@@ -273,8 +273,8 @@ let CompanyService = class CompanyService {
             });
             await this.logActivity(adminUserId, client_1.LogAction.UPDATE, client_1.LogLevel.INFO, 'Company', companyId, `Company updated: ${updatedCompany.name}`);
             return {
-                id: Number(updatedCompany.id),
-                userId: updatedCompany.userId ? Number(updatedCompany.userId) : undefined,
+                id: updatedCompany.id,
+                userId: updatedCompany.userId,
                 name: updatedCompany.name,
                 slug: updatedCompany.slug,
                 description: updatedCompany.description,

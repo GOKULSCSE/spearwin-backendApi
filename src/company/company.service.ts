@@ -112,8 +112,8 @@ export class CompanyService {
 
       return {
         companies: companies.map((company) => ({
-          id: Number(company.id),
-          userId: company.userId ? Number(company.userId) : undefined,
+          id: company.id,
+          userId: company.userId,
           name: company.name,
           slug: company.slug,
           description: company.description,
@@ -175,8 +175,8 @@ export class CompanyService {
       }
 
       return {
-        id: Number(company.id),
-        userId: company.userId ? Number(company.userId) : undefined,
+        id: company.id,
+        userId: company.userId,
         name: company.name,
         slug: company.slug,
         description: company.description,
@@ -256,8 +256,8 @@ export class CompanyService {
       );
 
       return {
-        id: Number(company.id),
-        userId: company.userId ? Number(company.userId) : undefined,
+        id: company.id,
+        userId: company.userId,
         name: company.name,
         slug: company.slug,
         description: company.description,
@@ -351,8 +351,8 @@ export class CompanyService {
       );
 
       return {
-        id: Number(updatedCompany.id),
-        userId: updatedCompany.userId ? Number(updatedCompany.userId) : undefined,
+        id: updatedCompany.id,
+        userId: updatedCompany.userId,
         name: updatedCompany.name,
         slug: updatedCompany.slug,
         description: updatedCompany.description,

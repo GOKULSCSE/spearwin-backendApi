@@ -1,6 +1,6 @@
 export class CompanyResponseDto {
-  id: number;
-  userId?: number | null;
+  id: string;
+  userId?: string | null;
   name: string;
   slug: string;
   description?: string | null;
