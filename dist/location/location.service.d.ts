@@ -1,7 +1,7 @@
 import { DatabaseService } from '../database/database.service';
 import { CreateCountryDto, UpdateCountryDto, CountryResponseDto } from './dto/country.dto';
 import { CreateStateDto, UpdateStateDto, StateResponseDto, StateListQueryDto, StateListResponseDto } from './dto/state.dto';
-import { CreateCityDto, UpdateCityDto, CityResponseDto, CitySearchQueryDto } from './dto/city.dto';
+import { CreateCityDto, UpdateCityDto, CityResponseDto, CitySearchQueryDto, CityListQueryDto, CityListResponseDto } from './dto/city.dto';
 import { CreatePincodeDto, UpdatePincodeDto, PincodeResponseDto } from './dto/pincode.dto';
 export declare class LocationService {
     private readonly db;
@@ -18,7 +18,7 @@ export declare class LocationService {
     getStateById(stateId: string): Promise<StateResponseDto>;
     createState(createDto: CreateStateDto, userId: string): Promise<StateResponseDto>;
     updateState(stateId: string, updateDto: UpdateStateDto, userId: string): Promise<StateResponseDto>;
-    getAllCities(): Promise<CityResponseDto[]>;
+    getAllCities(query: CityListQueryDto): Promise<CityListResponseDto>;
     deleteState(stateId: string, userId: string): Promise<{
         message: string;
     }>;
