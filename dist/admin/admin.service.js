@@ -883,16 +883,35 @@ let AdminService = class AdminService {
             if (![client_1.UserRole.ADMIN, client_1.UserRole.SUPER_ADMIN].includes(currentUser.role)) {
                 throw new common_1.ForbiddenException('Only admins can create jobs');
             }
-            const company = await this.prisma.company.findFirst({
+            console.log('createJobDto', createJobDto);
+            const admin = await this.prisma.admin.findUnique({
+                where: { userId: currentUser.id },
+                select: { id: true, firstName: true, lastName: true }
+            });
+            if (!admin) {
+                throw new common_1.BadRequestException('Admin profile not found for current user');
+            }
+            const company = await this.prisma.company.findUnique({
                 where: {
-                    name: {
-                        equals: createJobDto.companyName,
-                        mode: 'insensitive'
-                    }
-                }
+                    id: createJobDto.companyId,
+                    isActive: true
+                },
+                select: { id: true, name: true, isActive: true }
             });
             if (!company) {
-                throw new common_1.BadRequestException(`Company with name "${createJobDto.companyName}" not found`);
+                throw new common_1.BadRequestException(`Company with ID "${createJobDto.companyId}" not found or is not active`);
+            }
+            if (createJobDto.cityId) {
+                const city = await this.prisma.city.findUnique({
+                    where: { id: parseInt(createJobDto.cityId) },
+                    select: { id: true, name: true, isActive: true }
+                });
+                if (!city) {
+                    throw new common_1.BadRequestException(`City with ID ${createJobDto.cityId} not found`);
+                }
+                if (!city.isActive) {
+                    throw new common_1.BadRequestException(`City ${city.name} is not active`);
+                }
             }
             const slug = createJobDto.title
                 .toLowerCase()
@@ -909,7 +928,7 @@ let AdminService = class AdminService {
                     responsibilities: createJobDto.responsibilities,
                     benefits: createJobDto.benefits,
                     companyId: company.id,
-                    postedById: currentUser.id,
+                    postedById: admin.id,
                     cityId: createJobDto.cityId ? parseInt(createJobDto.cityId) : null,
                     address: createJobDto.address,
                     jobType: createJobDto.jobType,
@@ -966,10 +985,27 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.ForbiddenException) {
+            console.log('error', error);
+            if (error instanceof common_1.ForbiddenException || error instanceof common_1.BadRequestException) {
                 throw error;
             }
-            throw new common_1.BadRequestException('Failed to create job');
+            if (error.code === 'P2003') {
+                if (error.meta?.constraint === 'jobs_companyId_fkey') {
+                    throw new common_1.BadRequestException('Invalid company ID provided');
+                }
+                if (error.meta?.constraint === 'jobs_cityId_fkey') {
+                    throw new common_1.BadRequestException('Invalid city ID provided');
+                }
+                if (error.meta?.constraint === 'jobs_postedById_fkey') {
+                    throw new common_1.BadRequestException('Invalid user ID for job posting');
+                }
+            }
+            if (error.code === 'P2002') {
+                if (error.meta?.target?.includes('slug')) {
+                    throw new common_1.BadRequestException('A job with this title already exists');
+                }
+            }
+            throw new common_1.BadRequestException(`Failed to create job: ${error.message || 'Unknown error'}`);
         }
     }
     async getJobById(jobId, currentUser) {
