@@ -8,7 +8,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a, _b;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CandidateEducationResponseDto = exports.UpdateCandidateEducationDto = exports.CreateCandidateEducationDto = void 0;
 const class_validator_1 = require("class-validator");
@@ -45,7 +44,7 @@ __decorate([
     (0, class_validator_1.IsEnum)(client_1.EducationLevel, {
         message: 'Level must be one of: HIGH_SCHOOL, DIPLOMA, BACHELOR, MASTER, DOCTORATE, PROFESSIONAL',
     }),
-    __metadata("design:type", typeof (_a = typeof client_1.EducationLevel !== "undefined" && client_1.EducationLevel) === "function" ? _a : Object)
+    __metadata("design:type", String)
 ], CreateCandidateEducationDto.prototype, "level", void 0);
 __decorate([
     (0, class_validator_1.IsDateString)({}, { message: 'Start date must be a valid date' }),
@@ -105,7 +104,7 @@ __decorate([
     (0, class_validator_1.IsEnum)(client_1.EducationLevel, {
         message: 'Level must be one of: HIGH_SCHOOL, DIPLOMA, BACHELOR, MASTER, DOCTORATE, PROFESSIONAL',
     }),
-    __metadata("design:type", typeof (_b = typeof client_1.EducationLevel !== "undefined" && client_1.EducationLevel) === "function" ? _b : Object)
+    __metadata("design:type", String)
 ], UpdateCandidateEducationDto.prototype, "level", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
