@@ -5,8 +5,11 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ActivityLogsQueryDto } from './dto/activity-logs-query.dto';
 import { UpdateNotificationPreferencesDto, NotificationPreferencesResponseDto } from './dto/notification-preferences.dto';
+import { RecentUsersQueryDto } from './dto/recent-users-query.dto';
+import { RecentUsersStatsQueryDto } from './dto/recent-users-stats-query.dto';
 import type { UserProfileResponseDto } from './dto/user-profile-response.dto';
 import type { ActivityLogsResponseDto } from './dto/activity-logs-response.dto';
+import type { RecentUsersResponseDto } from './dto/recent-users-response.dto';
 import { type CurrentUser } from '../auth/decorators/current-user.decorator';
 export declare class UserController {
     private readonly userService;
@@ -62,4 +65,6 @@ export declare class UserController {
     testNotificationSettings(user: CurrentUser): Promise<{
         message: string;
     }>;
+    getRecentUsers(user: CurrentUser, query: RecentUsersQueryDto): Promise<RecentUsersResponseDto>;
+    getRecentUsersStats(user: CurrentUser, query: RecentUsersStatsQueryDto): Promise<RecentUsersResponseDto>;
 }

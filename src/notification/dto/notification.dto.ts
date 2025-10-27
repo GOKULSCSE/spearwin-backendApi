@@ -1,6 +1,27 @@
-import { IsString, IsOptional, IsBoolean, IsEnum, IsDateString, IsInt, IsArray, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsEnum,
+  IsDateString,
+  IsInt,
+  IsArray,
+  IsObject,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { NotificationType } from '@prisma/client';
+
+// Define NotificationType enum locally to avoid import issues
+export enum NotificationType {
+  JOB_ALERT = 'JOB_ALERT',
+  APPLICATION_UPDATE = 'APPLICATION_UPDATE',
+  PROFILE_UPDATE = 'PROFILE_UPDATE',
+  SYSTEM_NOTIFICATION = 'SYSTEM_NOTIFICATION',
+  SECURITY_ALERT = 'SECURITY_ALERT',
+  COMPANY_UPDATE = 'COMPANY_UPDATE',
+  NEW_MESSAGE = 'NEW_MESSAGE',
+  INTERVIEW_SCHEDULED = 'INTERVIEW_SCHEDULED',
+  JOB_RECOMMENDATION = 'JOB_RECOMMENDATION',
+}
 
 // =================================================================
 // NOTIFICATION MANAGEMENT DTOs
@@ -12,7 +33,7 @@ export class NotificationQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsEnum(NotificationType, { message: 'Invalid notification type' })
+  @IsEnum(Object.values(NotificationType), { message: 'Invalid notification type' })
   type?: NotificationType;
 
   @IsOptional()
@@ -85,7 +106,7 @@ export class CreateNotificationDto {
   @IsString({ message: 'User ID must be a string' })
   userId: string;
 
-  @IsEnum(NotificationType, { message: 'Invalid notification type' })
+  @IsEnum(Object.values(NotificationType), { message: 'Invalid notification type' })
   type: NotificationType;
 
   @IsString({ message: 'Title must be a string' })
@@ -129,7 +150,7 @@ export class CreateNotificationWithPushDto {
   @IsString({ each: true, message: 'Each user ID must be a string' })
   userIds?: string[];
 
-  @IsEnum(NotificationType, { message: 'Invalid notification type' })
+  @IsEnum(Object.values(NotificationType), { message: 'Invalid notification type' })
   type: NotificationType;
 
   @IsString({ message: 'Title must be a string' })

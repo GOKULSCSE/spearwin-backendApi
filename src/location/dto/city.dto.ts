@@ -2,10 +2,14 @@ import {
   IsString,
   IsOptional,
   IsBoolean,
+  IsInt,
+  IsNumber,
   MinLength,
   MaxLength,
+  Min,
+  Max,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateCityDto {
   @IsString({ message: 'Name must be a string' })
@@ -14,8 +18,9 @@ export class CreateCityDto {
   @Transform(({ value }) => value?.trim())
   name: string;
 
-  @IsString({ message: 'State ID must be a string' })
-  stateId: string;
+  @IsInt({ message: 'State ID must be a number' })
+  @Type(() => Number)
+  stateId: number;
 
   @IsOptional()
   @IsBoolean({ message: 'Is active must be a boolean value' })
@@ -31,8 +36,9 @@ export class UpdateCityDto {
   name?: string;
 
   @IsOptional()
-  @IsString({ message: 'State ID must be a string' })
-  stateId?: string;
+  @IsInt({ message: 'State ID must be a number' })
+  @Type(() => Number)
+  stateId?: number;
 
   @IsOptional()
   @IsBoolean({ message: 'Is active must be a boolean value' })
@@ -40,27 +46,65 @@ export class UpdateCityDto {
 }
 
 export class CityResponseDto {
-  id: string;
+  id: number;
   name: string;
-  stateId: string;
+  state_id: number;
+  state_code?: string | null;
+  state_name?: string | null;
+  country_id?: number | null;
+  country_code?: string | null;
+  country_name?: string | null;
+  latitude?: string | null;
+  longitude?: string | null;
+  wikiDataId?: string | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-  state?: {
-    id: string;
-    name: string;
-    code?: string | null;
-    country: {
-      id: string;
-      name: string;
-      code: string;
+      state?: {
+        id: number;
+        name?: string | null;
+        country_id?: number | null;
+        state_id?: number | null;
+      country_code?: string | null;
+      country_name?: string | null;
+      iso2?: string | null;
+      fips_code?: string | null;
+      type?: string | null;
+      latitude?: string | null;
+      longitude?: string | null;
+      isActive: boolean;
+      createdAt: Date;
+      updatedAt: Date;
+      country?: {
+        id: number;
+        name: string | null;
+        iso3?: string | null;
+      iso2?: string | null;
+      numeric_code?: string | null;
+      phonecode?: string | null;
+      capital?: string | null;
+      currency?: string | null;
+      currency_name?: string | null;
+      currency_symbol?: string | null;
+      tld?: string | null;
+      native?: string | null;
+      region?: string | null;
+      region_id?: number | null;
+      subregion?: string | null;
+      subregion_id?: number | null;
+      nationality?: string | null;
+      latitude?: string | null;
+      longitude?: string | null;
+      isActive: boolean;
+      createdAt: Date;
+      updatedAt: Date;
     };
   };
   pincodes?: {
     id: string;
     code: string;
     area?: string | null;
-    cityId: string;
+    cityId: number;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -73,10 +117,62 @@ export class CitySearchQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsString({ message: 'State ID must be a string' })
-  stateId?: string;
+  @IsInt({ message: 'State ID must be a number' })
+  @Type(() => Number)
+  stateId?: number;
 
   @IsOptional()
-  @IsString({ message: 'Country ID must be a string' })
-  countryId?: string;
+  @IsInt({ message: 'Country ID must be a number' })
+  @Type(() => Number)
+  countryId?: number;
+
+  @IsOptional()
+  @IsInt({ message: 'Limit must be a number' })
+  @Type(() => Number)
+  limit?: number;
+}
+
+export class CityListQueryDto {
+  @IsOptional()
+  @IsString({ message: 'Search must be a string' })
+  search?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'State ID must be an integer' })
+  stateId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'Country ID must be an integer' })
+  countryId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Limit must be a number' })
+  @Min(1, { message: 'Limit must be at least 1' })
+  @Max(1000, { message: 'Limit must not exceed 1000' })
+  limit?: number = 10;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Offset must be a number' })
+  @Min(0, { message: 'Offset must be at least 0' })
+  offset?: number = 0;
+
+  @IsOptional()
+  @IsString({ message: 'Sort by must be a string' })
+  sortBy?: string = 'name';
+
+  @IsOptional()
+  @IsString({ message: 'Sort order must be a string' })
+  sortOrder?: 'asc' | 'desc' = 'asc';
+}
+
+export class CityListResponseDto {
+  cities: CityResponseDto[];
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
 }

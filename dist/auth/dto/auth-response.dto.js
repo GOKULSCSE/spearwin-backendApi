@@ -24,6 +24,7 @@ exports.RefreshResponseDto = RefreshResponseDto;
 class ForgotPasswordResponseDto {
     success;
     message;
+    data;
 }
 exports.ForgotPasswordResponseDto = ForgotPasswordResponseDto;
 class ResetPasswordResponseDto {

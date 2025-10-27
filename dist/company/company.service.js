@@ -20,7 +20,7 @@ let CompanyService = class CompanyService {
     }
     async getAllCompanies(query) {
         try {
-            const { search, industry, cityId, isVerified, isActive, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc', } = query;
+            const { search, industry, country, state, city, isVerified, isActive, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc', } = query;
             const skip = (page - 1) * limit;
             const where = {};
             if (search) {
@@ -33,8 +33,14 @@ let CompanyService = class CompanyService {
             if (industry) {
                 where.industry = industry;
             }
-            if (cityId) {
-                where.cityId = cityId;
+            if (country) {
+                where.country = { contains: country, mode: 'insensitive' };
+            }
+            if (state) {
+                where.state = { contains: state, mode: 'insensitive' };
+            }
+            if (city) {
+                where.city = { contains: city, mode: 'insensitive' };
             }
             if (isVerified !== undefined) {
                 where.isVerified = isVerified;
@@ -43,20 +49,12 @@ let CompanyService = class CompanyService {
                 where.isActive = isActive;
             }
             const orderBy = {};
-            orderBy[sortBy] = sortOrder;
+            orderBy[sortBy] =
+                sortOrder;
             const [companies, total] = await Promise.all([
                 this.db.company.findMany({
                     where,
                     include: {
-                        city: {
-                            include: {
-                                state: {
-                                    include: {
-                                        country: true,
-                                    },
-                                },
-                            },
-                        },
                         user: {
                             select: {
                                 id: true,
@@ -74,7 +72,7 @@ let CompanyService = class CompanyService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                companies: companies.map(company => ({
+                companies: companies.map((company) => ({
                     id: company.id,
                     userId: company.userId,
                     name: company.name,
@@ -94,25 +92,17 @@ let CompanyService = class CompanyService {
                     isActive: company.isActive,
                     createdAt: company.createdAt,
                     updatedAt: company.updatedAt,
-                    city: company.city ? {
-                        id: company.city.id,
-                        name: company.city.name,
-                        state: {
-                            id: company.city.state.id,
-                            name: company.city.state.name,
-                            country: {
-                                id: company.city.state.country.id,
-                                name: company.city.state.country.name,
-                                code: company.city.state.country.code,
-                            },
-                        },
-                    } : undefined,
-                    user: company.user ? {
-                        id: company.user.id,
-                        email: company.user.email,
-                        role: company.user.role,
-                        status: company.user.status,
-                    } : undefined,
+                    country: company.country,
+                    state: company.state,
+                    city: company.city,
+                    user: company.user
+                        ? {
+                            id: company.user.id,
+                            email: company.user.email,
+                            role: company.user.role,
+                            status: company.user.status,
+                        }
+                        : undefined,
                 })),
                 total,
                 page,
@@ -130,15 +120,6 @@ let CompanyService = class CompanyService {
             const company = await this.db.company.findUnique({
                 where: { id: companyId },
                 include: {
-                    city: {
-                        include: {
-                            state: {
-                                include: {
-                                    country: true,
-                                },
-                            },
-                        },
-                    },
                     user: {
                         select: {
                             id: true,
@@ -172,25 +153,17 @@ let CompanyService = class CompanyService {
                 isActive: company.isActive,
                 createdAt: company.createdAt,
                 updatedAt: company.updatedAt,
-                city: company.city ? {
-                    id: company.city.id,
-                    name: company.city.name,
-                    state: {
-                        id: company.city.state.id,
-                        name: company.city.state.name,
-                        country: {
-                            id: company.city.state.country.id,
-                            name: company.city.state.country.name,
-                            code: company.city.state.country.code,
-                        },
-                    },
-                } : undefined,
-                user: company.user ? {
-                    id: company.user.id,
-                    email: company.user.email,
-                    role: company.user.role,
-                    status: company.user.status,
-                } : undefined,
+                country: company.country,
+                state: company.state,
+                city: company.city,
+                user: company.user
+                    ? {
+                        id: company.user.id,
+                        email: company.user.email,
+                        role: company.user.role,
+                        status: company.user.status,
+                    }
+                    : undefined,
             };
         }
         catch (error) {
@@ -210,17 +183,10 @@ let CompanyService = class CompanyService {
                 throw new common_1.BadRequestException('Company with this slug already exists');
             }
             const company = await this.db.company.create({
-                data: createDto,
+                data: {
+                    ...createDto,
+                },
                 include: {
-                    city: {
-                        include: {
-                            state: {
-                                include: {
-                                    country: true,
-                                },
-                            },
-                        },
-                    },
                     user: {
                         select: {
                             id: true,
@@ -252,25 +218,17 @@ let CompanyService = class CompanyService {
                 isActive: company.isActive,
                 createdAt: company.createdAt,
                 updatedAt: company.updatedAt,
-                city: company.city ? {
-                    id: company.city.id,
-                    name: company.city.name,
-                    state: {
-                        id: company.city.state.id,
-                        name: company.city.state.name,
-                        country: {
-                            id: company.city.state.country.id,
-                            name: company.city.state.country.name,
-                            code: company.city.state.country.code,
-                        },
-                    },
-                } : undefined,
-                user: company.user ? {
-                    id: company.user.id,
-                    email: company.user.email,
-                    role: company.user.role,
-                    status: company.user.status,
-                } : undefined,
+                country: company.country,
+                state: company.state,
+                city: company.city,
+                user: company.user
+                    ? {
+                        id: company.user.id,
+                        email: company.user.email,
+                        role: company.user.role,
+                        status: company.user.status,
+                    }
+                    : undefined,
             };
         }
         catch (error) {
@@ -299,17 +257,10 @@ let CompanyService = class CompanyService {
             }
             const updatedCompany = await this.db.company.update({
                 where: { id: companyId },
-                data: updateDto,
+                data: {
+                    ...updateDto,
+                },
                 include: {
-                    city: {
-                        include: {
-                            state: {
-                                include: {
-                                    country: true,
-                                },
-                            },
-                        },
-                    },
                     user: {
                         select: {
                             id: true,
@@ -341,29 +292,22 @@ let CompanyService = class CompanyService {
                 isActive: updatedCompany.isActive,
                 createdAt: updatedCompany.createdAt,
                 updatedAt: updatedCompany.updatedAt,
-                city: updatedCompany.city ? {
-                    id: updatedCompany.city.id,
-                    name: updatedCompany.city.name,
-                    state: {
-                        id: updatedCompany.city.state.id,
-                        name: updatedCompany.city.state.name,
-                        country: {
-                            id: updatedCompany.city.state.country.id,
-                            name: updatedCompany.city.state.country.name,
-                            code: updatedCompany.city.state.country.code,
-                        },
-                    },
-                } : undefined,
-                user: updatedCompany.user ? {
-                    id: updatedCompany.user.id,
-                    email: updatedCompany.user.email,
-                    role: updatedCompany.user.role,
-                    status: updatedCompany.user.status,
-                } : undefined,
+                country: updatedCompany.country,
+                state: updatedCompany.state,
+                city: updatedCompany.city,
+                user: updatedCompany.user
+                    ? {
+                        id: updatedCompany.user.id,
+                        email: updatedCompany.user.email,
+                        role: updatedCompany.user.role,
+                        status: updatedCompany.user.status,
+                    }
+                    : undefined,
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.BadRequestException) {
                 throw error;
             }
             this.handleException(error);
@@ -391,7 +335,8 @@ let CompanyService = class CompanyService {
             return { message: 'Company deleted successfully' };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.BadRequestException) {
                 throw error;
             }
             this.handleException(error);
@@ -411,7 +356,9 @@ let CompanyService = class CompanyService {
                 data: { isVerified: verifyDto.isVerified },
             });
             await this.logActivity(adminUserId, client_1.LogAction.UPDATE, client_1.LogLevel.INFO, 'Company', companyId, `Company ${verifyDto.isVerified ? 'verified' : 'unverified'}: ${company.name}`);
-            return { message: `Company ${verifyDto.isVerified ? 'verified' : 'unverified'} successfully` };
+            return {
+                message: `Company ${verifyDto.isVerified ? 'verified' : 'unverified'} successfully`,
+            };
         }
         catch (error) {
             if (error instanceof common_1.NotFoundException) {
@@ -434,7 +381,9 @@ let CompanyService = class CompanyService {
                 data: { isActive: statusDto.isActive },
             });
             await this.logActivity(adminUserId, client_1.LogAction.UPDATE, client_1.LogLevel.INFO, 'Company', companyId, `Company ${statusDto.isActive ? 'activated' : 'deactivated'}: ${company.name}`);
-            return { message: `Company ${statusDto.isActive ? 'activated' : 'deactivated'} successfully` };
+            return {
+                message: `Company ${statusDto.isActive ? 'activated' : 'deactivated'} successfully`,
+            };
         }
         catch (error) {
             if (error instanceof common_1.NotFoundException) {
@@ -482,7 +431,7 @@ let CompanyService = class CompanyService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                jobs: jobs.map(job => ({
+                jobs: jobs.map((job) => ({
                     id: job.id,
                     title: job.title,
                     slug: job.slug,
@@ -509,19 +458,21 @@ let CompanyService = class CompanyService {
                     createdAt: job.createdAt,
                     updatedAt: job.updatedAt,
                     company: job.company,
-                    city: job.city ? {
-                        id: job.city.id,
-                        name: job.city.name,
-                        state: {
-                            id: job.city.state.id,
-                            name: job.city.state.name,
-                            country: {
-                                id: job.city.state.country.id,
-                                name: job.city.state.country.name,
-                                code: job.city.state.country.code,
+                    city: job.city
+                        ? {
+                            id: job.city.id,
+                            name: job.city.name,
+                            state: {
+                                id: job.city.state.id,
+                                name: job.city.state.name,
+                                country: job.city.state.country ? {
+                                    id: job.city.state.country.id,
+                                    name: job.city.state.country.name,
+                                    iso2: job.city.state.country.iso2,
+                                } : undefined,
                             },
-                        },
-                    } : undefined,
+                        }
+                        : undefined,
                 })),
                 total,
                 page,
@@ -545,7 +496,7 @@ let CompanyService = class CompanyService {
             if (!company) {
                 throw new common_1.NotFoundException('Company not found');
             }
-            const [totalJobs, activeJobs, draftJobs, closedJobs, lastJobPosted,] = await Promise.all([
+            const [totalJobs, activeJobs, draftJobs, closedJobs, lastJobPosted] = await Promise.all([
                 this.db.job.count({ where: { companyId } }),
                 this.db.job.count({ where: { companyId, status: 'PUBLISHED' } }),
                 this.db.job.count({ where: { companyId, status: 'DRAFT' } }),

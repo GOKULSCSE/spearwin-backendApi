@@ -20,6 +20,7 @@ const refresh_token_dto_1 = require("./dto/refresh-token.dto");
 const forgot_password_dto_1 = require("./dto/forgot-password.dto");
 const reset_password_dto_1 = require("./dto/reset-password.dto");
 const candidate_register_dto_1 = require("./dto/candidate-register.dto");
+const candidate_simple_register_dto_1 = require("./dto/candidate-simple-register.dto");
 const company_register_dto_1 = require("./dto/company-register.dto");
 const verify_email_dto_1 = require("./dto/verify-email.dto");
 const verify_phone_dto_1 = require("./dto/verify-phone.dto");
@@ -37,6 +38,9 @@ let AuthController = class AuthController {
     }
     async candidateRegister(candidateRegisterDto) {
         return this.authService.candidateRegister(candidateRegisterDto);
+    }
+    async candidateSimpleRegister(candidateSimpleRegisterDto) {
+        return this.authService.candidateSimpleRegister(candidateSimpleRegisterDto);
     }
     async companyRegister(companyRegisterDto) {
         return this.authService.companyRegister(companyRegisterDto);
@@ -87,6 +91,14 @@ __decorate([
     __metadata("design:paramtypes", [candidate_register_dto_1.CandidateRegisterDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "candidateRegister", null);
+__decorate([
+    (0, common_1.Post)('register/candidate/simple'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [candidate_simple_register_dto_1.CandidateSimpleRegisterDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "candidateSimpleRegister", null);
 __decorate([
     (0, common_1.Post)('register/company'),
     (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),

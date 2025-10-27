@@ -16,21 +16,11 @@ export class CompanyResponseDto {
   facebookUrl?: string | null;
   isVerified: boolean;
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  city?: {
-    id: string;
-    name: string;
-    state: {
-      id: string;
-      name: string;
-      country: {
-        id: string;
-        name: string;
-        code: string;
-      };
-    };
-  };
+        createdAt: Date;
+        updatedAt?: Date;
+  country?: string | null;
+  state?: string | null;
+  city?: string | null;
   user?: {
     id: string;
     email: string;

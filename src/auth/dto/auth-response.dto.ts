@@ -22,11 +22,13 @@ export class AuthResponseDto {
 export class LoginResponseDto {
   success: boolean;
   message: string;
-  data: AuthResponseDto | {
-    requires2FA: boolean;
-    userId: string;
-    twoFactorCode?: string;
-  };
+  data:
+    | AuthResponseDto
+    | {
+        requires2FA: boolean;
+        userId: string;
+        twoFactorCode?: string;
+      };
 }
 
 export class RefreshResponseDto {
@@ -41,6 +43,11 @@ export class RefreshResponseDto {
 export class ForgotPasswordResponseDto {
   success: boolean;
   message: string;
+  data?: {
+    email: string;
+    resetToken: string;
+    expiresAt: Date;
+  };
 }
 
 export class ResetPasswordResponseDto {

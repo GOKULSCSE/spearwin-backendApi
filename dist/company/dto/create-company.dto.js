@@ -22,7 +22,9 @@ class CreateCompanyDto {
     foundedYear;
     employeeCount;
     headquarters;
-    cityId;
+    country;
+    state;
+    city;
     address;
     linkedinUrl;
     twitterUrl;
@@ -83,9 +85,19 @@ __decorate([
 ], CreateCompanyDto.prototype, "headquarters", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'City ID must be a string' }),
+    (0, class_validator_1.IsString)({ message: 'Country must be a string' }),
     __metadata("design:type", String)
-], CreateCompanyDto.prototype, "cityId", void 0);
+], CreateCompanyDto.prototype, "country", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'State must be a string' }),
+    __metadata("design:type", String)
+], CreateCompanyDto.prototype, "state", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'City must be a string' }),
+    __metadata("design:type", String)
+], CreateCompanyDto.prototype, "city", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Address must be a string' }),

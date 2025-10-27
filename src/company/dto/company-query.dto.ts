@@ -18,8 +18,16 @@ export class CompanyQueryDto {
   industry?: string;
 
   @IsOptional()
-  @IsString({ message: 'City ID must be a string' })
-  cityId?: string;
+  @IsString({ message: 'Country must be a string' })
+  country?: string;
+
+  @IsOptional()
+  @IsString({ message: 'State must be a string' })
+  state?: string;
+
+  @IsOptional()
+  @IsString({ message: 'City must be a string' })
+  city?: string;
 
   @IsOptional()
   @IsBoolean({ message: 'Is verified must be a boolean value' })

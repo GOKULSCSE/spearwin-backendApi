@@ -6,6 +6,7 @@ import { ActivityLogsQueryDto } from './dto/activity-logs-query.dto';
 import { UpdateNotificationPreferencesDto, NotificationPreferencesResponseDto } from './dto/notification-preferences.dto';
 import { UserProfileResponseDto } from './dto/user-profile-response.dto';
 import { ActivityLogsResponseDto } from './dto/activity-logs-response.dto';
+import { RecentUsersResponseDto } from './dto/recent-users-response.dto';
 import { DatabaseService } from 'src/database/database.service';
 export declare class UserService {
     private readonly db;
@@ -63,4 +64,6 @@ export declare class UserService {
     }>;
     private logActivity;
     handleException(error: any): void;
+    getRecentUsers(query: any): Promise<any>;
+    getRecentUsersStats(query: any): Promise<RecentUsersResponseDto>;
 }

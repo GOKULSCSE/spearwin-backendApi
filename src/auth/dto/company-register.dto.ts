@@ -1,4 +1,13 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional, IsUrl, IsInt, IsBoolean } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  IsOptional,
+  IsUrl,
+  IsInt,
+  IsBoolean,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CompanyRegisterDto {
@@ -29,7 +38,7 @@ export class CompanyRegisterDto {
 
   @IsOptional()
   @IsInt({ message: 'Founded year must be a number' })
-  @Transform(({ value }) => value ? parseInt(value) : undefined)
+  @Transform(({ value }) => (value ? parseInt(value) : undefined))
   foundedYear?: number;
 
   @IsOptional()
@@ -45,8 +54,16 @@ export class CompanyRegisterDto {
   address?: string;
 
   @IsOptional()
-  @IsString({ message: 'City ID must be a string' })
-  cityId?: string;
+  @IsString({ message: 'Country must be a string' })
+  country?: string;
+
+  @IsOptional()
+  @IsString({ message: 'State must be a string' })
+  state?: string;
+
+  @IsOptional()
+  @IsString({ message: 'City must be a string' })
+  city?: string;
 
   @IsOptional()
   @IsUrl({}, { message: 'LinkedIn URL must be a valid URL' })

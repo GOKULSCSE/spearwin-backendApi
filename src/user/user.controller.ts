@@ -1,15 +1,36 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Put, Query, UseGuards, ValidationPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Put,
+  Query,
+  UseGuards,
+  ValidationPipe,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ActivityLogsQueryDto } from './dto/activity-logs-query.dto';
-import { UpdateNotificationPreferencesDto, NotificationPreferencesResponseDto } from './dto/notification-preferences.dto';
+import {
+  UpdateNotificationPreferencesDto,
+  NotificationPreferencesResponseDto,
+} from './dto/notification-preferences.dto';
+import { RecentUsersQueryDto } from './dto/recent-users-query.dto';
+import { RecentUsersStatsQueryDto } from './dto/recent-users-stats-query.dto';
 import type { UserProfileResponseDto } from './dto/user-profile-response.dto';
 import type { ActivityLogsResponseDto } from './dto/activity-logs-response.dto';
+import type { RecentUsersResponseDto } from './dto/recent-users-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { GetCurrentUser, type CurrentUser } from '../auth/decorators/current-user.decorator';
+import {
+  GetCurrentUser,
+  type CurrentUser,
+} from '../auth/decorators/current-user.decorator';
 
 @Controller('user')
 export class UserController {
@@ -44,7 +65,9 @@ export class UserController {
   // New User Profile APIs
   @Get('profile')
   @UseGuards(JwtAuthGuard)
-  async getCurrentUserProfile(@GetCurrentUser() user: CurrentUser): Promise<UserProfileResponseDto> {
+  async getCurrentUserProfile(
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<UserProfileResponseDto> {
     return this.userService.getCurrentUserProfile(user.id);
   }
 
@@ -59,7 +82,9 @@ export class UserController {
 
   @Delete('account')
   @UseGuards(JwtAuthGuard)
-  async deleteUserAccount(@GetCurrentUser() user: CurrentUser): Promise<{ message: string }> {
+  async deleteUserAccount(
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<{ message: string }> {
     return this.userService.deleteUserAccount(user.id);
   }
 
@@ -93,9 +118,13 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async updateNotificationPreferences(
     @GetCurrentUser() user: CurrentUser,
-    @Body(ValidationPipe) updatePreferencesDto: UpdateNotificationPreferencesDto,
+    @Body(ValidationPipe)
+    updatePreferencesDto: UpdateNotificationPreferencesDto,
   ): Promise<NotificationPreferencesResponseDto> {
-    return this.userService.updateNotificationPreferences(user.id, updatePreferencesDto);
+    return this.userService.updateNotificationPreferences(
+      user.id,
+      updatePreferencesDto,
+    );
   }
 
   @Post('notification-preferences/test')
@@ -104,5 +133,27 @@ export class UserController {
     @GetCurrentUser() user: CurrentUser,
   ): Promise<{ message: string }> {
     return this.userService.testNotificationSettings(user.id);
+  }
+
+  // =================================================================
+  // RECENT USERS API (Admin Only)
+  // =================================================================
+
+  @Get('recent')
+  @UseGuards(JwtAuthGuard)
+  async getRecentUsers(
+    @GetCurrentUser() user: CurrentUser,
+    @Query(ValidationPipe) query: RecentUsersQueryDto,
+  ): Promise<RecentUsersResponseDto> {
+    return this.userService.getRecentUsers(query);
+  }
+
+  @Get('recent/stats')
+  @UseGuards(JwtAuthGuard)
+  async getRecentUsersStats(
+    @GetCurrentUser() user: CurrentUser,
+    @Query(ValidationPipe) query: RecentUsersStatsQueryDto,
+  ): Promise<RecentUsersResponseDto> {
+    return this.userService.getRecentUsersStats(query);
   }
 }

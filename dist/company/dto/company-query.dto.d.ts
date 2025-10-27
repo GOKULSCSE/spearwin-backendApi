@@ -1,7 +1,9 @@
 export declare class CompanyQueryDto {
     search?: string;
     industry?: string;
-    cityId?: string;
+    country?: string;
+    state?: string;
+    city?: string;
     isVerified?: boolean;
     isActive?: boolean;
     page?: number;

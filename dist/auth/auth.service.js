@@ -59,6 +59,7 @@ let AuthService = class AuthService {
         this.jwtService = jwtService;
     }
     async login(loginDto) {
+        console.log('loginDto ascgaskcja.cjgacha', loginDto);
         const user = await this.prisma.user.findUnique({
             where: { email: loginDto.email },
             include: {
@@ -209,8 +210,12 @@ let AuthService = class AuthService {
                 role: user.role,
                 status: user.status,
             };
-            const accessToken = this.jwtService.sign(newPayload, { expiresIn: '15m' });
-            const newRefreshToken = this.jwtService.sign(newPayload, { expiresIn: '7d' });
+            const accessToken = this.jwtService.sign(newPayload, {
+                expiresIn: '1d',
+            });
+            const newRefreshToken = this.jwtService.sign(newPayload, {
+                expiresIn: '7d',
+            });
             return {
                 success: true,
                 message: 'Token refreshed successfully',
@@ -258,6 +263,11 @@ let AuthService = class AuthService {
         return {
             success: true,
             message: 'If an account with that email exists, a password reset link has been sent.',
+            data: {
+                email: forgotPasswordDto.email,
+                resetToken: resetToken,
+                expiresAt: expiresAt,
+            },
         };
     }
     async validateUserById(userId) {
@@ -331,6 +341,7 @@ let AuthService = class AuthService {
     }
     async candidateRegister(candidateRegisterDto) {
         try {
+            console.log('candidateRegisterDto ', candidateRegisterDto);
             const existingUser = await this.prisma.user.findUnique({
                 where: { email: candidateRegisterDto.email },
             });
@@ -343,6 +354,17 @@ let AuthService = class AuthService {
                 });
                 if (existingPhoneUser) {
                     throw new common_1.BadRequestException('User with this phone number already exists');
+                }
+            }
+            if (candidateRegisterDto.cityId) {
+                const city = await this.prisma.city.findUnique({
+                    where: { id: parseInt(candidateRegisterDto.cityId) },
+                });
+                if (!city) {
+                    throw new common_1.BadRequestException('Invalid city ID provided');
+                }
+                if (!city.isActive) {
+                    throw new common_1.BadRequestException('The selected city is not active');
                 }
             }
             const hashedPassword = await bcrypt.hash(candidateRegisterDto.password, 10);
@@ -365,7 +387,9 @@ let AuthService = class AuthService {
                         userId: user.id,
                         firstName: candidateRegisterDto.firstName,
                         lastName: candidateRegisterDto.lastName,
-                        dateOfBirth: candidateRegisterDto.dateOfBirth ? new Date(candidateRegisterDto.dateOfBirth) : null,
+                        dateOfBirth: candidateRegisterDto.dateOfBirth
+                            ? new Date(candidateRegisterDto.dateOfBirth)
+                            : null,
                         gender: candidateRegisterDto.gender,
                         bio: candidateRegisterDto.bio,
                         currentTitle: candidateRegisterDto.currentTitle,
@@ -373,7 +397,7 @@ let AuthService = class AuthService {
                         linkedinUrl: candidateRegisterDto.linkedinUrl,
                         githubUrl: candidateRegisterDto.githubUrl,
                         portfolioUrl: candidateRegisterDto.portfolioUrl,
-                        cityId: candidateRegisterDto.cityId,
+                        cityId: candidateRegisterDto.cityId ? parseInt(candidateRegisterDto.cityId) : null,
                         isAvailable: candidateRegisterDto.isAvailable ?? true,
                     },
                 });
@@ -426,6 +450,100 @@ let AuthService = class AuthService {
             };
         }
         catch (error) {
+            console.log('actual error', error);
+            if (error instanceof common_1.BadRequestException) {
+                throw error;
+            }
+            throw new common_1.BadRequestException('Failed to register candidate');
+        }
+    }
+    async candidateSimpleRegister(candidateSimpleRegisterDto) {
+        try {
+            console.log('candidateSimpleRegisterDto ', candidateSimpleRegisterDto);
+            const existingUser = await this.prisma.user.findUnique({
+                where: { email: candidateSimpleRegisterDto.email },
+            });
+            if (existingUser) {
+                throw new common_1.BadRequestException('User with this email already exists');
+            }
+            const nameParts = candidateSimpleRegisterDto.fullName.trim().split(' ');
+            const firstName = nameParts[0];
+            const lastName = nameParts.slice(1).join(' ') || '';
+            if (!firstName) {
+                throw new common_1.BadRequestException('Full name must contain at least a first name');
+            }
+            const hashedPassword = await bcrypt.hash(candidateSimpleRegisterDto.password, 10);
+            const result = await this.prisma.$transaction(async (prisma) => {
+                const user = await prisma.user.create({
+                    data: {
+                        email: candidateSimpleRegisterDto.email,
+                        password: hashedPassword,
+                        role: client_1.UserRole.CANDIDATE,
+                        status: client_1.UserStatus.PENDING_VERIFICATION,
+                        emailVerified: false,
+                        phoneVerified: false,
+                        profileCompleted: false,
+                        twoFactorEnabled: false,
+                    },
+                });
+                const candidate = await prisma.candidate.create({
+                    data: {
+                        userId: user.id,
+                        firstName: firstName,
+                        lastName: lastName,
+                        isAvailable: true,
+                    },
+                });
+                return { user, candidate };
+            });
+            const verificationCode = (0, uuid_1.v4)();
+            const expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 24);
+            await this.prisma.oTP.create({
+                data: {
+                    userId: result.user.id,
+                    code: verificationCode,
+                    type: client_1.OTPType.EMAIL_VERIFICATION,
+                    expiresAt,
+                },
+            });
+            await this.prisma.activityLog.create({
+                data: {
+                    userId: result.user.id,
+                    action: 'CREATE',
+                    level: 'INFO',
+                    description: 'Candidate registered successfully (simple registration)',
+                    entity: 'User',
+                    entityId: result.user.id,
+                },
+            });
+            return {
+                success: true,
+                message: 'Candidate registered successfully. Please check your email for verification.',
+                data: {
+                    user: {
+                        id: result.user.id,
+                        email: result.user.email,
+                        role: result.user.role,
+                        status: result.user.status,
+                        emailVerified: result.user.emailVerified,
+                        phoneVerified: result.user.phoneVerified,
+                        profileCompleted: result.user.profileCompleted,
+                        twoFactorEnabled: result.user.twoFactorEnabled,
+                        createdAt: result.user.createdAt,
+                    },
+                    candidate: {
+                        id: result.candidate.id,
+                        firstName: result.candidate.firstName,
+                        lastName: result.candidate.lastName,
+                        isAvailable: result.candidate.isAvailable,
+                        createdAt: result.candidate.createdAt,
+                    },
+                },
+            };
+        }
+        catch (error) {
+            console.log('actual error', error);
             if (error instanceof common_1.BadRequestException) {
                 throw error;
             }
@@ -444,7 +562,9 @@ let AuthService = class AuthService {
             const slug = companyRegisterDto.name
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
-                .replace(/(^-|-$)/g, '') + '-' + Date.now();
+                .replace(/(^-|-$)/g, '') +
+                '-' +
+                Date.now();
             const result = await this.prisma.$transaction(async (prisma) => {
                 const user = await prisma.user.create({
                     data: {
@@ -470,7 +590,9 @@ let AuthService = class AuthService {
                         employeeCount: companyRegisterDto.employeeCount,
                         headquarters: companyRegisterDto.headquarters,
                         address: companyRegisterDto.address,
-                        cityId: companyRegisterDto.cityId,
+                        country: companyRegisterDto.country,
+                        state: companyRegisterDto.state,
+                        city: companyRegisterDto.city,
                         linkedinUrl: companyRegisterDto.linkedinUrl,
                         twitterUrl: companyRegisterDto.twitterUrl,
                         facebookUrl: companyRegisterDto.facebookUrl,
@@ -736,12 +858,22 @@ let AuthService = class AuthService {
                 await prisma.userSetting.upsert({
                     where: { userId_key: { userId, key: '2fa_secret' } },
                     update: { value: secret.base32 },
-                    create: { userId, key: '2fa_secret', value: secret.base32, category: 'security' },
+                    create: {
+                        userId,
+                        key: '2fa_secret',
+                        value: secret.base32,
+                        category: 'security',
+                    },
                 });
                 await prisma.userSetting.upsert({
                     where: { userId_key: { userId, key: '2fa_backup_codes' } },
                     update: { value: JSON.stringify(backupCodes) },
-                    create: { userId, key: '2fa_backup_codes', value: JSON.stringify(backupCodes), category: 'security' },
+                    create: {
+                        userId,
+                        key: '2fa_backup_codes',
+                        value: JSON.stringify(backupCodes),
+                        category: 'security',
+                    },
                 });
             });
             await this.prisma.activityLog.create({
@@ -836,7 +968,7 @@ let AuthService = class AuthService {
             if (!user.twoFactorEnabled) {
                 throw new common_1.BadRequestException('2FA is not enabled');
             }
-            const secretSetting = user.settings.find(s => s.key === '2fa_secret');
+            const secretSetting = user.settings.find((s) => s.key === '2fa_secret');
             if (!secretSetting) {
                 throw new common_1.BadRequestException('2FA secret not found');
             }
@@ -848,7 +980,12 @@ let AuthService = class AuthService {
             });
             if (!verified) {
                 const backupCodesSetting = await this.prisma.userSetting.findUnique({
-                    where: { userId_key: { userId: verify2FaDto.userId, key: '2fa_backup_codes' } },
+                    where: {
+                        userId_key: {
+                            userId: verify2FaDto.userId,
+                            key: '2fa_backup_codes',
+                        },
+                    },
                 });
                 if (backupCodesSetting) {
                     const backupCodes = JSON.parse(backupCodesSetting.value);
@@ -856,7 +993,12 @@ let AuthService = class AuthService {
                     if (codeIndex !== -1) {
                         backupCodes.splice(codeIndex, 1);
                         await this.prisma.userSetting.update({
-                            where: { userId_key: { userId: verify2FaDto.userId, key: '2fa_backup_codes' } },
+                            where: {
+                                userId_key: {
+                                    userId: verify2FaDto.userId,
+                                    key: '2fa_backup_codes',
+                                },
+                            },
                             data: { value: JSON.stringify(backupCodes) },
                         });
                         await this.prisma.activityLog.create({
@@ -916,13 +1058,18 @@ let AuthService = class AuthService {
             }
             const backupCodes = Array.from({ length: 10 }, () => Math.random().toString(36).substring(2, 8).toUpperCase());
             await this.prisma.userSetting.upsert({
-                where: { userId_key: { userId: generateBackupCodesDto.userId, key: '2fa_backup_codes' } },
+                where: {
+                    userId_key: {
+                        userId: generateBackupCodesDto.userId,
+                        key: '2fa_backup_codes',
+                    },
+                },
                 update: { value: JSON.stringify(backupCodes) },
                 create: {
                     userId: generateBackupCodesDto.userId,
                     key: '2fa_backup_codes',
                     value: JSON.stringify(backupCodes),
-                    category: 'security'
+                    category: 'security',
                 },
             });
             await this.prisma.activityLog.create({

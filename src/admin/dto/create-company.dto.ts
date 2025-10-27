@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsEmail, IsUrl, IsNumber, IsBoolean, MinLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEmail,
+  IsUrl,
+  IsNumber,
+  IsBoolean,
+  MinLength,
+} from 'class-validator';
 
 export class CreateCompanyDto {
   @IsString()
@@ -35,7 +43,15 @@ export class CreateCompanyDto {
 
   @IsOptional()
   @IsString()
-  cityId?: string;
+  country?: string;
+
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
 
   @IsOptional()
   @IsUrl()

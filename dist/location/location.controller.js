@@ -43,6 +43,9 @@ let LocationController = class LocationController {
     async deleteCountry(countryId, user) {
         return this.locationService.deleteCountry(countryId, user.id);
     }
+    async getAllStates(query) {
+        return this.locationService.getAllStates(query);
+    }
     async getStatesByCountry(countryId) {
         return this.locationService.getStatesByCountry(countryId);
     }
@@ -57,6 +60,9 @@ let LocationController = class LocationController {
     }
     async deleteState(stateId, user) {
         return this.locationService.deleteState(stateId, user.id);
+    }
+    async getAllCities(query) {
+        return this.locationService.getAllCities(query);
     }
     async getCitiesByState(stateId) {
         return this.locationService.getCitiesByState(stateId);
@@ -108,7 +114,7 @@ __decorate([
 ], LocationController.prototype, "getCountryById", null);
 __decorate([
     (0, common_1.Post)('countries'),
-    (0, common_1.UseGuards)(admin_role_guard_1.AdminRoleGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
     __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
     __metadata("design:type", Function),
@@ -117,7 +123,7 @@ __decorate([
 ], LocationController.prototype, "createCountry", null);
 __decorate([
     (0, common_1.Put)('countries/:id'),
-    (0, common_1.UseGuards)(admin_role_guard_1.AdminRoleGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, admin_role_guard_1.AdminRoleGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
     __param(2, (0, common_1.Body)(common_1.ValidationPipe)),
@@ -127,13 +133,20 @@ __decorate([
 ], LocationController.prototype, "updateCountry", null);
 __decorate([
     (0, common_1.Delete)('countries/:id'),
-    (0, common_1.UseGuards)(super_admin_role_guard_1.SuperAdminRoleGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, super_admin_role_guard_1.SuperAdminRoleGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], LocationController.prototype, "deleteCountry", null);
+__decorate([
+    (0, common_1.Get)('states'),
+    __param(0, (0, common_1.Query)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [state_dto_1.StateListQueryDto]),
+    __metadata("design:returntype", Promise)
+], LocationController.prototype, "getAllStates", null);
 __decorate([
     (0, common_1.Get)('countries/:countryId/states'),
     __param(0, (0, common_1.Param)('countryId')),
@@ -150,7 +163,7 @@ __decorate([
 ], LocationController.prototype, "getStateById", null);
 __decorate([
     (0, common_1.Post)('states'),
-    (0, common_1.UseGuards)(admin_role_guard_1.AdminRoleGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, admin_role_guard_1.AdminRoleGuard),
     __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
     __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
     __metadata("design:type", Function),
@@ -159,7 +172,7 @@ __decorate([
 ], LocationController.prototype, "createState", null);
 __decorate([
     (0, common_1.Put)('states/:id'),
-    (0, common_1.UseGuards)(admin_role_guard_1.AdminRoleGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, admin_role_guard_1.AdminRoleGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
     __param(2, (0, common_1.Body)(common_1.ValidationPipe)),
@@ -169,13 +182,20 @@ __decorate([
 ], LocationController.prototype, "updateState", null);
 __decorate([
     (0, common_1.Delete)('states/:id'),
-    (0, common_1.UseGuards)(super_admin_role_guard_1.SuperAdminRoleGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, super_admin_role_guard_1.SuperAdminRoleGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], LocationController.prototype, "deleteState", null);
+__decorate([
+    (0, common_1.Get)('cities'),
+    __param(0, (0, common_1.Query)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [city_dto_1.CityListQueryDto]),
+    __metadata("design:returntype", Promise)
+], LocationController.prototype, "getAllCities", null);
 __decorate([
     (0, common_1.Get)('states/:stateId/cities'),
     __param(0, (0, common_1.Param)('stateId')),
@@ -192,7 +212,7 @@ __decorate([
 ], LocationController.prototype, "getCityById", null);
 __decorate([
     (0, common_1.Post)('cities'),
-    (0, common_1.UseGuards)(admin_role_guard_1.AdminRoleGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, admin_role_guard_1.AdminRoleGuard),
     __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
     __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
     __metadata("design:type", Function),
@@ -201,7 +221,7 @@ __decorate([
 ], LocationController.prototype, "createCity", null);
 __decorate([
     (0, common_1.Put)('cities/:id'),
-    (0, common_1.UseGuards)(admin_role_guard_1.AdminRoleGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, admin_role_guard_1.AdminRoleGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
     __param(2, (0, common_1.Body)(common_1.ValidationPipe)),
@@ -211,7 +231,7 @@ __decorate([
 ], LocationController.prototype, "updateCity", null);
 __decorate([
     (0, common_1.Delete)('cities/:id'),
-    (0, common_1.UseGuards)(super_admin_role_guard_1.SuperAdminRoleGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, super_admin_role_guard_1.SuperAdminRoleGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
     __metadata("design:type", Function),
@@ -241,7 +261,7 @@ __decorate([
 ], LocationController.prototype, "getPincodeById", null);
 __decorate([
     (0, common_1.Post)('pincodes'),
-    (0, common_1.UseGuards)(admin_role_guard_1.AdminRoleGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, admin_role_guard_1.AdminRoleGuard),
     __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
     __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
     __metadata("design:type", Function),
@@ -250,7 +270,7 @@ __decorate([
 ], LocationController.prototype, "createPincode", null);
 __decorate([
     (0, common_1.Put)('pincodes/:id'),
-    (0, common_1.UseGuards)(admin_role_guard_1.AdminRoleGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, admin_role_guard_1.AdminRoleGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
     __param(2, (0, common_1.Body)(common_1.ValidationPipe)),
@@ -260,7 +280,7 @@ __decorate([
 ], LocationController.prototype, "updatePincode", null);
 __decorate([
     (0, common_1.Delete)('pincodes/:id'),
-    (0, common_1.UseGuards)(super_admin_role_guard_1.SuperAdminRoleGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, super_admin_role_guard_1.SuperAdminRoleGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
     __metadata("design:type", Function),
@@ -269,7 +289,6 @@ __decorate([
 ], LocationController.prototype, "deletePincode", null);
 exports.LocationController = LocationController = __decorate([
     (0, common_1.Controller)('locations'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [location_service_1.LocationService])
 ], LocationController);
 //# sourceMappingURL=location.controller.js.map

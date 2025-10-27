@@ -1,9 +1,32 @@
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { JobQueryDto, JobSearchDto } from './dto/job-query.dto';
-import { JobResponseDto, JobListResponseDto, JobFiltersResponseDto, JobViewResponseDto } from './dto/job-response.dto';
+import {
+  JobResponseDto,
+  JobListResponseDto,
+  JobFiltersResponseDto,
+  JobViewResponseDto,
+} from './dto/job-response.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
-import { ApplyForJobDto, ApplicationResponseDto } from '../candidate/dto/job-application.dto';
+import {
+  ApplyForJobDto,
+  ApplicationResponseDto,
+} from '../candidate/dto/job-application.dto';
+import {
+  CreateJobAttributeDto,
+  UpdateJobAttributeDto,
+  JobAttributeQueryDto,
+  JobAttributeResponseDto,
+  JobAttributeListResponseDto,
+  JobAttributeCategoriesResponseDto,
+  BulkCreateJobAttributesDto,
+} from './dto/job-attribute.dto';
+import { JobAttributeCategory } from '@prisma/client';
 import { Prisma, LogAction, LogLevel } from '@prisma/client';
 
 @Injectable()
@@ -57,7 +80,7 @@ export class JobService {
 
       // Add city filter
       if (city) {
-        where.cityId = city;
+        where.cityId = parseInt(city);
       }
 
       // Add job type filter
@@ -76,8 +99,12 @@ export class JobService {
           ...(where.OR || []),
           {
             AND: [
-              salary_min !== undefined ? { minSalary: { gte: salary_min } } : {},
-              salary_max !== undefined ? { maxSalary: { lte: salary_max } } : {},
+              salary_min !== undefined
+                ? { minSalary: { gte: salary_min } }
+                : {},
+              salary_max !== undefined
+                ? { maxSalary: { lte: salary_max } }
+                : {},
             ],
           },
         ];
@@ -142,7 +169,7 @@ export class JobService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        jobs: jobs.map(job => this.mapJobToResponse(job)),
+        jobs: jobs.map((job) => this.mapJobToResponse(job)),
         total,
         page,
         limit,
@@ -275,7 +302,7 @@ export class JobService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        jobs: jobs.map(job => this.mapJobToResponse(job)),
+        jobs: jobs.map((job) => this.mapJobToResponse(job)),
         total,
         page,
         limit,
@@ -303,7 +330,7 @@ export class JobService {
               name: true,
               logo: true,
               industry: true,
-                employeeCount: true,
+              employeeCount: true,
               website: true,
             },
           },
@@ -317,12 +344,12 @@ export class JobService {
             },
           },
         },
-        
+
         orderBy: { publishedAt: 'desc' },
         take: 10,
       });
 
-      return jobs.map(job => this.mapJobToResponse(job));
+      return jobs.map((job) => this.mapJobToResponse(job));
     } catch (error) {
       this.handleException(error);
       throw error;
@@ -344,7 +371,7 @@ export class JobService {
               name: true,
               logo: true,
               industry: true,
-                employeeCount: true,
+              employeeCount: true,
               website: true,
             },
           },
@@ -510,16 +537,20 @@ export class JobService {
       ]);
 
       return {
-        companies,
-        locations: locations.map(location => ({
+        companies: companies.map((company) => ({
+          id: Number(company.id),
+          name: company.name,
+          logo: company.logo,
+        })),
+        locations: locations.map((location) => ({
           id: location.id,
           name: location.name,
           state: location.state.name,
-          country: location.state.country.name,
+          country: location.state.country?.name || 'Unknown',
         })),
-        jobTypes: jobTypes.map(job => job.jobType),
-        experienceLevels: experienceLevels.map(job => job.experienceLevel),
-        workModes: workModes.map(job => job.workMode),
+        jobTypes: jobTypes.map((job) => job.jobType),
+        experienceLevels: experienceLevels.map((job) => job.experienceLevel),
+        workModes: workModes.map((job) => job.workMode),
         skills: [], // Will be processed from skillsRequired
         salaryRanges: {
           min: Number(salaryRanges._min.minSalary) || 0,
@@ -536,7 +567,10 @@ export class JobService {
   // JOB MANAGEMENT
   // =================================================================
 
-  async updateJob(jobId: string, updateJobDto: UpdateJobDto): Promise<JobResponseDto> {
+  async updateJob(
+    jobId: string,
+    updateJobDto: UpdateJobDto,
+  ): Promise<JobResponseDto> {
     try {
       // Check if job exists
       const existingJob = await this.db.job.findUnique({
@@ -563,25 +597,42 @@ export class JobService {
       const updateData: any = {};
 
       // Only update fields that are provided
-      if (updateJobDto.title !== undefined) updateData.title = updateJobDto.title;
-      if (updateJobDto.description !== undefined) updateData.description = updateJobDto.description;
-      if (updateJobDto.requirements !== undefined) updateData.requirements = updateJobDto.requirements;
-      if (updateJobDto.responsibilities !== undefined) updateData.responsibilities = updateJobDto.responsibilities;
-      if (updateJobDto.benefits !== undefined) updateData.benefits = updateJobDto.benefits;
-      if (updateJobDto.minSalary !== undefined) updateData.minSalary = updateJobDto.minSalary;
-      if (updateJobDto.maxSalary !== undefined) updateData.maxSalary = updateJobDto.maxSalary;
-      if (updateJobDto.currency !== undefined) updateData.currency = updateJobDto.currency;
-      if (updateJobDto.jobType !== undefined) updateData.jobType = updateJobDto.jobType;
-      if (updateJobDto.workMode !== undefined) updateData.workMode = updateJobDto.workMode;
-      if (updateJobDto.experienceLevel !== undefined) updateData.experienceLevel = updateJobDto.experienceLevel;
-      if (updateJobDto.companyId !== undefined) updateData.companyId = updateJobDto.companyId;
-      if (updateJobDto.cityId !== undefined) updateData.cityId = updateJobDto.cityId;
-      if (updateJobDto.skillsRequired !== undefined) updateData.skillsRequired = updateJobDto.skillsRequired;
+      if (updateJobDto.title !== undefined)
+        updateData.title = updateJobDto.title;
+      if (updateJobDto.description !== undefined)
+        updateData.description = updateJobDto.description;
+      if (updateJobDto.requirements !== undefined)
+        updateData.requirements = updateJobDto.requirements;
+      if (updateJobDto.responsibilities !== undefined)
+        updateData.responsibilities = updateJobDto.responsibilities;
+      if (updateJobDto.benefits !== undefined)
+        updateData.benefits = updateJobDto.benefits;
+      if (updateJobDto.minSalary !== undefined)
+        updateData.minSalary = updateJobDto.minSalary;
+      if (updateJobDto.maxSalary !== undefined)
+        updateData.maxSalary = updateJobDto.maxSalary;
+      if (updateJobDto.currency !== undefined)
+        updateData.currency = updateJobDto.currency;
+      if (updateJobDto.jobType !== undefined)
+        updateData.jobType = updateJobDto.jobType;
+      if (updateJobDto.workMode !== undefined)
+        updateData.workMode = updateJobDto.workMode;
+      if (updateJobDto.experienceLevel !== undefined)
+        updateData.experienceLevel = updateJobDto.experienceLevel;
+      if (updateJobDto.companyId !== undefined)
+        updateData.companyId = updateJobDto.companyId;
+      if (updateJobDto.cityId !== undefined)
+        updateData.cityId = updateJobDto.cityId;
+      if (updateJobDto.skillsRequired !== undefined)
+        updateData.skillsRequired = updateJobDto.skillsRequired;
       if (updateJobDto.tags !== undefined) updateData.tags = updateJobDto.tags;
       if (updateJobDto.applicationDeadline !== undefined) {
-        updateData.applicationDeadline = new Date(updateJobDto.applicationDeadline);
+        updateData.applicationDeadline = new Date(
+          updateJobDto.applicationDeadline,
+        );
       }
-      if (updateJobDto.status !== undefined) updateData.status = updateJobDto.status;
+      if (updateJobDto.status !== undefined)
+        updateData.status = updateJobDto.status;
 
       // Update the job
       const updatedJob = await this.db.job.update({
@@ -648,22 +699,24 @@ export class JobService {
       createdAt: job.createdAt,
       updatedAt: job.updatedAt,
       company: job.company,
-      location: job.city ? {
-        city: {
-          id: job.city.id,
-          name: job.city.name,
-          state: {
-            id: job.city.state.id,
-            name: job.city.state.name,
-            code: job.city.state.code,
-            country: {
-              id: job.city.state.country.id,
-              name: job.city.state.country.name,
-              code: job.city.state.country.code,
+      location: job.city
+        ? {
+            city: {
+              id: job.city.id,
+              name: job.city.name,
+              state: {
+                id: job.city.state.id,
+                name: job.city.state.name,
+                iso2: job.city.state.iso2,
+                country: {
+                  id: job.city.state.country.id,
+                  name: job.city.state.country.name,
+                  iso2: job.city.state.country.iso2,
+                },
+              },
             },
-          },
-        },
-      } : null,
+          }
+        : null,
       skillsRequired: job.skillsRequired || [],
       tags: job.tags || [],
     };
@@ -673,7 +726,11 @@ export class JobService {
   // JOB APPLICATIONS
   // =================================================================
 
-  async applyForJob(jobId: string, userId: string, applyDto: ApplyForJobDto): Promise<ApplicationResponseDto> {
+  async applyForJob(
+    jobId: string,
+    userId: string,
+    applyDto: ApplyForJobDto,
+  ): Promise<ApplicationResponseDto> {
     try {
       // Check if job exists and is published
       const job = await this.db.job.findFirst({
@@ -718,7 +775,9 @@ export class JobService {
         });
 
         if (!resume) {
-          throw new BadRequestException('Resume not found or does not belong to you');
+          throw new BadRequestException(
+            'Resume not found or does not belong to you',
+          );
         }
       }
 
@@ -774,7 +833,14 @@ export class JobService {
       });
 
       // Log the application
-      await this.logActivity(userId, LogAction.APPLY, LogLevel.INFO, 'JobApplication', application.id, `Applied for job: ${job.title}`);
+      await this.logActivity(
+        userId,
+        LogAction.APPLY,
+        LogLevel.INFO,
+        'JobApplication',
+        application.id,
+        `Applied for job: ${job.title}`,
+      );
 
       return {
         id: application.id,
@@ -798,32 +864,80 @@ export class JobService {
             name: application.job.company.name,
             logo: application.job.company.logo || undefined,
           },
-          location: application.job.city ? {
-            city: {
-              id: application.job.city.id,
-              name: application.job.city.name,
-              state: {
-                id: application.job.city.state.id,
-                name: application.job.city.state.name,
-                code: application.job.city.state.code || undefined,
-                country: {
-                  id: application.job.city.state.country.id,
-                  name: application.job.city.state.country.name,
-                  code: application.job.city.state.country.code,
+          location: application.job.city
+            ? {
+                city: {
+                  id: application.job.city.id,
+                  name: application.job.city.name,
+                  state_id: application.job.city.state_id,
+                  state_code: application.job.city.state_code,
+                  state_name: application.job.city.state_name,
+                  country_id: application.job.city.country_id,
+                  country_code: application.job.city.country_code,
+                  country_name: application.job.city.country_name,
+                  latitude: application.job.city.latitude,
+                  longitude: application.job.city.longitude,
+                  wikiDataId: application.job.city.wikiDataId,
+                  isActive: application.job.city.isActive,
+                  createdAt: application.job.city.createdAt,
+                  updatedAt: application.job.city.updatedAt,
+                  state: {
+                    id: application.job.city.state.id,
+                    name: application.job.city.state.name,
+                    country_id: application.job.city.state.country_id,
+                    country_code: application.job.city.state.country_code,
+                    country_name: application.job.city.state.country_name,
+                    iso2: application.job.city.state.iso2,
+                    fips_code: application.job.city.state.fips_code,
+                    type: application.job.city.state.type,
+                    latitude: application.job.city.state.latitude,
+                    longitude: application.job.city.state.longitude,
+                    isActive: application.job.city.state.isActive,
+                    createdAt: application.job.city.state.createdAt,
+                    updatedAt: application.job.city.state.updatedAt,
+                    country: application.job.city.state.country ? {
+                      id: application.job.city.state.country.id,
+                      name: application.job.city.state.country.name,
+                      iso3: application.job.city.state.country.iso3,
+                      iso2: application.job.city.state.country.iso2,
+                      numeric_code: application.job.city.state.country.numeric_code,
+                      phonecode: application.job.city.state.country.phonecode,
+                      capital: application.job.city.state.country.capital,
+                      currency: application.job.city.state.country.currency,
+                      currency_name: application.job.city.state.country.currency_name,
+                      currency_symbol: application.job.city.state.country.currency_symbol,
+                      tld: application.job.city.state.country.tld,
+                      native: application.job.city.state.country.native,
+                      region: application.job.city.state.country.region,
+                      region_id: application.job.city.state.country.region_id,
+                      subregion: application.job.city.state.country.subregion,
+                      subregion_id: application.job.city.state.country.subregion_id,
+                      nationality: application.job.city.state.country.nationality,
+                      latitude: application.job.city.state.country.latitude,
+                      longitude: application.job.city.state.country.longitude,
+                      isActive: application.job.city.state.country.isActive,
+                      createdAt: application.job.city.state.country.createdAt,
+                      updatedAt: application.job.city.state.country.updatedAt,
+                    } : undefined,
+                  },
                 },
-              },
-            },
-          } : undefined,
+              }
+            : undefined,
         },
-        resume: application.resume ? {
-          id: application.resume.id,
-          title: application.resume.title,
-          fileName: application.resume.fileName,
-          uploadedAt: application.resume.uploadedAt,
-        } : undefined,
+        resume: application.resume
+          ? {
+              id: application.resume.id,
+              title: application.resume.title,
+              fileName: application.resume.fileName,
+              uploadedAt: application.resume.uploadedAt,
+            }
+          : undefined,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -864,5 +978,344 @@ export class JobService {
 
   private handleException(error: any): void {
     throw new InternalServerErrorException("Can't process job request");
+  }
+
+  // =================================================================
+  // JOB ATTRIBUTES MANAGEMENT
+  // =================================================================
+
+  async createJobAttribute(
+    createJobAttributeDto: CreateJobAttributeDto,
+  ): Promise<JobAttributeResponseDto> {
+    try {
+      // Check if attribute with same name and category already exists
+      const existingAttribute = await this.db.job_attributes.findFirst({
+        where: {
+          name: createJobAttributeDto.name,
+          category: createJobAttributeDto.category as any,
+        },
+      });
+
+      if (existingAttribute) {
+        throw new BadRequestException(
+          `Job attribute with name "${createJobAttributeDto.name}" already exists in category "${createJobAttributeDto.category}"`,
+        );
+      }
+
+      const jobAttribute = await this.db.job_attributes.create({
+        data: {
+          id: `attr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: createJobAttributeDto.name,
+          category: createJobAttributeDto.category as any,
+          description: createJobAttributeDto.description,
+          isActive: createJobAttributeDto.isActive ?? true,
+          sortOrder: createJobAttributeDto.sortOrder ?? 0,
+          updatedAt: new Date(),
+        },
+      });
+
+      return {
+        id: jobAttribute.id,
+        name: jobAttribute.name,
+        category: jobAttribute.category as any,
+        description: jobAttribute.description,
+        isActive: jobAttribute.isActive,
+        sortOrder: jobAttribute.sortOrder,
+        createdAt: jobAttribute.createdAt,
+        updatedAt: jobAttribute.updatedAt,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to create job attribute',
+      );
+    }
+  }
+
+  async updateJobAttribute(
+    id: string,
+    updateJobAttributeDto: UpdateJobAttributeDto,
+  ): Promise<JobAttributeResponseDto> {
+    try {
+      // Check if attribute exists
+      const existingAttribute = await this.db.job_attributes.findUnique({
+        where: { id },
+      });
+
+      if (!existingAttribute) {
+        throw new NotFoundException('Job attribute not found');
+      }
+
+      // Check for name conflicts if name is being updated
+      if (updateJobAttributeDto.name && updateJobAttributeDto.name !== existingAttribute.name) {
+        const conflictingAttribute = await this.db.job_attributes.findFirst({
+          where: {
+            name: updateJobAttributeDto.name,
+            category: (updateJobAttributeDto.category || existingAttribute.category) as any,
+            id: { not: id },
+          },
+        });
+
+        if (conflictingAttribute) {
+          throw new BadRequestException(
+            `Job attribute with name "${updateJobAttributeDto.name}" already exists in category "${updateJobAttributeDto.category || existingAttribute.category}"`,
+          );
+        }
+      }
+
+      const updatedAttribute = await this.db.job_attributes.update({
+        where: { id },
+        data: {
+          ...updateJobAttributeDto,
+          category: updateJobAttributeDto.category as any,
+        },
+      });
+
+      return {
+        id: updatedAttribute.id,
+        name: updatedAttribute.name,
+        category: updatedAttribute.category as any,
+        description: updatedAttribute.description,
+        isActive: updatedAttribute.isActive,
+        sortOrder: updatedAttribute.sortOrder,
+        createdAt: updatedAttribute.createdAt,
+        updatedAt: updatedAttribute.updatedAt,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to update job attribute',
+      );
+    }
+  }
+
+  async deleteJobAttribute(id: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const existingAttribute = await this.db.job_attributes.findUnique({
+        where: { id },
+      });
+
+      if (!existingAttribute) {
+        throw new NotFoundException('Job attribute not found');
+      }
+
+      await this.db.job_attributes.delete({
+        where: { id },
+      });
+
+      return {
+        success: true,
+        message: 'Job attribute deleted successfully',
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to delete job attribute',
+      );
+    }
+  }
+
+  async getJobAttribute(id: string): Promise<JobAttributeResponseDto> {
+    try {
+      const jobAttribute = await this.db.job_attributes.findUnique({
+        where: { id },
+      });
+
+      if (!jobAttribute) {
+        throw new NotFoundException('Job attribute not found');
+      }
+
+      return {
+        id: jobAttribute.id,
+        name: jobAttribute.name,
+        category: jobAttribute.category as any,
+        description: jobAttribute.description,
+        isActive: jobAttribute.isActive,
+        sortOrder: jobAttribute.sortOrder,
+        createdAt: jobAttribute.createdAt,
+        updatedAt: jobAttribute.updatedAt,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to get job attribute',
+      );
+    }
+  }
+
+  async getJobAttributes(
+    query: JobAttributeQueryDto,
+  ): Promise<JobAttributeListResponseDto> {
+    try {
+      const {
+        category,
+        isActive,
+        search,
+        page = 1,
+        limit = 20,
+        sortBy = 'sortOrder',
+        sortOrder = 'asc',
+      } = query;
+
+      const skip = (page - 1) * limit;
+
+      // Build where clause
+      const where: Prisma.job_attributesWhereInput = {};
+
+      if (category) {
+        where.category = category as any;
+      }
+
+      if (isActive !== undefined) {
+        where.isActive = isActive;
+      }
+
+      if (search) {
+        where.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+
+      // Get total count
+      const total = await this.db.job_attributes.count({ where });
+
+      // Get attributes
+      const attributes = await this.db.job_attributes.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+      });
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        success: true,
+        message: 'Job attributes retrieved successfully',
+        data: attributes.map((attr) => ({
+          id: attr.id,
+          name: attr.name,
+          category: attr.category as any,
+          description: attr.description,
+          isActive: attr.isActive,
+          sortOrder: attr.sortOrder,
+          createdAt: attr.createdAt,
+          updatedAt: attr.updatedAt,
+        })),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+        },
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to get job attributes',
+      );
+    }
+  }
+
+  async getJobAttributesByCategory(): Promise<JobAttributeCategoriesResponseDto> {
+    try {
+      const categories = Object.values(JobAttributeCategory);
+      const result: { category: JobAttributeCategory; attributes: JobAttributeResponseDto[] }[] = [];
+
+      for (const category of categories) {
+        const attributes = await this.db.job_attributes.findMany({
+          where: {
+            category: category as JobAttributeCategory,
+            isActive: true,
+          },
+          orderBy: { sortOrder: 'asc' },
+        });
+
+        result.push({
+          category: category as any,
+          attributes: attributes.map((attr) => ({
+            id: attr.id,
+            name: attr.name,
+            category: attr.category as any,
+            description: attr.description,
+            isActive: attr.isActive,
+            sortOrder: attr.sortOrder,
+            createdAt: attr.createdAt,
+            updatedAt: attr.updatedAt,
+          })),
+        });
+      }
+
+      return {
+        success: true,
+        message: 'Job attributes by category retrieved successfully',
+        data: result as any,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to get job attributes by category',
+      );
+    }
+  }
+
+  async bulkCreateJobAttributes(
+    bulkCreateDto: BulkCreateJobAttributesDto,
+  ): Promise<{ success: boolean; message: string; created: number }> {
+    try {
+      const { category, attributes } = bulkCreateDto;
+
+      // Check for existing attributes to avoid duplicates
+      const existingNames = await this.db.job_attributes.findMany({
+        where: {
+          category: category as any,
+          name: { in: attributes.map((attr) => attr.name) },
+        },
+        select: { name: true },
+      });
+
+      const existingNamesSet = new Set(existingNames.map((attr) => attr.name));
+      const newAttributes = attributes.filter(
+        (attr) => !existingNamesSet.has(attr.name),
+      );
+
+      if (newAttributes.length === 0) {
+        throw new BadRequestException(
+          'All attributes already exist in this category',
+        );
+      }
+
+      // Create new attributes
+      const createdAttributes = await this.db.job_attributes.createMany({
+        data: newAttributes.map((attr) => ({
+          id: `attr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: attr.name,
+          category: category as any,
+          description: attr.description,
+          sortOrder: attr.sortOrder ?? 0,
+          updatedAt: new Date(),
+        })),
+      });
+
+      return {
+        success: true,
+        message: `Successfully created ${createdAttributes.count} job attributes`,
+        created: createdAttributes.count,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to bulk create job attributes',
+      );
+    }
   }
 }

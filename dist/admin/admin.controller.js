@@ -16,6 +16,7 @@ exports.AdminController = void 0;
 const common_1 = require("@nestjs/common");
 const admin_service_1 = require("./admin.service");
 const create_admin_dto_1 = require("./dto/create-admin.dto");
+const admin_login_dto_1 = require("../auth/dto/admin-login.dto");
 const create_company_dto_1 = require("./dto/create-company.dto");
 const update_permissions_dto_1 = require("./dto/update-permissions.dto");
 const admin_profile_dto_1 = require("./dto/admin-profile.dto");
@@ -27,13 +28,17 @@ const admin_resume_dto_1 = require("./dto/admin-resume.dto");
 const admin_notification_dto_1 = require("./dto/admin-notification.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
+const change_password_dto_1 = require("../user/dto/change-password.dto");
 let AdminController = class AdminController {
     adminService;
     constructor(adminService) {
         this.adminService = adminService;
     }
-    async createAdmin(createAdminDto, user) {
-        return this.adminService.createAdmin(createAdminDto, user);
+    async adminLogin(adminLoginDto) {
+        return this.adminService.adminLogin(adminLoginDto);
+    }
+    async createAdmin(createAdminDto) {
+        return this.adminService.createAdmin(createAdminDto, null);
     }
     async createCompany(createCompanyDto, user) {
         return this.adminService.createCompany(createCompanyDto, user);
@@ -46,6 +51,9 @@ let AdminController = class AdminController {
     }
     async updateAdminProfile(user, updateDto) {
         return this.adminService.updateAdminProfile(user.id, updateDto);
+    }
+    async changeAdminPassword(user, changePasswordDto) {
+        return this.adminService.changeAdminPassword(user.id, changePasswordDto);
     }
     async getAllAdmins(query) {
         return this.adminService.getAllAdmins(query);
@@ -60,6 +68,7 @@ let AdminController = class AdminController {
         return this.adminService.updateAdminStatus(adminId, statusDto, user.id);
     }
     async getAllJobs(query, user) {
+        console.log('user', user);
         return this.adminService.getAllJobs(query, user);
     }
     async createJob(createJobDto, user) {
@@ -155,13 +164,19 @@ let AdminController = class AdminController {
 };
 exports.AdminController = AdminController;
 __decorate([
-    (0, common_1.Post)('create-admin'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
+    (0, common_1.Post)('login'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_admin_dto_1.CreateAdminDto, Object]),
+    __metadata("design:paramtypes", [admin_login_dto_1.AdminLoginDto]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "adminLogin", null);
+__decorate([
+    (0, common_1.Post)('create-admin'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_admin_dto_1.CreateAdminDto]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "createAdmin", null);
 __decorate([
@@ -201,6 +216,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, admin_profile_dto_1.UpdateAdminProfileDto]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "updateAdminProfile", null);
+__decorate([
+    (0, common_1.Put)('change-password'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
+    __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, change_password_dto_1.ChangePasswordDto]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "changeAdminPassword", null);
 __decorate([
     (0, common_1.Get)('admins'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

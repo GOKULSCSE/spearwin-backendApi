@@ -1,5 +1,5 @@
 export declare class JobResponseDto {
-    id: string;
+    id: number;
     title: string;
     slug: string;
     description: string;
@@ -21,7 +21,7 @@ export declare class JobResponseDto {
     createdAt: Date;
     updatedAt: Date;
     company: {
-        id: string;
+        id: number;
         name: string;
         logo?: string | null;
         industry?: string | null;
@@ -30,16 +30,18 @@ export declare class JobResponseDto {
     };
     location?: {
         city: {
-            id: string;
+            id: number;
             name: string;
+            state_id?: number | null;
             state: {
-                id: string;
-                name: string;
-                code?: string | null;
-                country: {
-                    id: string;
-                    name: string;
-                    code: string;
+                id: number;
+                name?: string | null;
+                country_id?: number | null;
+                iso2?: string | null;
+                country?: {
+                    id: number;
+                    name: string | null;
+                    iso2?: string | null;
                 };
             };
         };
@@ -58,14 +60,14 @@ export declare class JobListResponseDto {
 }
 export declare class JobFiltersResponseDto {
     companies: {
-        id: string;
+        id: number;
         name: string;
         logo?: string | null;
     }[];
     locations: {
-        id: string;
+        id: number;
         name: string;
-        state: string;
+        state: string | null;
         country: string;
     }[];
     jobTypes: string[];

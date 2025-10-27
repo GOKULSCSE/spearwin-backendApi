@@ -14,29 +14,36 @@ import {
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
+import { AdminLoginDto } from '../auth/dto/admin-login.dto';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdatePermissionsDto } from './dto/update-permissions.dto';
-import { UpdateAdminProfileDto, type AdminProfileResponseDto } from './dto/admin-profile.dto';
-import { AdminListQueryDto, type AdminListResponseDto } from './dto/admin-list.dto';
+import {
+  UpdateAdminProfileDto,
+  type AdminProfileResponseDto,
+} from './dto/admin-profile.dto';
+import {
+  AdminListQueryDto,
+  type AdminListResponseDto,
+} from './dto/admin-list.dto';
 import { UpdateAdminStatusDto } from './dto/update-admin-status.dto';
-import { 
-  CreateJobDto, 
-  UpdateJobDto, 
-  JobListQueryDto, 
-  JobStatsResponseDto, 
-  JobApplicationsResponseDto 
+import {
+  CreateJobDto,
+  UpdateJobDto,
+  JobListQueryDto,
+  JobStatsResponseDto,
+  JobApplicationsResponseDto,
 } from './dto/admin-job.dto';
-import { 
-  UpdateApplicationStatusDto, 
-  AddApplicationFeedbackDto, 
-  ApplicationQueryDto, 
-  AdminApplicationResponseDto, 
-  ApplicationsListResponseDto, 
+import {
+  UpdateApplicationStatusDto,
+  AddApplicationFeedbackDto,
+  ApplicationQueryDto,
+  AdminApplicationResponseDto,
+  ApplicationsListResponseDto,
   ApplicationStatsResponseDto,
   BulkUpdateApplicationsDto,
   BulkUpdateResponseDto,
   BulkExportQueryDto,
-  BulkExportResponseDto
+  BulkExportResponseDto,
 } from './dto/admin-application.dto';
 import {
   ResumeQueryDto,
@@ -44,7 +51,7 @@ import {
   ResumesListResponseDto,
   ResumeStatsResponseDto,
   BulkDownloadDto,
-  BulkDownloadResponseDto
+  BulkDownloadResponseDto,
 } from './dto/admin-resume.dto';
 import {
   SendNotificationDto,
@@ -55,24 +62,33 @@ import {
   SendNotificationResponseDto,
   BroadcastNotificationResponseDto,
   NotificationTemplatesListResponseDto,
-  NotificationQueryDto
+  NotificationQueryDto,
 } from './dto/admin-notification.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetCurrentUser } from '../auth/decorators/current-user.decorator';
+import { ChangePasswordDto } from '../user/dto/change-password.dto';
 import type { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('api/admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
+  // =================================================================
+  // ADMIN AUTHENTICATION
+  // =================================================================
+
+  @Post('login') 
+  @HttpCode(HttpStatus.OK)
+  async adminLogin(@Body(ValidationPipe) adminLoginDto: AdminLoginDto) {
+    return this.adminService.adminLogin(adminLoginDto);
+  }
+
   @Post('create-admin')
-  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async createAdmin(
-    @Body() createAdminDto: CreateAdminDto,
-    @GetCurrentUser() user: CurrentUser,
+    @Body(ValidationPipe) createAdminDto: CreateAdminDto,
   ) {
-    return this.adminService.createAdmin(createAdminDto, user);
+    return this.adminService.createAdmin(createAdminDto, null);
   }
 
   @Post('create-company')
@@ -101,7 +117,9 @@ export class AdminController {
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
-  async getAdminProfile(@GetCurrentUser() user: CurrentUser): Promise<AdminProfileResponseDto> {
+  async getAdminProfile(
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<AdminProfileResponseDto> {
     return this.adminService.getAdminProfile(user.id);
   }
 
@@ -114,6 +132,15 @@ export class AdminController {
     return this.adminService.updateAdminProfile(user.id, updateDto);
   }
 
+  @Put('change-password')
+  @UseGuards(JwtAuthGuard)
+  async changeAdminPassword(
+    @GetCurrentUser() user: CurrentUser,
+    @Body(ValidationPipe) changePasswordDto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    return this.adminService.changeAdminPassword(user.id, changePasswordDto);
+  }
+
   @Get('admins')
   @UseGuards(JwtAuthGuard)
   async getAllAdmins(
@@ -124,7 +151,9 @@ export class AdminController {
 
   @Get('admins/:id')
   @UseGuards(JwtAuthGuard)
-  async getAdminById(@Param('id') adminId: string): Promise<AdminProfileResponseDto> {
+  async getAdminById(
+    @Param('id') adminId: string,
+  ): Promise<AdminProfileResponseDto> {
     return this.adminService.getAdminById(adminId);
   }
 
@@ -158,6 +187,7 @@ export class AdminController {
     @Query(ValidationPipe) query: JobListQueryDto,
     @GetCurrentUser() user: CurrentUser,
   ) {
+    console.log('user', user);
     return this.adminService.getAllJobs(query, user);
   }
 
@@ -275,7 +305,11 @@ export class AdminController {
     @Body(ValidationPipe) updateDto: UpdateApplicationStatusDto,
     @GetCurrentUser() user: CurrentUser,
   ): Promise<AdminApplicationResponseDto> {
-    return this.adminService.updateApplicationStatus(applicationId, updateDto, user);
+    return this.adminService.updateApplicationStatus(
+      applicationId,
+      updateDto,
+      user,
+    );
   }
 
   @Post('applications/:id/feedback')
@@ -285,7 +319,11 @@ export class AdminController {
     @Body(ValidationPipe) feedbackDto: AddApplicationFeedbackDto,
     @GetCurrentUser() user: CurrentUser,
   ): Promise<AdminApplicationResponseDto> {
-    return this.adminService.addApplicationFeedback(applicationId, feedbackDto, user);
+    return this.adminService.addApplicationFeedback(
+      applicationId,
+      feedbackDto,
+      user,
+    );
   }
 
   @Get('applications/stats')
@@ -306,9 +344,12 @@ export class AdminController {
     @Param('id') applicationId: string,
     @GetCurrentUser() user: CurrentUser,
   ): Promise<AdminApplicationResponseDto> {
-    return this.adminService.updateApplicationStatus(applicationId, { status: 'UNDER_REVIEW' }, user);
+    return this.adminService.updateApplicationStatus(
+      applicationId,
+      { status: 'UNDER_REVIEW' },
+      user,
+    );
   }
-
 
   @Put('applications/:id/shortlist')
   @UseGuards(JwtAuthGuard)
@@ -316,7 +357,11 @@ export class AdminController {
     @Param('id') applicationId: string,
     @GetCurrentUser() user: CurrentUser,
   ): Promise<AdminApplicationResponseDto> {
-    return this.adminService.updateApplicationStatus(applicationId, { status: 'SHORTLISTED' }, user);
+    return this.adminService.updateApplicationStatus(
+      applicationId,
+      { status: 'SHORTLISTED' },
+      user,
+    );
   }
 
   @Put('applications/:id/interview')
@@ -325,7 +370,11 @@ export class AdminController {
     @Param('id') applicationId: string,
     @GetCurrentUser() user: CurrentUser,
   ): Promise<AdminApplicationResponseDto> {
-    return this.adminService.updateApplicationStatus(applicationId, { status: 'INTERVIEWED' }, user);
+    return this.adminService.updateApplicationStatus(
+      applicationId,
+      { status: 'INTERVIEWED' },
+      user,
+    );
   }
 
   @Put('applications/:id/select')
@@ -334,7 +383,11 @@ export class AdminController {
     @Param('id') applicationId: string,
     @GetCurrentUser() user: CurrentUser,
   ): Promise<AdminApplicationResponseDto> {
-    return this.adminService.updateApplicationStatus(applicationId, { status: 'SELECTED' }, user);
+    return this.adminService.updateApplicationStatus(
+      applicationId,
+      { status: 'SELECTED' },
+      user,
+    );
   }
 
   @Put('applications/:id/reject')
@@ -343,7 +396,11 @@ export class AdminController {
     @Param('id') applicationId: string,
     @GetCurrentUser() user: CurrentUser,
   ): Promise<AdminApplicationResponseDto> {
-    return this.adminService.updateApplicationStatus(applicationId, { status: 'REJECTED' }, user);
+    return this.adminService.updateApplicationStatus(
+      applicationId,
+      { status: 'REJECTED' },
+      user,
+    );
   }
 
   // =================================================================
@@ -437,7 +494,10 @@ export class AdminController {
     @Body(ValidationPipe) broadcastNotificationDto: BroadcastNotificationDto,
     @GetCurrentUser() user: CurrentUser,
   ): Promise<BroadcastNotificationResponseDto> {
-    return this.adminService.broadcastNotification(broadcastNotificationDto, user);
+    return this.adminService.broadcastNotification(
+      broadcastNotificationDto,
+      user,
+    );
   }
 
   @Get('notifications/templates')
@@ -456,6 +516,9 @@ export class AdminController {
     @Body(ValidationPipe) createTemplateDto: CreateNotificationTemplateDto,
     @GetCurrentUser() user: CurrentUser,
   ): Promise<NotificationTemplateResponseDto> {
-    return this.adminService.createNotificationTemplate(createTemplateDto, user);
+    return this.adminService.createNotificationTemplate(
+      createTemplateDto,
+      user,
+    );
   }
 }
