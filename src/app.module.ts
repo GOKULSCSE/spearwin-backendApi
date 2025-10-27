@@ -14,6 +14,7 @@ import { LocationModule } from './location/location.module';
 import { JobModule } from './job/job.module';
 import { NotificationModule } from './notification/notification.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { JobAttributeModule } from './job-attribute/job-attribute.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     JobModule,
     NotificationModule,
     DashboardModule,
+    JobAttributeModule,
     ThrottlerModule.forRoot([
       {
         name: 'short',

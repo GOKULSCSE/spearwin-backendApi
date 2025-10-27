@@ -154,6 +154,74 @@ export class CompanyService {
     }
   }
 
+  async getActiveCompanies(): Promise<{ companies: { id: string; name: string; slug: string }[] }> {
+    try {
+      const companies = await this.db.company.findMany({
+        where: { isActive: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+        orderBy: { name: 'asc' },
+      });
+
+      return { companies };
+    } catch (error) {
+      this.handleException(error);
+      throw error;
+    }
+  }
+
+  async getActiveCompaniesWithPagination(
+    query: CompanyQueryDto,
+  ): Promise<{ companies: { id: string; name: string; slug: string }[]; total: number; page: number; limit: number; totalPages: number }> {
+    try {
+      const { search, page = 1, limit = 10 } = query;
+      const skip = (page - 1) * limit;
+
+      // Build where clause for active companies only
+      const where: any = { isActive: true };
+
+      // Add search filter if provided
+      if (search && search.trim()) {
+        where.name = {
+          contains: search.trim(),
+          mode: 'insensitive', // Case-insensitive search
+        };
+      }
+
+      // Get companies and total count
+      const [companies, total] = await Promise.all([
+        this.db.company.findMany({
+          where,
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+          orderBy: { name: 'asc' },
+          skip,
+          take: limit,
+        }),
+        this.db.company.count({ where }),
+      ]);
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        companies,
+        total,
+        page,
+        limit,
+        totalPages,
+      };
+    } catch (error) {
+      this.handleException(error);
+      throw error;
+    }
+  }
+
   async getCompanyById(companyId: string): Promise<CompanyResponseDto> {
     try {
       const company = await this.db.company.findUnique({

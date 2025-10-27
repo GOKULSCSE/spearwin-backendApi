@@ -1,6 +1,10 @@
-import { IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsBoolean } from 'class-validator';
 
 export class VerifyCompanyDto {
-  @IsBoolean({ message: 'Is verified must be a boolean value' })
+  @IsString()
+  @IsNotEmpty()
+  companyId: string;
+
+  @IsBoolean()
   isVerified: boolean;
 }

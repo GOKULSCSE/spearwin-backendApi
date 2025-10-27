@@ -1,50 +1,57 @@
-import {
-  IsString,
-  IsOptional,
-  IsEnum,
-  IsNumber,
-  Min,
-  Max,
-} from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
 
 export class CreateCandidateSkillDto {
-  @IsString({ message: 'Skill name must be a string' })
-  @Transform(({ value }) => value?.trim())
+  @IsString()
+  @IsNotEmpty()
   skillName: string;
 
   @IsOptional()
-  @IsString({ message: 'Level must be a string' })
+  @IsString()
   level?: string;
 
   @IsOptional()
-  @IsNumber({}, { message: 'Years used must be a number' })
-  @Min(0, { message: 'Years used must be at least 0' })
-  @Max(50, { message: 'Years used must not exceed 50' })
+  @IsNumber()
   yearsUsed?: number;
+
+  @IsOptional()
+  @IsNumber()
+  proficiencyLevel?: number;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
 }
 
 export class UpdateCandidateSkillDto {
   @IsOptional()
-  @IsString({ message: 'Skill name must be a string' })
-  @Transform(({ value }) => value?.trim())
+  @IsString()
   skillName?: string;
 
   @IsOptional()
-  @IsString({ message: 'Level must be a string' })
+  @IsString()
   level?: string;
 
   @IsOptional()
-  @IsNumber({}, { message: 'Years used must be a number' })
-  @Min(0, { message: 'Years used must be at least 0' })
-  @Max(50, { message: 'Years used must not exceed 50' })
+  @IsNumber()
   yearsUsed?: number;
+
+  @IsOptional()
+  @IsNumber()
+  proficiencyLevel?: number;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
 }
 
-export class CandidateSkillResponseDto {
+export interface CandidateSkillResponseDto {
   id: string;
   candidateId: string;
   skillName: string;
-  level?: string | null;
-  yearsUsed?: number | null;
+  level: string | null;
+  yearsUsed: number | null;
+  proficiencyLevel?: number; // Made optional since it might not always be present
+  description?: string;
+  createdAt?: Date; // Made optional since it might not always be present
+  updatedAt?: Date; // Made optional since it might not always be present
 }

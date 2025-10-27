@@ -517,44 +517,34 @@ model FAQ {
   updatedAt DateTime @updatedAt
 }
 
-model job_attributes {
-  id          String               @id
-  name        String
-  category    JobAttributeCategory
-  description String?
-  isActive    Boolean              @default(true)
-  sortOrder   Int                  @default(0)
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime
-
-  @@unique([name, category])
-  @@index([category, isActive])
-  @@index([category, sortOrder])
+model JobAttributeCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  displayName String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  attributes  JobAttribute[]
+  
+  @@map("job_attribute_categories")
 }
 
-// JOB ATTRIBUITES - LATEST
-
-model JobAttributes {
-  id String @id @default(cuid())
-  attributeName String
-  isActive Boolean @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model JobAttribute {
+  id         String   @id @default(cuid())
+  name       String
+  categoryId String
+  isActive   Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
   
-  // Relations
-  subAttributes JobSubAttributes[]
-}
-
-model JobSubAttributes {
-  id String @id @default(cuid())
-  attributeId String
-  subAttributeName String
-  isActive Boolean @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  category   JobAttributeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   
-  // Relations
-  attribute JobAttributes @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  @@unique([name, categoryId])
+  @@index([categoryId, isActive])
+  @@map("job_attributes")
 }
 
 enum UserRole {
@@ -652,7 +642,7 @@ enum LogAction {
   REJECT
 }
 
-enum JobAttributeCategory {
+enum JobAttributeCategoryEnum {
   LANGUAGE_LEVEL
   CAREER_LEVEL
   FUNCTIONAL_AREA

@@ -1,11 +1,11 @@
-import { IsString, IsArray, IsOptional } from 'class-validator';
+import { IsString, IsArray, IsNotEmpty } from 'class-validator';
 
 export class UpdatePermissionsDto {
   @IsString()
+  @IsNotEmpty()
   adminId: string;
 
-  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  permissions?: string[];
+  permissions: string[];
 }

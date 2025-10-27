@@ -1,25 +1,20 @@
-import {
-  IsOptional,
-  IsString,
-  IsEmail,
-  IsPhoneNumber,
-  MinLength,
-  MaxLength,
-  IsBoolean,
-} from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsString, IsOptional, IsEmail } from 'class-validator';
 
 export class UpdateProfileDto {
   @IsOptional()
-  @IsEmail({}, { message: 'Please provide a valid email address' })
-  @Transform(({ value }) => value?.toLowerCase()?.trim())
+  @IsString()
+  firstName?: string;
+
+  @IsOptional()
+  @IsString()
+  lastName?: string;
+
+  @IsOptional()
+  @IsEmail()
   email?: string;
 
   @IsOptional()
-  @IsPhoneNumber('IN', { message: 'Please provide a valid phone number' })
+  @IsString()
   phone?: string;
-
-  @IsOptional()
-  @IsBoolean({ message: 'Two factor enabled must be a boolean value' })
-  twoFactorEnabled?: boolean;
 }
+
