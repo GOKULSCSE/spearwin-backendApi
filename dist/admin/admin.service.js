@@ -891,15 +891,15 @@ let AdminService = class AdminService {
             if (!admin) {
                 throw new common_1.BadRequestException('Admin profile not found for current user');
             }
-            const company = await this.prisma.company.findUnique({
+            const company = await this.prisma.company.findFirst({
                 where: {
-                    id: createJobDto.companyId,
+                    name: createJobDto.companyName,
                     isActive: true
                 },
                 select: { id: true, name: true, isActive: true }
             });
             if (!company) {
-                throw new common_1.BadRequestException(`Company with ID "${createJobDto.companyId}" not found or is not active`);
+                throw new common_1.BadRequestException(`Company with name "${createJobDto.companyName}" not found or is not active`);
             }
             if (createJobDto.cityId) {
                 const city = await this.prisma.city.findUnique({

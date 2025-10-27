@@ -1147,17 +1147,17 @@ export class AdminService {
         throw new BadRequestException('Admin profile not found for current user');
       }
 
-      // Validate company exists by ID
-      const company = await this.prisma.company.findUnique({
+      // Validate company exists by name
+      const company = await this.prisma.company.findFirst({
         where: { 
-          id: createJobDto.companyId,
+          name: createJobDto.companyName,
           isActive: true
         },
         select: { id: true, name: true, isActive: true }
       });
 
       if (!company) {
-        throw new BadRequestException(`Company with ID "${createJobDto.companyId}" not found or is not active`);
+        throw new BadRequestException(`Company with name "${createJobDto.companyName}" not found or is not active`);
       }
 
       // Validate city exists if provided
