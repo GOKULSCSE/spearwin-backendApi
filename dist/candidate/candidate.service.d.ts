@@ -46,6 +46,7 @@ export declare class CandidateService {
     private generateLengthOptimization;
     private estimateResumeLength;
     private logActivity;
+    private getOrCreateCandidate;
     updateCandidateProfile(userId: string, updateDto: UpdateCandidateProfileDto): Promise<CandidateProfileResponseDto>;
     uploadProfilePicture(userId: string, file: Multer.File): Promise<{
         message: string;

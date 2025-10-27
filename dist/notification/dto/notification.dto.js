@@ -9,10 +9,21 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BulkNotificationResponseDto = exports.BulkNotificationDto = exports.CreateNotificationWithPushDto = exports.NotificationStatsResponseDto = exports.CreateNotificationDto = exports.MarkAllAsReadResponseDto = exports.MarkAsReadResponseDto = exports.UnreadCountResponseDto = exports.NotificationsListResponseDto = exports.NotificationResponseDto = exports.NotificationQueryDto = void 0;
+exports.BulkNotificationResponseDto = exports.BulkNotificationDto = exports.CreateNotificationWithPushDto = exports.NotificationStatsResponseDto = exports.CreateNotificationDto = exports.MarkAllAsReadResponseDto = exports.MarkAsReadResponseDto = exports.UnreadCountResponseDto = exports.NotificationsListResponseDto = exports.NotificationResponseDto = exports.NotificationQueryDto = exports.NotificationType = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
-const client_1 = require("@prisma/client");
+var NotificationType;
+(function (NotificationType) {
+    NotificationType["JOB_ALERT"] = "JOB_ALERT";
+    NotificationType["APPLICATION_UPDATE"] = "APPLICATION_UPDATE";
+    NotificationType["PROFILE_UPDATE"] = "PROFILE_UPDATE";
+    NotificationType["SYSTEM_NOTIFICATION"] = "SYSTEM_NOTIFICATION";
+    NotificationType["SECURITY_ALERT"] = "SECURITY_ALERT";
+    NotificationType["COMPANY_UPDATE"] = "COMPANY_UPDATE";
+    NotificationType["NEW_MESSAGE"] = "NEW_MESSAGE";
+    NotificationType["INTERVIEW_SCHEDULED"] = "INTERVIEW_SCHEDULED";
+    NotificationType["JOB_RECOMMENDATION"] = "JOB_RECOMMENDATION";
+})(NotificationType || (exports.NotificationType = NotificationType = {}));
 class NotificationQueryDto {
     search;
     type;
@@ -30,7 +41,7 @@ __decorate([
 ], NotificationQueryDto.prototype, "search", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsEnum)(client_1.NotificationType, { message: 'Invalid notification type' }),
+    (0, class_validator_1.IsEnum)(Object.values(NotificationType), { message: 'Invalid notification type' }),
     __metadata("design:type", String)
 ], NotificationQueryDto.prototype, "type", void 0);
 __decorate([
@@ -117,7 +128,7 @@ __decorate([
     __metadata("design:type", String)
 ], CreateNotificationDto.prototype, "userId", void 0);
 __decorate([
-    (0, class_validator_1.IsEnum)(client_1.NotificationType, { message: 'Invalid notification type' }),
+    (0, class_validator_1.IsEnum)(Object.values(NotificationType), { message: 'Invalid notification type' }),
     __metadata("design:type", String)
 ], CreateNotificationDto.prototype, "type", void 0);
 __decorate([
@@ -171,7 +182,7 @@ __decorate([
     __metadata("design:type", Array)
 ], CreateNotificationWithPushDto.prototype, "userIds", void 0);
 __decorate([
-    (0, class_validator_1.IsEnum)(client_1.NotificationType, { message: 'Invalid notification type' }),
+    (0, class_validator_1.IsEnum)(Object.values(NotificationType), { message: 'Invalid notification type' }),
     __metadata("design:type", String)
 ], CreateNotificationWithPushDto.prototype, "type", void 0);
 __decorate([

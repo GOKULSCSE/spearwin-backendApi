@@ -15,17 +15,33 @@ const class_transformer_1 = require("class-transformer");
 class UpdateCandidateProfileDto {
     firstName;
     lastName;
+    fatherName;
     dateOfBirth;
     gender;
+    maritalStatus;
     bio;
     currentTitle;
-    experienceYears;
+    currentCompany;
+    currentLocation;
+    preferredLocation;
+    noticePeriod;
+    currentSalary;
     expectedSalary;
+    profileType;
+    experienceYears;
     cityId;
     address;
     linkedinUrl;
     githubUrl;
     portfolioUrl;
+    email;
+    mobileNumber;
+    jobExperience;
+    country;
+    state;
+    cityName;
+    streetAddress;
+    profileSummary;
 }
 exports.UpdateCandidateProfileDto = UpdateCandidateProfileDto;
 __decorate([
@@ -42,6 +58,12 @@ __decorate([
 ], UpdateCandidateProfileDto.prototype, "lastName", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Father name must be a string' }),
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "fatherName", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsDateString)({}, { message: 'Date of birth must be a valid date' }),
     __metadata("design:type", String)
 ], UpdateCandidateProfileDto.prototype, "dateOfBirth", void 0);
@@ -50,6 +72,11 @@ __decorate([
     (0, class_validator_1.IsString)({ message: 'Gender must be a string' }),
     __metadata("design:type", String)
 ], UpdateCandidateProfileDto.prototype, "gender", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Marital status must be a string' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "maritalStatus", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Bio must be a string' }),
@@ -62,17 +89,51 @@ __decorate([
 ], UpdateCandidateProfileDto.prototype, "currentTitle", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)({}, { message: 'Experience years must be a number' }),
-    (0, class_validator_1.Min)(0, { message: 'Experience years must be at least 0' }),
-    (0, class_validator_1.Max)(50, { message: 'Experience years must not exceed 50' }),
+    (0, class_validator_1.IsString)({ message: 'Current company must be a string' }),
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "currentCompany", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Current location must be a string' }),
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "currentLocation", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Preferred location must be a string' }),
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "preferredLocation", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Notice period must be a string' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "noticePeriod", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)({}, { message: 'Current salary must be a number' }),
+    (0, class_validator_1.Min)(0, { message: 'Current salary must be at least 0' }),
     __metadata("design:type", Number)
-], UpdateCandidateProfileDto.prototype, "experienceYears", void 0);
+], UpdateCandidateProfileDto.prototype, "currentSalary", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsNumber)({}, { message: 'Expected salary must be a number' }),
     (0, class_validator_1.Min)(0, { message: 'Expected salary must be at least 0' }),
     __metadata("design:type", Number)
 ], UpdateCandidateProfileDto.prototype, "expectedSalary", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Profile type must be a string' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "profileType", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)({}, { message: 'Experience years must be a number' }),
+    (0, class_validator_1.Min)(0, { message: 'Experience years must be at least 0' }),
+    (0, class_validator_1.Max)(50, { message: 'Experience years must not exceed 50' }),
+    __metadata("design:type", Number)
+], UpdateCandidateProfileDto.prototype, "experienceYears", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'City ID must be a string' }),
@@ -98,6 +159,46 @@ __decorate([
     (0, class_validator_1.IsUrl)({}, { message: 'Portfolio URL must be a valid URL' }),
     __metadata("design:type", String)
 ], UpdateCandidateProfileDto.prototype, "portfolioUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEmail)({}, { message: 'Email must be a valid email address' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsPhoneNumber)('IN', { message: 'Mobile number must be a valid phone number' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "mobileNumber", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Job experience must be a string' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "jobExperience", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Country must be a string' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "country", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'State must be a string' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "state", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'City name must be a string' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "cityName", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Street address must be a string' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "streetAddress", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Profile summary must be a string' }),
+    __metadata("design:type", String)
+], UpdateCandidateProfileDto.prototype, "profileSummary", void 0);
 class UpdateAvailabilityDto {
     isAvailable;
 }
@@ -111,20 +212,37 @@ class CandidateProfileResponseDto {
     userId;
     firstName;
     lastName;
+    fatherName;
     dateOfBirth;
     gender;
+    maritalStatus;
     profilePicture;
     bio;
     currentTitle;
-    experienceYears;
+    currentCompany;
+    currentLocation;
+    preferredLocation;
+    noticePeriod;
+    currentSalary;
     expectedSalary;
+    profileType;
+    experienceYears;
     address;
     linkedinUrl;
     githubUrl;
     portfolioUrl;
     isAvailable;
+    email;
+    mobileNumber;
+    jobExperience;
+    country;
+    state;
+    cityName;
+    streetAddress;
+    profileSummary;
     createdAt;
     updatedAt;
+    user;
     city;
 }
 exports.CandidateProfileResponseDto = CandidateProfileResponseDto;

@@ -1,33 +1,51 @@
-import { Injectable, InternalServerErrorException, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ActivityLogsQueryDto } from './dto/activity-logs-query.dto';
-import { UpdateNotificationPreferencesDto, NotificationPreferencesDto, NotificationPreferencesResponseDto } from './dto/notification-preferences.dto';
+import {
+  UpdateNotificationPreferencesDto,
+  NotificationPreferencesDto,
+  NotificationPreferencesResponseDto,
+  NotificationType,
+} from './dto/notification-preferences.dto';
 import { UserProfileResponseDto } from './dto/user-profile-response.dto';
 import { ActivityLogsResponseDto } from './dto/activity-logs-response.dto';
-import { Prisma, UserRole, UserStatus, LogAction, LogLevel } from '@prisma/client';
+import { RecentUsersResponseDto } from './dto/recent-users-response.dto';
+import {
+  Prisma,
+  UserRole,
+  UserStatus,
+  LogAction,
+  LogLevel,
+} from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly db: DatabaseService) { }
+  constructor(private readonly db: DatabaseService) {}
   async create(createUserDto: CreateUserDto) {
-    try{
-      return await this.db.user.create({data:createUserDto}) 
-    }catch(error){
-      this.handleException(error)
+    try {
+      return await this.db.user.create({ data: createUserDto });
+    } catch (error) {
+      this.handleException(error);
     }
   }
 
   async findAll() {
     try {
-      const data = await this.db.user.findMany()
-      return data
+      const data = await this.db.user.findMany();
+      return data;
     } catch (error) {
-      this.handleException(error)
+      this.handleException(error);
     }
   }
 
@@ -64,19 +82,7 @@ export class UserService {
           },
           admin: true,
           superAdmin: true,
-          company: {
-            include: {
-              city: {
-                include: {
-                  state: {
-                    include: {
-                      country: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
+          company: true,
         },
       });
 
@@ -95,7 +101,10 @@ export class UserService {
   }
 
   // Update current user profile
-  async updateCurrentUserProfile(userId: string, updateProfileDto: UpdateProfileDto): Promise<UserProfileResponseDto> {
+  async updateCurrentUserProfile(
+    userId: string,
+    updateProfileDto: UpdateProfileDto,
+  ): Promise<UserProfileResponseDto> {
     try {
       const user = await this.db.user.findUnique({
         where: { id: userId },
@@ -131,8 +140,14 @@ export class UserService {
         where: { id: userId },
         data: {
           ...updateProfileDto,
-          emailVerified: updateProfileDto.email && updateProfileDto.email !== user.email ? false : user.emailVerified,
-          phoneVerified: updateProfileDto.phone && updateProfileDto.phone !== user.phone ? false : user.phoneVerified,
+          emailVerified:
+            updateProfileDto.email && updateProfileDto.email !== user.email
+              ? false
+              : user.emailVerified,
+          phoneVerified:
+            updateProfileDto.phone && updateProfileDto.phone !== user.phone
+              ? false
+              : user.phoneVerified,
         },
         include: {
           candidate: {
@@ -150,28 +165,26 @@ export class UserService {
           },
           admin: true,
           superAdmin: true,
-          company: {
-            include: {
-              city: {
-                include: {
-                  state: {
-                    include: {
-                      country: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
+          company: true,
         },
       });
 
       // Log the profile update
-      await this.logActivity(userId, LogAction.UPDATE, LogLevel.INFO, 'User', userId, 'Profile updated');
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'User',
+        userId,
+        'Profile updated',
+      );
 
       return updatedUser as unknown as UserProfileResponseDto;
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -196,7 +209,14 @@ export class UserService {
       });
 
       // Log the account deletion
-      await this.logActivity(userId, LogAction.DELETE, LogLevel.CRITICAL, 'User', userId, 'Account deleted');
+      await this.logActivity(
+        userId,
+        LogAction.DELETE,
+        LogLevel.CRITICAL,
+        'User',
+        userId,
+        'Account deleted',
+      );
 
       return { message: 'Account deleted successfully' };
     } catch (error) {
@@ -209,7 +229,10 @@ export class UserService {
   }
 
   // Change password
-  async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<{ message: string }> {
+  async changePassword(
+    userId: string,
+    changePasswordDto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
     try {
       const user = await this.db.user.findUnique({
         where: { id: userId },
@@ -220,13 +243,19 @@ export class UserService {
       }
 
       // Verify current password
-      const isCurrentPasswordValid = await bcrypt.compare(changePasswordDto.currentPassword, user.password);
+      const isCurrentPasswordValid = await bcrypt.compare(
+        changePasswordDto.currentPassword,
+        user.password,
+      );
       if (!isCurrentPasswordValid) {
         throw new UnauthorizedException('Current password is incorrect');
       }
 
       // Hash new password
-      const hashedNewPassword = await bcrypt.hash(changePasswordDto.newPassword, 12);
+      const hashedNewPassword = await bcrypt.hash(
+        changePasswordDto.newPassword,
+        12,
+      );
 
       // Update password
       await this.db.user.update({
@@ -235,11 +264,21 @@ export class UserService {
       });
 
       // Log the password change
-      await this.logActivity(userId, LogAction.UPDATE, LogLevel.INFO, 'User', userId, 'Password changed');
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'User',
+        userId,
+        'Password changed',
+      );
 
       return { message: 'Password changed successfully' };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof UnauthorizedException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof UnauthorizedException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -248,7 +287,10 @@ export class UserService {
   }
 
   // Get user activity logs
-  async getUserActivityLogs(userId: string, query: ActivityLogsQueryDto): Promise<ActivityLogsResponseDto> {
+  async getUserActivityLogs(
+    userId: string,
+    query: ActivityLogsQueryDto,
+  ): Promise<ActivityLogsResponseDto> {
     try {
       const user = await this.db.user.findUnique({
         where: { id: userId },
@@ -276,11 +318,11 @@ export class UserService {
       };
 
       if (action) {
-        where.action = action;
+        where.action = action as any;
       }
 
       if (level) {
-        where.level = level;
+        where.level = level as any;
       }
 
       if (entity) {
@@ -311,7 +353,7 @@ export class UserService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        logs: logs.map(log => ({
+        logs: logs.map((log) => ({
           id: log.id,
           action: log.action,
           level: log.level,
@@ -338,7 +380,9 @@ export class UserService {
   }
 
   // Get notification preferences
-  async getNotificationPreferences(userId: string): Promise<NotificationPreferencesResponseDto> {
+  async getNotificationPreferences(
+    userId: string,
+  ): Promise<NotificationPreferencesResponseDto> {
     try {
       const user = await this.db.user.findUnique({
         where: { id: userId },
@@ -382,35 +426,35 @@ export class UserService {
       // Default preferences if no settings exist
       const defaultPreferences: NotificationPreferencesDto[] = [
         {
-          type: 'JOB_ALERT',
+          type: NotificationType.JOB_ALERT,
           email: true,
           push: true,
           sms: false,
           inApp: true,
         },
         {
-          type: 'APPLICATION_UPDATE',
+          type: NotificationType.APPLICATION_UPDATE,
           email: true,
           push: true,
           sms: false,
           inApp: true,
         },
         {
-          type: 'SYSTEM_NOTIFICATION',
+          type: NotificationType.SYSTEM_NOTIFICATION,
           email: true,
           push: true,
           sms: false,
           inApp: true,
         },
         {
-          type: 'SECURITY_ALERT',
+          type: NotificationType.SECURITY_ALERT,
           email: true,
           push: true,
           sms: true,
           inApp: true,
         },
         {
-          type: 'COMPANY_UPDATE',
+          type: NotificationType.COMPANY_UPDATE,
           email: true,
           push: true,
           sms: false,
@@ -419,7 +463,7 @@ export class UserService {
       ];
 
       // Map settings to preferences
-      const preferences = defaultPreferences.map(pref => {
+      const preferences = defaultPreferences.map((pref) => {
         const settingMap = {
           email: `notification_${pref.type.toLowerCase()}_email`,
           push: `notification_${pref.type.toLowerCase()}_push`,
@@ -427,16 +471,24 @@ export class UserService {
           inApp: `notification_${pref.type.toLowerCase()}_in_app`,
         };
 
-        const prefSettings = settings.filter(setting =>
-          Object.values(settingMap).includes(setting.key)
+        const prefSettings = settings.filter((setting) =>
+          Object.values(settingMap).includes(setting.key),
         );
 
         return {
           type: pref.type,
-          email: prefSettings.find(s => s.key === settingMap.email)?.value === 'true' || pref.email,
-          push: prefSettings.find(s => s.key === settingMap.push)?.value === 'true' || pref.push,
-          sms: prefSettings.find(s => s.key === settingMap.sms)?.value === 'true' || pref.sms,
-          inApp: prefSettings.find(s => s.key === settingMap.inApp)?.value === 'true' || pref.inApp,
+          email:
+            prefSettings.find((s) => s.key === settingMap.email)?.value ===
+              'true' || pref.email,
+          push:
+            prefSettings.find((s) => s.key === settingMap.push)?.value ===
+              'true' || pref.push,
+          sms:
+            prefSettings.find((s) => s.key === settingMap.sms)?.value ===
+              'true' || pref.sms,
+          inApp:
+            prefSettings.find((s) => s.key === settingMap.inApp)?.value ===
+              'true' || pref.inApp,
         };
       });
 
@@ -491,13 +543,17 @@ export class UserService {
               },
             },
             update: {
-              value: pref[channel as keyof NotificationPreferencesDto] as string,
+              value: pref[
+                channel as keyof NotificationPreferencesDto
+              ] as string,
               category: 'notification_preferences',
             },
             create: {
               userId,
               key,
-              value: pref[channel as keyof NotificationPreferencesDto] as string,
+              value: pref[
+                channel as keyof NotificationPreferencesDto
+              ] as string,
               category: 'notification_preferences',
             },
           });
@@ -556,7 +612,11 @@ export class UserService {
       }
 
       // Create test notifications in the database
-      for (const notificationType of ['JOB_ALERT', 'APPLICATION_UPDATE', 'SYSTEM_NOTIFICATION']) {
+      for (const notificationType of [
+        'JOB_ALERT',
+        'APPLICATION_UPDATE',
+        'SYSTEM_NOTIFICATION',
+      ]) {
         await this.db.notification.create({
           data: {
             userId,
@@ -623,6 +683,305 @@ export class UserService {
   }
 
   handleException(error) {
-    throw new InternalServerErrorException("Can't fetch user Details")
+    throw new InternalServerErrorException("Can't fetch user Details");
+  }
+
+  // =================================================================
+  // RECENT USERS API
+  // =================================================================
+
+  async getRecentUsers(query: any): Promise<any> {
+    try {
+      const {
+        role,
+        status,
+        startDate,
+        endDate,
+        page = 1,
+        limit = 10,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+        days = 7
+      } = query;
+
+      const skip = (page - 1) * limit;
+      const currentDate = new Date();
+      const daysAgo = new Date(currentDate.getTime() - (days * 24 * 60 * 60 * 1000));
+
+      // Build where clause
+      const where: any = {
+        createdAt: {
+          gte: startDate ? new Date(startDate) : daysAgo,
+          lte: endDate ? new Date(endDate) : currentDate
+        }
+      };
+
+      if (role) where.role = role;
+      if (status) where.status = status;
+
+      // Get users and total count
+      const [users, total, totalUsers, newUsers, activeUsers, inactiveUsers] = await Promise.all([
+        this.db.user.findMany({
+          where,
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            status: true,
+            emailVerified: true,
+            phoneVerified: true,
+            profileCompleted: true,
+            twoFactorEnabled: true,
+            lastLoginAt: true,
+            createdAt: true,
+            updatedAt: true
+          },
+          orderBy: { [sortBy]: sortOrder },
+          skip,
+          take: limit,
+        }),
+        this.db.user.count({ where }),
+        this.db.user.count(),
+        this.db.user.count({
+          where: {
+            createdAt: {
+              gte: new Date(currentDate.getTime() - (7 * 24 * 60 * 60 * 1000))
+            }
+          }
+        }),
+        this.db.user.count({
+          where: {
+            lastLoginAt: {
+              gte: new Date(currentDate.getTime() - (30 * 24 * 60 * 60 * 1000))
+            }
+          }
+        }),
+        this.db.user.count({
+          where: {
+            lastLoginAt: null
+          }
+        })
+      ]);
+
+      // Get role and status statistics
+      const [roleStats, statusStats] = await Promise.all([
+        this.db.user.groupBy({
+          by: ['role'],
+          _count: { role: true }
+        }),
+        this.db.user.groupBy({
+          by: ['status'],
+          _count: { status: true }
+        })
+      ]);
+
+      const totalPages = Math.ceil(total / limit);
+
+      // Transform users data
+      const transformedUsers = users.map(user => {
+        const daysSinceRegistration = Math.floor(
+          (currentDate.getTime() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        
+        return {
+          ...user,
+          daysSinceRegistration,
+          isNewUser: daysSinceRegistration <= 7,
+          hasLoggedIn: user.lastLoginAt !== null,
+          lastActivityAt: user.lastLoginAt
+        };
+      });
+
+      // Build statistics
+      const byRole = roleStats.reduce((acc, stat) => {
+        acc[stat.role] = stat._count.role;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const byStatus = statusStats.reduce((acc, stat) => {
+        acc[stat.status] = stat._count.status;
+        return acc;
+      }, {} as Record<string, number>);
+
+      return {
+        users: transformedUsers,
+        total,
+        page,
+        limit,
+        totalPages,
+        statistics: {
+          totalUsers,
+          newUsers,
+          activeUsers,
+          inactiveUsers,
+          byRole,
+          byStatus
+        },
+        timeRange: {
+          startDate: startDate ? new Date(startDate) : daysAgo,
+          endDate: endDate ? new Date(endDate) : currentDate,
+          days
+        }
+      };
+    } catch (error) {
+      throw new BadRequestException('Failed to get recent users');
+    }
+  }
+
+  async getRecentUsersStats(query: any): Promise<RecentUsersResponseDto> {
+    try {
+      const {
+        status,
+        startDate,
+        endDate,
+        page = 1,
+        limit = 10,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+        days = 7
+      } = query;
+
+      const skip = (page - 1) * limit;
+      const currentDate = new Date();
+      const last7Days = new Date(currentDate.getTime() - (7 * 24 * 60 * 60 * 1000));
+      const last30Days = new Date(currentDate.getTime() - (30 * 24 * 60 * 60 * 1000));
+      const daysAgo = new Date(currentDate.getTime() - (days * 24 * 60 * 60 * 1000));
+
+      // Build where clause for user filtering - only candidates
+      const where: any = {
+        createdAt: {
+          gte: startDate ? new Date(startDate) : daysAgo,
+          lte: endDate ? new Date(endDate) : currentDate
+        },
+        role: 'CANDIDATE' // Only include candidates, exclude admin and super admin
+      };
+
+      if (status) where.status = status;
+
+      const [
+        totalUsers,
+        newUsers7Days,
+        newUsers30Days,
+        activeUsers7Days,
+        activeUsers30Days,
+        roleStats,
+        statusStats,
+        registrationTrends,
+        users,
+        total
+      ] = await Promise.all([
+        this.db.user.count({
+          where: { role: 'CANDIDATE' }
+        }),
+        this.db.user.count({
+          where: { 
+            createdAt: { gte: last7Days },
+            role: 'CANDIDATE'
+          }
+        }),
+        this.db.user.count({
+          where: { 
+            createdAt: { gte: last30Days },
+            role: 'CANDIDATE'
+          }
+        }),
+        this.db.user.count({
+          where: { 
+            lastLoginAt: { gte: last7Days },
+            role: 'CANDIDATE'
+          }
+        }),
+        this.db.user.count({
+          where: { 
+            lastLoginAt: { gte: last30Days },
+            role: 'CANDIDATE'
+          }
+        }),
+        this.db.user.groupBy({
+          by: ['role'],
+          _count: { role: true },
+          where: { role: 'CANDIDATE' }
+        }),
+        this.db.user.groupBy({
+          by: ['status'],
+          _count: { status: true },
+          where: { role: 'CANDIDATE' }
+        }),
+        this.db.user.groupBy({
+          by: ['createdAt'],
+          _count: { createdAt: true },
+          where: {
+            createdAt: { gte: last30Days },
+            role: 'CANDIDATE'
+          }
+        }),
+        this.db.user.findMany({
+          where,
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            status: true,
+            emailVerified: true,
+            phoneVerified: true,
+            profileCompleted: true,
+            twoFactorEnabled: true,
+            lastLoginAt: true,
+            createdAt: true,
+            updatedAt: true
+          },
+          orderBy: { [sortBy]: sortOrder },
+          skip,
+          take: limit,
+        }),
+        this.db.user.count({ where })
+      ]);
+
+      const totalPages = Math.ceil(total / limit);
+
+      // Transform users data
+      const transformedUsers = users.map(user => {
+        const daysSinceRegistration = Math.floor(
+          (currentDate.getTime() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        
+        return {
+          ...user,
+          daysSinceRegistration,
+          isNewUser: daysSinceRegistration <= 7,
+          hasLoggedIn: user.lastLoginAt !== null,
+          lastActivityAt: user.lastLoginAt
+        };
+      });
+
+      return {
+        users: transformedUsers,
+        total,
+        page,
+        limit,
+        totalPages,
+        statistics: {
+          totalUsers,
+          newUsers: newUsers7Days,
+          activeUsers: activeUsers7Days,
+          inactiveUsers: totalUsers - activeUsers7Days,
+          byRole: roleStats.reduce((acc, stat) => {
+            acc[stat.role] = stat._count.role;
+            return acc;
+          }, {} as Record<UserRole, number>),
+          byStatus: statusStats.reduce((acc, stat) => {
+            acc[stat.status] = stat._count.status;
+            return acc;
+          }, {} as Record<UserStatus, number>)
+        },
+        timeRange: {
+          startDate: startDate ? new Date(startDate) : daysAgo,
+          endDate: endDate ? new Date(endDate) : currentDate,
+          days
+        }
+      };
+    } catch (error) {
+      throw new BadRequestException('Failed to get recent users statistics');
+    }
   }
 }

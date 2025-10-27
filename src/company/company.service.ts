@@ -1,11 +1,21 @@
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { CompanyQueryDto } from './dto/company-query.dto';
 import { VerifyCompanyDto } from './dto/verify-company.dto';
 import { UpdateCompanyStatusDto } from './dto/update-company-status.dto';
-import { CompanyResponseDto, CompanyListResponseDto, CompanyStatsResponseDto } from './dto/company-response.dto';
+import {
+  CompanyResponseDto,
+  CompanyListResponseDto,
+  CompanyStatsResponseDto,
+} from './dto/company-response.dto';
 import { LogAction, LogLevel, UserRole } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 
@@ -17,12 +27,16 @@ export class CompanyService {
   // COMPANY MANAGEMENT
   // =================================================================
 
-  async getAllCompanies(query: CompanyQueryDto): Promise<CompanyListResponseDto> {
+  async getAllCompanies(
+    query: CompanyQueryDto,
+  ): Promise<CompanyListResponseDto> {
     try {
       const {
         search,
         industry,
-        cityId,
+        country,
+        state,
+        city,
         isVerified,
         isActive,
         page = 1,
@@ -48,8 +62,16 @@ export class CompanyService {
         where.industry = industry;
       }
 
-      if (cityId) {
-        where.cityId = cityId;
+      if (country) {
+        where.country = { contains: country, mode: 'insensitive' };
+      }
+
+      if (state) {
+        where.state = { contains: state, mode: 'insensitive' };
+      }
+
+      if (city) {
+        where.city = { contains: city, mode: 'insensitive' };
       }
 
       if (isVerified !== undefined) {
@@ -62,22 +84,14 @@ export class CompanyService {
 
       // Build order by clause
       const orderBy: Prisma.CompanyOrderByWithRelationInput = {};
-      orderBy[sortBy as keyof Prisma.CompanyOrderByWithRelationInput] = sortOrder;
+      orderBy[sortBy as keyof Prisma.CompanyOrderByWithRelationInput] =
+        sortOrder;
 
       // Get companies and total count
       const [companies, total] = await Promise.all([
         this.db.company.findMany({
           where,
           include: {
-            city: {
-              include: {
-                state: {
-                  include: {
-                    country: true,
-                  },
-                },
-              },
-            },
             user: {
               select: {
                 id: true,
@@ -97,7 +111,7 @@ export class CompanyService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        companies: companies.map(company => ({
+        companies: companies.map((company) => ({
           id: company.id,
           userId: company.userId,
           name: company.name,
@@ -117,25 +131,17 @@ export class CompanyService {
           isActive: company.isActive,
           createdAt: company.createdAt,
           updatedAt: company.updatedAt,
-          city: company.city ? {
-            id: company.city.id,
-            name: company.city.name,
-            state: {
-              id: company.city.state.id,
-              name: company.city.state.name,
-              country: {
-                id: company.city.state.country.id,
-                name: company.city.state.country.name,
-                code: company.city.state.country.code,
-              },
-            },
-          } : undefined,
-          user: company.user ? {
-            id: company.user.id,
-            email: company.user.email,
-            role: company.user.role,
-            status: company.user.status,
-          } : undefined,
+          country: company.country,
+          state: company.state,
+          city: company.city,
+          user: company.user
+            ? {
+                id: company.user.id,
+                email: company.user.email,
+                role: company.user.role,
+                status: company.user.status,
+              }
+            : undefined,
         })),
         total,
         page,
@@ -153,15 +159,6 @@ export class CompanyService {
       const company = await this.db.company.findUnique({
         where: { id: companyId },
         include: {
-          city: {
-            include: {
-              state: {
-                include: {
-                  country: true,
-                },
-              },
-            },
-          },
           user: {
             select: {
               id: true,
@@ -197,25 +194,17 @@ export class CompanyService {
         isActive: company.isActive,
         createdAt: company.createdAt,
         updatedAt: company.updatedAt,
-        city: company.city ? {
-          id: company.city.id,
-          name: company.city.name,
-          state: {
-            id: company.city.state.id,
-            name: company.city.state.name,
-            country: {
-              id: company.city.state.country.id,
-              name: company.city.state.country.name,
-              code: company.city.state.country.code,
-            },
-          },
-        } : undefined,
-        user: company.user ? {
-          id: company.user.id,
-          email: company.user.email,
-          role: company.user.role,
-          status: company.user.status,
-        } : undefined,
+        country: company.country,
+        state: company.state,
+        city: company.city,
+        user: company.user
+          ? {
+              id: company.user.id,
+              email: company.user.email,
+              role: company.user.role,
+              status: company.user.status,
+            }
+          : undefined,
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -226,7 +215,10 @@ export class CompanyService {
     }
   }
 
-  async createCompany(createDto: CreateCompanyDto, adminUserId: string): Promise<CompanyResponseDto> {
+  async createCompany(
+    createDto: CreateCompanyDto,
+    adminUserId: string,
+  ): Promise<CompanyResponseDto> {
     try {
       // Check if slug already exists
       const existingCompany = await this.db.company.findUnique({
@@ -238,17 +230,10 @@ export class CompanyService {
       }
 
       const company = await this.db.company.create({
-        data: createDto,
+        data: {
+          ...createDto,
+        },
         include: {
-          city: {
-            include: {
-              state: {
-                include: {
-                  country: true,
-                },
-              },
-            },
-          },
           user: {
             select: {
               id: true,
@@ -261,7 +246,14 @@ export class CompanyService {
       });
 
       // Log the company creation
-      await this.logActivity(adminUserId, LogAction.CREATE, LogLevel.INFO, 'Company', company.id, `Company created: ${company.name}`);
+      await this.logActivity(
+        adminUserId,
+        LogAction.CREATE,
+        LogLevel.INFO,
+        'Company',
+        company.id,
+        `Company created: ${company.name}`,
+      );
 
       return {
         id: company.id,
@@ -283,25 +275,17 @@ export class CompanyService {
         isActive: company.isActive,
         createdAt: company.createdAt,
         updatedAt: company.updatedAt,
-        city: company.city ? {
-          id: company.city.id,
-          name: company.city.name,
-          state: {
-            id: company.city.state.id,
-            name: company.city.state.name,
-            country: {
-              id: company.city.state.country.id,
-              name: company.city.state.country.name,
-              code: company.city.state.country.code,
-            },
-          },
-        } : undefined,
-        user: company.user ? {
-          id: company.user.id,
-          email: company.user.email,
-          role: company.user.role,
-          status: company.user.status,
-        } : undefined,
+        country: company.country,
+        state: company.state,
+        city: company.city,
+        user: company.user
+          ? {
+              id: company.user.id,
+              email: company.user.email,
+              role: company.user.role,
+              status: company.user.status,
+            }
+          : undefined,
       };
     } catch (error) {
       if (error instanceof BadRequestException) {
@@ -312,7 +296,11 @@ export class CompanyService {
     }
   }
 
-  async updateCompany(companyId: string, updateDto: UpdateCompanyDto, adminUserId: string): Promise<CompanyResponseDto> {
+  async updateCompany(
+    companyId: string,
+    updateDto: UpdateCompanyDto,
+    adminUserId: string,
+  ): Promise<CompanyResponseDto> {
     try {
       const company = await this.db.company.findUnique({
         where: { id: companyId },
@@ -329,23 +317,18 @@ export class CompanyService {
         });
 
         if (existingCompany) {
-          throw new BadRequestException('Company with this slug already exists');
+          throw new BadRequestException(
+            'Company with this slug already exists',
+          );
         }
       }
 
       const updatedCompany = await this.db.company.update({
         where: { id: companyId },
-        data: updateDto,
+        data: {
+          ...updateDto,
+        },
         include: {
-          city: {
-            include: {
-              state: {
-                include: {
-                  country: true,
-                },
-              },
-            },
-          },
           user: {
             select: {
               id: true,
@@ -358,7 +341,14 @@ export class CompanyService {
       });
 
       // Log the company update
-      await this.logActivity(adminUserId, LogAction.UPDATE, LogLevel.INFO, 'Company', companyId, `Company updated: ${updatedCompany.name}`);
+      await this.logActivity(
+        adminUserId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'Company',
+        companyId,
+        `Company updated: ${updatedCompany.name}`,
+      );
 
       return {
         id: updatedCompany.id,
@@ -380,28 +370,23 @@ export class CompanyService {
         isActive: updatedCompany.isActive,
         createdAt: updatedCompany.createdAt,
         updatedAt: updatedCompany.updatedAt,
-        city: updatedCompany.city ? {
-          id: updatedCompany.city.id,
-          name: updatedCompany.city.name,
-          state: {
-            id: updatedCompany.city.state.id,
-            name: updatedCompany.city.state.name,
-            country: {
-              id: updatedCompany.city.state.country.id,
-              name: updatedCompany.city.state.country.name,
-              code: updatedCompany.city.state.country.code,
-            },
-          },
-        } : undefined,
-        user: updatedCompany.user ? {
-          id: updatedCompany.user.id,
-          email: updatedCompany.user.email,
-          role: updatedCompany.user.role,
-          status: updatedCompany.user.status,
-        } : undefined,
+        country: updatedCompany.country,
+        state: updatedCompany.state,
+        city: updatedCompany.city,
+        user: updatedCompany.user
+          ? {
+              id: updatedCompany.user.id,
+              email: updatedCompany.user.email,
+              role: updatedCompany.user.role,
+              status: updatedCompany.user.status,
+            }
+          : undefined,
       };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -409,7 +394,10 @@ export class CompanyService {
     }
   }
 
-  async deleteCompany(companyId: string, adminUserId: string): Promise<{ message: string }> {
+  async deleteCompany(
+    companyId: string,
+    adminUserId: string,
+  ): Promise<{ message: string }> {
     try {
       const company = await this.db.company.findUnique({
         where: { id: companyId },
@@ -425,7 +413,9 @@ export class CompanyService {
       });
 
       if (jobCount > 0) {
-        throw new BadRequestException('Cannot delete company with existing jobs. Please delete all jobs first.');
+        throw new BadRequestException(
+          'Cannot delete company with existing jobs. Please delete all jobs first.',
+        );
       }
 
       await this.db.company.delete({
@@ -433,11 +423,21 @@ export class CompanyService {
       });
 
       // Log the company deletion
-      await this.logActivity(adminUserId, LogAction.DELETE, LogLevel.CRITICAL, 'Company', companyId, `Company deleted: ${company.name}`);
+      await this.logActivity(
+        adminUserId,
+        LogAction.DELETE,
+        LogLevel.CRITICAL,
+        'Company',
+        companyId,
+        `Company deleted: ${company.name}`,
+      );
 
       return { message: 'Company deleted successfully' };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       this.handleException(error);
@@ -445,7 +445,11 @@ export class CompanyService {
     }
   }
 
-  async verifyCompany(companyId: string, verifyDto: VerifyCompanyDto, adminUserId: string): Promise<{ message: string }> {
+  async verifyCompany(
+    companyId: string,
+    verifyDto: VerifyCompanyDto,
+    adminUserId: string,
+  ): Promise<{ message: string }> {
     try {
       const company = await this.db.company.findUnique({
         where: { id: companyId },
@@ -461,9 +465,18 @@ export class CompanyService {
       });
 
       // Log the company verification
-      await this.logActivity(adminUserId, LogAction.UPDATE, LogLevel.INFO, 'Company', companyId, `Company ${verifyDto.isVerified ? 'verified' : 'unverified'}: ${company.name}`);
+      await this.logActivity(
+        adminUserId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'Company',
+        companyId,
+        `Company ${verifyDto.isVerified ? 'verified' : 'unverified'}: ${company.name}`,
+      );
 
-      return { message: `Company ${verifyDto.isVerified ? 'verified' : 'unverified'} successfully` };
+      return {
+        message: `Company ${verifyDto.isVerified ? 'verified' : 'unverified'} successfully`,
+      };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -473,7 +486,11 @@ export class CompanyService {
     }
   }
 
-  async updateCompanyStatus(companyId: string, statusDto: UpdateCompanyStatusDto, adminUserId: string): Promise<{ message: string }> {
+  async updateCompanyStatus(
+    companyId: string,
+    statusDto: UpdateCompanyStatusDto,
+    adminUserId: string,
+  ): Promise<{ message: string }> {
     try {
       const company = await this.db.company.findUnique({
         where: { id: companyId },
@@ -489,9 +506,18 @@ export class CompanyService {
       });
 
       // Log the company status update
-      await this.logActivity(adminUserId, LogAction.UPDATE, LogLevel.INFO, 'Company', companyId, `Company ${statusDto.isActive ? 'activated' : 'deactivated'}: ${company.name}`);
+      await this.logActivity(
+        adminUserId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'Company',
+        companyId,
+        `Company ${statusDto.isActive ? 'activated' : 'deactivated'}: ${company.name}`,
+      );
 
-      return { message: `Company ${statusDto.isActive ? 'activated' : 'deactivated'} successfully` };
+      return {
+        message: `Company ${statusDto.isActive ? 'activated' : 'deactivated'} successfully`,
+      };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -501,7 +527,11 @@ export class CompanyService {
     }
   }
 
-  async getCompanyJobs(companyId: string, page: number = 1, limit: number = 10): Promise<any> {
+  async getCompanyJobs(
+    companyId: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<any> {
     try {
       const company = await this.db.company.findUnique({
         where: { id: companyId },
@@ -544,7 +574,7 @@ export class CompanyService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        jobs: jobs.map(job => ({
+        jobs: jobs.map((job) => ({
           id: job.id,
           title: job.title,
           slug: job.slug,
@@ -571,19 +601,21 @@ export class CompanyService {
           createdAt: job.createdAt,
           updatedAt: job.updatedAt,
           company: job.company,
-          city: job.city ? {
-            id: job.city.id,
-            name: job.city.name,
-            state: {
-              id: job.city.state.id,
-              name: job.city.state.name,
-              country: {
-                id: job.city.state.country.id,
-                name: job.city.state.country.name,
-                code: job.city.state.country.code,
-              },
-            },
-          } : undefined,
+          city: job.city
+            ? {
+                id: job.city.id,
+                name: job.city.name,
+                state: {
+                  id: job.city.state.id,
+                  name: job.city.state.name,
+                  country: job.city.state.country ? {
+                    id: job.city.state.country.id,
+                    name: job.city.state.country.name,
+                    iso2: job.city.state.country.iso2,
+                  } : undefined,
+                },
+              }
+            : undefined,
         })),
         total,
         page,
@@ -610,23 +642,18 @@ export class CompanyService {
       }
 
       // Get job statistics
-      const [
-        totalJobs,
-        activeJobs,
-        draftJobs,
-        closedJobs,
-        lastJobPosted,
-      ] = await Promise.all([
-        this.db.job.count({ where: { companyId } }),
-        this.db.job.count({ where: { companyId, status: 'PUBLISHED' } }),
-        this.db.job.count({ where: { companyId, status: 'DRAFT' } }),
-        this.db.job.count({ where: { companyId, status: 'CLOSED' } }),
-        this.db.job.findFirst({
-          where: { companyId },
-          orderBy: { publishedAt: 'desc' },
-          select: { publishedAt: true },
-        }),
-      ]);
+      const [totalJobs, activeJobs, draftJobs, closedJobs, lastJobPosted] =
+        await Promise.all([
+          this.db.job.count({ where: { companyId } }),
+          this.db.job.count({ where: { companyId, status: 'PUBLISHED' } }),
+          this.db.job.count({ where: { companyId, status: 'DRAFT' } }),
+          this.db.job.count({ where: { companyId, status: 'CLOSED' } }),
+          this.db.job.findFirst({
+            where: { companyId },
+            orderBy: { publishedAt: 'desc' },
+            select: { publishedAt: true },
+          }),
+        ]);
 
       // Get application statistics
       const [

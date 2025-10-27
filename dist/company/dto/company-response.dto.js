@@ -21,6 +21,8 @@ class CompanyResponseDto {
     isActive;
     createdAt;
     updatedAt;
+    country;
+    state;
     city;
     user;
 }

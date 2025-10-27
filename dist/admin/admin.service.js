@@ -44,18 +44,97 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminService = void 0;
 const common_1 = require("@nestjs/common");
+const jwt_1 = require("@nestjs/jwt");
 const database_service_1 = require("../database/database.service");
 const client_1 = require("@prisma/client");
 const bcrypt = __importStar(require("bcryptjs"));
 const uuid_1 = require("uuid");
 let AdminService = class AdminService {
     prisma;
-    constructor(prisma) {
+    jwtService;
+    constructor(prisma, jwtService) {
         this.prisma = prisma;
+        this.jwtService = jwtService;
+    }
+    async adminLogin(adminLoginDto) {
+        try {
+            const user = await this.prisma.user.findUnique({
+                where: { email: adminLoginDto.email },
+                include: {
+                    admin: true,
+                    superAdmin: true,
+                },
+            });
+            if (!user) {
+                throw new common_1.UnauthorizedException('Invalid admin credentials');
+            }
+            if (user.role !== client_1.UserRole.ADMIN && user.role !== client_1.UserRole.SUPER_ADMIN) {
+                throw new common_1.UnauthorizedException('Access denied. Admin privileges required.');
+            }
+            const isPasswordValid = await bcrypt.compare(adminLoginDto.password, user.password);
+            if (!isPasswordValid) {
+                throw new common_1.UnauthorizedException('Invalid admin credentials');
+            }
+            if (user.status === client_1.UserStatus.SUSPENDED) {
+                throw new common_1.UnauthorizedException('Admin account is suspended');
+            }
+            if (user.status === client_1.UserStatus.INACTIVE) {
+                throw new common_1.UnauthorizedException('Admin account is inactive');
+            }
+            await this.prisma.user.update({
+                where: { id: user.id },
+                data: { lastLoginAt: new Date() },
+            });
+            const payload = {
+                sub: user.id,
+                email: user.email,
+                role: user.role,
+                status: user.status,
+            };
+            const accessToken = this.jwtService.sign(payload, { expiresIn: '1d' });
+            const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+            await this.prisma.activityLog.create({
+                data: {
+                    userId: user.id,
+                    action: 'LOGIN',
+                    level: 'INFO',
+                    description: 'Admin logged in successfully',
+                    entity: 'Admin',
+                    entityId: user.admin?.id || user.superAdmin?.id || user.id,
+                },
+            });
+            const authResponse = {
+                accessToken,
+                refreshToken,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    role: user.role,
+                    status: user.status,
+                    firstName: user.admin?.firstName || user.superAdmin?.firstName || '',
+                    lastName: user.admin?.lastName || user.superAdmin?.lastName || '',
+                    designation: user.admin?.designation || undefined,
+                    department: user.admin?.department || undefined,
+                    lastLoginAt: user.lastLoginAt,
+                    createdAt: user.createdAt,
+                },
+            };
+            return {
+                success: true,
+                message: 'Admin login successful',
+                data: authResponse,
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.UnauthorizedException) {
+                throw error;
+            }
+            throw new common_1.BadRequestException('Admin login failed');
+        }
     }
     async createAdmin(createAdminDto, currentUser) {
         try {
-            if (currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
+            if (currentUser && currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
                 throw new common_1.ForbiddenException('Only SUPER_ADMIN can create admins');
             }
             const existingUser = await this.prisma.user.findUnique({
@@ -99,16 +178,18 @@ let AdminService = class AdminService {
                 });
                 return { user, admin };
             });
-            await this.prisma.activityLog.create({
-                data: {
-                    userId: currentUser.id,
-                    action: 'CREATE',
-                    level: 'INFO',
-                    description: `Admin created: ${result.user.email}`,
-                    entity: 'Admin',
-                    entityId: result.admin.id,
-                },
-            });
+            if (currentUser) {
+                await this.prisma.activityLog.create({
+                    data: {
+                        userId: currentUser.id,
+                        action: 'CREATE',
+                        level: 'INFO',
+                        description: `Admin created: ${result.user.email}`,
+                        entity: 'Admin',
+                        entityId: result.admin.id,
+                    },
+                });
+            }
             return {
                 success: true,
                 message: 'Admin created successfully',
@@ -136,7 +217,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.BadRequestException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.BadRequestException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to create admin');
@@ -152,7 +234,9 @@ let AdminService = class AdminService {
             const slug = createCompanyDto.name
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
-                .replace(/(^-|-$)/g, '') + '-' + Date.now();
+                .replace(/(^-|-$)/g, '') +
+                '-' +
+                Date.now();
             const result = await this.prisma.$transaction(async (prisma) => {
                 const user = await prisma.user.create({
                     data: {
@@ -178,7 +262,9 @@ let AdminService = class AdminService {
                         employeeCount: createCompanyDto.employeeCount,
                         headquarters: createCompanyDto.headquarters,
                         address: createCompanyDto.address,
-                        cityId: createCompanyDto.cityId,
+                        country: createCompanyDto.country,
+                        state: createCompanyDto.state,
+                        city: createCompanyDto.city,
                         linkedinUrl: createCompanyDto.linkedinUrl,
                         twitterUrl: createCompanyDto.twitterUrl,
                         facebookUrl: createCompanyDto.facebookUrl,
@@ -225,7 +311,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.BadRequestException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.BadRequestException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to create company profile');
@@ -249,7 +336,9 @@ let AdminService = class AdminService {
             const updatedAdmin = await this.prisma.admin.update({
                 where: { id: updatePermissionsDto.adminId },
                 data: {
-                    permissions: updatePermissionsDto.permissions || admin.permissions || [],
+                    permissions: updatePermissionsDto.permissions ||
+                        admin.permissions ||
+                        [],
                 },
             });
             await this.prisma.activityLog.create({
@@ -268,14 +357,17 @@ let AdminService = class AdminService {
                 data: {
                     admin: {
                         id: updatedAdmin.id,
-                        permissions: Array.isArray(updatedAdmin.permissions) ? updatedAdmin.permissions : [],
+                        permissions: Array.isArray(updatedAdmin.permissions)
+                            ? updatedAdmin.permissions
+                            : [],
                         updatedAt: updatedAdmin.updatedAt,
                     },
                 },
             };
         }
         catch (error) {
-            if (error instanceof common_1.BadRequestException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.BadRequestException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to update admin permissions');
@@ -376,8 +468,12 @@ let AdminService = class AdminService {
                         where: { id: userId },
                         data: {
                             ...userUpdateData,
-                            emailVerified: updateDto.email && updateDto.email !== admin.user.email ? false : admin.user.emailVerified,
-                            phoneVerified: updateDto.phone && updateDto.phone !== admin.user.phone ? false : admin.user.phoneVerified,
+                            emailVerified: updateDto.email && updateDto.email !== admin.user.email
+                                ? false
+                                : admin.user.emailVerified,
+                            phoneVerified: updateDto.phone && updateDto.phone !== admin.user.phone
+                                ? false
+                                : admin.user.phoneVerified,
                         },
                     });
                 }
@@ -450,10 +546,39 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.BadRequestException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to update admin profile');
+        }
+    }
+    async changeAdminPassword(adminId, changePasswordDto) {
+        try {
+            const user = await this.prisma.user.findUnique({
+                where: { id: adminId },
+            });
+            if (!user) {
+                throw new common_1.NotFoundException('Admin not found');
+            }
+            const isCurrentPasswordValid = await bcrypt.compare(changePasswordDto.currentPassword, user.password);
+            if (!isCurrentPasswordValid) {
+                throw new common_1.UnauthorizedException('Current password is incorrect');
+            }
+            const hashedNewPassword = await bcrypt.hash(changePasswordDto.newPassword, 12);
+            await this.prisma.user.update({
+                where: { id: adminId },
+                data: { password: hashedNewPassword },
+            });
+            await this.logActivity(adminId, 'UPDATE', 'INFO', 'Admin', adminId, 'Admin password changed');
+            return { message: 'Password changed successfully' };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.UnauthorizedException) {
+                throw error;
+            }
+            throw new common_1.InternalServerErrorException('Failed to change password');
         }
     }
     async getAllAdmins(query) {
@@ -486,11 +611,17 @@ let AdminService = class AdminService {
                 where.user = { ...where.user, status: status };
             }
             const orderBy = {};
-            if (sortBy === 'firstName' || sortBy === 'lastName' || sortBy === 'department' || sortBy === 'designation') {
-                orderBy[sortBy] = sortOrder;
+            if (sortBy === 'firstName' ||
+                sortBy === 'lastName' ||
+                sortBy === 'department' ||
+                sortBy === 'designation') {
+                orderBy[sortBy] =
+                    sortOrder;
             }
             else {
-                orderBy.user = { [sortBy]: sortOrder };
+                orderBy.user = {
+                    [sortBy]: sortOrder,
+                };
             }
             const [admins, total] = await Promise.all([
                 this.prisma.admin.findMany({
@@ -521,7 +652,7 @@ let AdminService = class AdminService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                admins: admins.map(admin => ({
+                admins: admins.map((admin) => ({
                     id: admin.id,
                     userId: admin.userId,
                     firstName: admin.firstName,
@@ -638,10 +769,14 @@ let AdminService = class AdminService {
                 data: { status: statusDto.status },
             });
             await this.logActivity(currentUserId, client_1.LogAction.UPDATE, client_1.LogLevel.INFO, 'Admin', adminId, `Admin status updated to ${statusDto.status}: ${admin.user.email}`);
-            return { message: `Admin status updated to ${statusDto.status} successfully` };
+            return {
+                message: `Admin status updated to ${statusDto.status} successfully`,
+            };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.BadRequestException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to update admin status');
@@ -666,7 +801,7 @@ let AdminService = class AdminService {
             if (company)
                 where.companyId = company;
             if (city)
-                where.cityId = city;
+                where.cityId = parseInt(city);
             if (type)
                 where.jobType = type;
             if (experience)
@@ -727,7 +862,7 @@ let AdminService = class AdminService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                jobs: jobs.map(job => this.mapJobToResponse(job)),
+                jobs: jobs.map((job) => this.mapJobToResponse(job)),
                 total,
                 page,
                 limit,
@@ -748,10 +883,42 @@ let AdminService = class AdminService {
             if (![client_1.UserRole.ADMIN, client_1.UserRole.SUPER_ADMIN].includes(currentUser.role)) {
                 throw new common_1.ForbiddenException('Only admins can create jobs');
             }
+            console.log('createJobDto', createJobDto);
+            const admin = await this.prisma.admin.findUnique({
+                where: { userId: currentUser.id },
+                select: { id: true, firstName: true, lastName: true }
+            });
+            if (!admin) {
+                throw new common_1.BadRequestException('Admin profile not found for current user');
+            }
+            const company = await this.prisma.company.findUnique({
+                where: {
+                    id: createJobDto.companyId,
+                    isActive: true
+                },
+                select: { id: true, name: true, isActive: true }
+            });
+            if (!company) {
+                throw new common_1.BadRequestException(`Company with ID "${createJobDto.companyId}" not found or is not active`);
+            }
+            if (createJobDto.cityId) {
+                const city = await this.prisma.city.findUnique({
+                    where: { id: parseInt(createJobDto.cityId) },
+                    select: { id: true, name: true, isActive: true }
+                });
+                if (!city) {
+                    throw new common_1.BadRequestException(`City with ID ${createJobDto.cityId} not found`);
+                }
+                if (!city.isActive) {
+                    throw new common_1.BadRequestException(`City ${city.name} is not active`);
+                }
+            }
             const slug = createJobDto.title
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
-                .replace(/(^-|-$)/g, '') + '-' + Date.now();
+                .replace(/(^-|-$)/g, '') +
+                '-' +
+                Date.now();
             const job = await this.prisma.job.create({
                 data: {
                     title: createJobDto.title,
@@ -760,9 +927,9 @@ let AdminService = class AdminService {
                     requirements: createJobDto.requirements,
                     responsibilities: createJobDto.responsibilities,
                     benefits: createJobDto.benefits,
-                    companyId: createJobDto.companyId,
-                    postedById: currentUser.id,
-                    cityId: createJobDto.cityId,
+                    companyId: company.id,
+                    postedById: admin.id,
+                    cityId: createJobDto.cityId ? parseInt(createJobDto.cityId) : null,
                     address: createJobDto.address,
                     jobType: createJobDto.jobType,
                     workMode: createJobDto.workMode,
@@ -774,7 +941,9 @@ let AdminService = class AdminService {
                     salaryNegotiable: createJobDto.salaryNegotiable || false,
                     skillsRequired: createJobDto.skillsRequired || [],
                     educationLevel: createJobDto.educationLevel,
-                    expiresAt: createJobDto.expiresAt ? new Date(createJobDto.expiresAt) : null,
+                    expiresAt: createJobDto.expiresAt
+                        ? new Date(createJobDto.expiresAt)
+                        : null,
                     status: createJobDto.status || 'DRAFT',
                 },
                 include: {
@@ -816,10 +985,27 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.ForbiddenException) {
+            console.log('error', error);
+            if (error instanceof common_1.ForbiddenException || error instanceof common_1.BadRequestException) {
                 throw error;
             }
-            throw new common_1.BadRequestException('Failed to create job');
+            if (error.code === 'P2003') {
+                if (error.meta?.constraint === 'jobs_companyId_fkey') {
+                    throw new common_1.BadRequestException('Invalid company ID provided');
+                }
+                if (error.meta?.constraint === 'jobs_cityId_fkey') {
+                    throw new common_1.BadRequestException('Invalid city ID provided');
+                }
+                if (error.meta?.constraint === 'jobs_postedById_fkey') {
+                    throw new common_1.BadRequestException('Invalid user ID for job posting');
+                }
+            }
+            if (error.code === 'P2002') {
+                if (error.meta?.target?.includes('slug')) {
+                    throw new common_1.BadRequestException('A job with this title already exists');
+                }
+            }
+            throw new common_1.BadRequestException(`Failed to create job: ${error.message || 'Unknown error'}`);
         }
     }
     async getJobById(jobId, currentUser) {
@@ -866,7 +1052,8 @@ let AdminService = class AdminService {
             return this.mapJobToResponse(job);
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to get job details');
@@ -921,7 +1108,9 @@ let AdminService = class AdminService {
             if (updateJobDto.educationLevel !== undefined)
                 updateData.educationLevel = updateJobDto.educationLevel;
             if (updateJobDto.expiresAt !== undefined) {
-                updateData.expiresAt = updateJobDto.expiresAt ? new Date(updateJobDto.expiresAt) : null;
+                updateData.expiresAt = updateJobDto.expiresAt
+                    ? new Date(updateJobDto.expiresAt)
+                    : null;
             }
             if (updateJobDto.status !== undefined)
                 updateData.status = updateJobDto.status;
@@ -967,7 +1156,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to update job');
@@ -995,7 +1185,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to delete job');
@@ -1024,11 +1215,15 @@ let AdminService = class AdminService {
             return {
                 success: true,
                 message: 'Job published successfully',
-                data: { status: updatedJob.status, publishedAt: updatedJob.publishedAt },
+                data: {
+                    status: updatedJob.status,
+                    publishedAt: updatedJob.publishedAt,
+                },
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to publish job');
@@ -1060,7 +1255,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to close job');
@@ -1092,7 +1288,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to archive job');
@@ -1136,7 +1333,7 @@ let AdminService = class AdminService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                applications: applications.map(app => ({
+                applications: applications.map((app) => ({
                     id: app.id,
                     status: app.status,
                     appliedAt: app.appliedAt,
@@ -1162,7 +1359,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to get job applications');
@@ -1188,7 +1386,10 @@ let AdminService = class AdminService {
                 this.prisma.jobApplication.count(),
                 this.prisma.job.aggregate({ _sum: { viewCount: true } }),
                 this.prisma.jobApplication.count({ where: { jobId } }),
-                this.prisma.job.findUnique({ where: { id: jobId }, select: { viewCount: true } }),
+                this.prisma.job.findUnique({
+                    where: { id: jobId },
+                    select: { viewCount: true },
+                }),
                 this.prisma.jobApplication.count({
                     where: {
                         jobId,
@@ -1213,7 +1414,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to get job statistics');
@@ -1252,22 +1454,24 @@ let AdminService = class AdminService {
             updatedAt: job.updatedAt,
             company: job.company,
             postedBy: job.postedBy,
-            location: job.city ? {
-                city: {
-                    id: job.city.id,
-                    name: job.city.name,
-                    state: {
-                        id: job.city.state.id,
-                        name: job.city.state.name,
-                        code: job.city.state.code,
-                        country: {
-                            id: job.city.state.country.id,
-                            name: job.city.state.country.name,
-                            code: job.city.state.country.code,
+            location: job.city
+                ? {
+                    city: {
+                        id: job.city.id,
+                        name: job.city.name,
+                        state: {
+                            id: job.city.state.id,
+                            name: job.city.state.name,
+                            code: job.city.state.code,
+                            country: {
+                                id: job.city.state.country.id,
+                                name: job.city.state.country.name,
+                                code: job.city.state.country.code,
+                            },
                         },
                     },
-                },
-            } : null,
+                }
+                : null,
         };
     }
     async getAllApplications(query, currentUser) {
@@ -1282,7 +1486,10 @@ let AdminService = class AdminService {
             if (query.jobTitle || query.companyName) {
                 whereClause.job = {};
                 if (query.jobTitle) {
-                    whereClause.job.title = { contains: query.jobTitle, mode: 'insensitive' };
+                    whereClause.job.title = {
+                        contains: query.jobTitle,
+                        mode: 'insensitive',
+                    };
                 }
                 if (query.companyName) {
                     whereClause.job.company = {
@@ -1293,8 +1500,12 @@ let AdminService = class AdminService {
             if (query.candidateName) {
                 whereClause.candidate = {
                     OR: [
-                        { firstName: { contains: query.candidateName, mode: 'insensitive' } },
-                        { lastName: { contains: query.candidateName, mode: 'insensitive' } },
+                        {
+                            firstName: { contains: query.candidateName, mode: 'insensitive' },
+                        },
+                        {
+                            lastName: { contains: query.candidateName, mode: 'insensitive' },
+                        },
                     ],
                 };
             }
@@ -1367,11 +1578,11 @@ let AdminService = class AdminService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                applications: applications.map(app => ({
-                    id: app.id,
-                    jobId: app.jobId,
-                    candidateId: app.candidateId,
-                    resumeId: app.resumeId || undefined,
+                applications: applications.map((app) => ({
+                    id: Number(app.id),
+                    jobId: Number(app.jobId),
+                    candidateId: Number(app.candidateId),
+                    resumeId: app.resumeId ? Number(app.resumeId) : undefined,
                     coverLetter: app.coverLetter || undefined,
                     status: app.status,
                     appliedAt: app.appliedAt,
@@ -1380,31 +1591,78 @@ let AdminService = class AdminService {
                     feedback: app.feedback || undefined,
                     updatedAt: app.updatedAt,
                     job: {
-                        id: app.job.id,
+                        id: Number(app.job.id),
                         title: app.job.title,
                         slug: app.job.slug,
                         description: app.job.description,
                         company: {
-                            id: app.job.company.id,
+                            id: Number(app.job.company.id),
                             name: app.job.company.name,
                             logo: app.job.company.logo || undefined,
                         },
-                        location: app.job.city ? {
-                            city: {
-                                id: app.job.city.id,
-                                name: app.job.city.name,
-                                state: {
-                                    id: app.job.city.state.id,
-                                    name: app.job.city.state.name,
-                                    code: app.job.city.state.code || undefined,
-                                    country: {
-                                        id: app.job.city.state.country.id,
-                                        name: app.job.city.state.country.name,
-                                        code: app.job.city.state.country.code,
+                        location: app.job.city
+                            ? {
+                                city: {
+                                    id: app.job.city.id,
+                                    name: app.job.city.name,
+                                    state_id: app.job.city.state_id,
+                                    state_code: app.job.city.state_code,
+                                    state_name: app.job.city.state_name,
+                                    country_id: app.job.city.country_id,
+                                    country_code: app.job.city.country_code,
+                                    country_name: app.job.city.country_name,
+                                    latitude: app.job.city.latitude,
+                                    longitude: app.job.city.longitude,
+                                    wikiDataId: app.job.city.wikiDataId,
+                                    isActive: app.job.city.isActive,
+                                    createdAt: app.job.city.createdAt,
+                                    updatedAt: app.job.city.updatedAt,
+                                    state: {
+                                        id: app.job.city.state.id,
+                                        name: app.job.city.state.name,
+                                        country_id: app.job.city.state.country_id,
+                                        country_code: app.job.city.state.country_code,
+                                        country_name: app.job.city.state.country_name,
+                                        iso2: app.job.city.state.iso2,
+                                        fips_code: app.job.city.state.fips_code,
+                                        type: app.job.city.state.type,
+                                        level: app.job.city.state.level,
+                                        parent_id: app.job.city.state.parent_id,
+                                        latitude: app.job.city.state.latitude,
+                                        longitude: app.job.city.state.longitude,
+                                        isActive: app.job.city.state.isActive,
+                                        createdAt: app.job.city.state.createdAt,
+                                        updatedAt: app.job.city.state.updatedAt,
+                                        country: app.job.city.state.country
+                                            ? {
+                                                id: app.job.city.state.country.id,
+                                                name: app.job.city.state.country.name,
+                                                iso3: app.job.city.state.country.iso3,
+                                                iso2: app.job.city.state.country.iso2,
+                                                numeric_code: app.job.city.state.country.numeric_code,
+                                                phonecode: app.job.city.state.country.phonecode,
+                                                capital: app.job.city.state.country.capital,
+                                                currency: app.job.city.state.country.currency,
+                                                currency_name: app.job.city.state.country.currency_name,
+                                                currency_symbol: app.job.city.state.country.currency_symbol,
+                                                tld: app.job.city.state.country.tld,
+                                                native: app.job.city.state.country.native,
+                                                region: app.job.city.state.country.region,
+                                                region_id: app.job.city.state.country.region_id,
+                                                subregion: app.job.city.state.country.subregion,
+                                                subregion_id: app.job.city.state.country.subregion_id,
+                                                nationality: app.job.city.state.country.nationality,
+                                                latitude: app.job.city.state.country.latitude,
+                                                longitude: app.job.city.state.country.longitude,
+                                                isActive: app.job.city.state.country.isActive,
+                                                createdAt: app.job.city.state.country.createdAt,
+                                                updatedAt: app.job.city.state.country.updatedAt,
+                                            }
+                                            : undefined,
                                     },
                                 },
-                            },
-                        } : undefined,
+                            }
+                            : undefined,
                     },
                     candidate: {
                         id: app.candidate.id,
@@ -1415,27 +1673,74 @@ let AdminService = class AdminService {
                         profilePicture: app.candidate.profilePicture || undefined,
                         currentTitle: app.candidate.currentTitle || undefined,
                         experienceYears: app.candidate.experienceYears || undefined,
-                        city: app.candidate.city ? {
-                            id: app.candidate.city.id,
-                            name: app.candidate.city.name,
-                            state: {
-                                id: app.candidate.city.state.id,
-                                name: app.candidate.city.state.name,
-                                code: app.candidate.city.state.code || undefined,
-                                country: {
-                                    id: app.candidate.city.state.country.id,
-                                    name: app.candidate.city.state.country.name,
-                                    code: app.candidate.city.state.country.code,
+                        city: app.candidate.city
+                            ? {
+                                id: app.candidate.city.id,
+                                name: app.candidate.city.name,
+                                state_id: app.candidate.city.state_id,
+                                state_code: app.candidate.city.state_code,
+                                state_name: app.candidate.city.state_name,
+                                country_id: app.candidate.city.country_id,
+                                country_code: app.candidate.city.country_code,
+                                country_name: app.candidate.city.country_name,
+                                latitude: app.candidate.city.latitude,
+                                longitude: app.candidate.city.longitude,
+                                wikiDataId: app.candidate.city.wikiDataId,
+                                isActive: app.candidate.city.isActive,
+                                createdAt: app.candidate.city.createdAt,
+                                updatedAt: app.candidate.city.updatedAt,
+                                state: {
+                                    id: app.candidate.city.state.id,
+                                    name: app.candidate.city.state.name,
+                                    country_id: app.candidate.city.state.country_id,
+                                    country_code: app.candidate.city.state.country_code,
+                                    country_name: app.candidate.city.state.country_name,
+                                    iso2: app.candidate.city.state.iso2,
+                                    fips_code: app.candidate.city.state.fips_code,
+                                    type: app.candidate.city.state.type,
+                                    latitude: app.candidate.city.state.latitude,
+                                    longitude: app.candidate.city.state.longitude,
+                                    isActive: app.candidate.city.state.isActive,
+                                    createdAt: app.candidate.city.state.createdAt,
+                                    updatedAt: app.candidate.city.state.updatedAt,
+                                    country: app.candidate.city.state.country
+                                        ? {
+                                            id: app.candidate.city.state.country.id,
+                                            name: app.candidate.city.state.country.name,
+                                            iso3: app.candidate.city.state.country.iso3,
+                                            iso2: app.candidate.city.state.country.iso2,
+                                            numeric_code: app.candidate.city.state.country.numeric_code,
+                                            phonecode: app.candidate.city.state.country.phonecode,
+                                            capital: app.candidate.city.state.country.capital,
+                                            currency: app.candidate.city.state.country.currency,
+                                            currency_name: app.candidate.city.state.country.currency_name,
+                                            currency_symbol: app.candidate.city.state.country.currency_symbol,
+                                            tld: app.candidate.city.state.country.tld,
+                                            native: app.candidate.city.state.country.native,
+                                            region: app.candidate.city.state.country.region,
+                                            region_id: app.candidate.city.state.country.region_id,
+                                            subregion: app.candidate.city.state.country.subregion,
+                                            subregion_id: app.candidate.city.state.country.subregion_id,
+                                            nationality: app.candidate.city.state.country.nationality,
+                                            latitude: app.candidate.city.state.country.latitude,
+                                            longitude: app.candidate.city.state.country.longitude,
+                                            isActive: app.candidate.city.state.country.isActive,
+                                            createdAt: app.candidate.city.state.country.createdAt,
+                                            updatedAt: app.candidate.city.state.country.updatedAt,
+                                        }
+                                        : undefined,
                                 },
-                            },
-                        } : undefined,
+                            }
+                            : undefined,
                     },
-                    resume: app.resume ? {
-                        id: app.resume.id,
-                        title: app.resume.title,
-                        fileName: app.resume.fileName,
-                        uploadedAt: app.resume.uploadedAt,
-                    } : undefined,
+                    resume: app.resume
+                        ? {
+                            id: Number(app.resume.id),
+                            title: app.resume.title,
+                            fileName: app.resume.fileName,
+                            uploadedAt: app.resume.uploadedAt,
+                        }
+                        : undefined,
                 })),
                 total,
                 page,
@@ -1507,10 +1812,10 @@ let AdminService = class AdminService {
                 throw new common_1.NotFoundException('Application not found');
             }
             return {
-                id: application.id,
-                jobId: application.jobId,
-                candidateId: application.candidateId,
-                resumeId: application.resumeId || undefined,
+                id: Number(application.id),
+                jobId: Number(application.jobId),
+                candidateId: Number(application.candidateId),
+                resumeId: application.resumeId ? Number(application.resumeId) : undefined,
                 coverLetter: application.coverLetter || undefined,
                 status: application.status,
                 appliedAt: application.appliedAt,
@@ -1519,31 +1824,76 @@ let AdminService = class AdminService {
                 feedback: application.feedback || undefined,
                 updatedAt: application.updatedAt,
                 job: {
-                    id: application.job.id,
+                    id: Number(application.job.id),
                     title: application.job.title,
                     slug: application.job.slug,
                     description: application.job.description,
                     company: {
-                        id: application.job.company.id,
+                        id: Number(application.job.company.id),
                         name: application.job.company.name,
                         logo: application.job.company.logo || undefined,
                     },
-                    location: application.job.city ? {
-                        city: {
-                            id: application.job.city.id,
-                            name: application.job.city.name,
-                            state: {
-                                id: application.job.city.state.id,
-                                name: application.job.city.state.name,
-                                code: application.job.city.state.code || undefined,
-                                country: {
-                                    id: application.job.city.state.country.id,
-                                    name: application.job.city.state.country.name,
-                                    code: application.job.city.state.country.code,
+                    location: application.job.city
+                        ? {
+                            city: {
+                                id: application.job.city.id,
+                                name: application.job.city.name,
+                                state_id: application.job.city.state_id,
+                                state_code: application.job.city.state_code,
+                                state_name: application.job.city.state_name,
+                                country_id: application.job.city.country_id,
+                                country_code: application.job.city.country_code,
+                                country_name: application.job.city.country_name,
+                                latitude: application.job.city.latitude,
+                                longitude: application.job.city.longitude,
+                                wikiDataId: application.job.city.wikiDataId,
+                                isActive: application.job.city.isActive,
+                                createdAt: application.job.city.createdAt,
+                                updatedAt: application.job.city.updatedAt,
+                                state: {
+                                    id: application.job.city.state.id,
+                                    name: application.job.city.state.name,
+                                    country_id: application.job.city.state.country_id,
+                                    country_code: application.job.city.state.country_code,
+                                    country_name: application.job.city.state.country_name,
+                                    iso2: application.job.city.state.iso2,
+                                    fips_code: application.job.city.state.fips_code,
+                                    type: application.job.city.state.type,
+                                    latitude: application.job.city.state.latitude,
+                                    longitude: application.job.city.state.longitude,
+                                    isActive: application.job.city.state.isActive,
+                                    createdAt: application.job.city.state.createdAt,
+                                    updatedAt: application.job.city.state.updatedAt,
+                                    country: application.job.city.state.country
+                                        ? {
+                                            id: application.job.city.state.country.id,
+                                            name: application.job.city.state.country.name,
+                                            iso3: application.job.city.state.country.iso3,
+                                            iso2: application.job.city.state.country.iso2,
+                                            numeric_code: application.job.city.state.country.numeric_code,
+                                            phonecode: application.job.city.state.country.phonecode,
+                                            capital: application.job.city.state.country.capital,
+                                            currency: application.job.city.state.country.currency,
+                                            currency_name: application.job.city.state.country.currency_name,
+                                            currency_symbol: application.job.city.state.country.currency_symbol,
+                                            tld: application.job.city.state.country.tld,
+                                            native: application.job.city.state.country.native,
+                                            region: application.job.city.state.country.region,
+                                            region_id: application.job.city.state.country.region_id,
+                                            subregion: application.job.city.state.country.subregion,
+                                            subregion_id: application.job.city.state.country.subregion_id,
+                                            nationality: application.job.city.state.country.nationality,
+                                            latitude: application.job.city.state.country.latitude,
+                                            longitude: application.job.city.state.country.longitude,
+                                            isActive: application.job.city.state.country.isActive,
+                                            createdAt: application.job.city.state.country.createdAt,
+                                            updatedAt: application.job.city.state.country.updatedAt,
+                                        }
+                                        : undefined,
                                 },
                             },
-                        },
-                    } : undefined,
+                        }
+                        : undefined,
                 },
                 candidate: {
                     id: application.candidate.id,
@@ -1554,27 +1904,74 @@ let AdminService = class AdminService {
                     profilePicture: application.candidate.profilePicture || undefined,
                     currentTitle: application.candidate.currentTitle || undefined,
                     experienceYears: application.candidate.experienceYears || undefined,
-                    city: application.candidate.city ? {
-                        id: application.candidate.city.id,
-                        name: application.candidate.city.name,
-                        state: {
-                            id: application.candidate.city.state.id,
-                            name: application.candidate.city.state.name,
-                            code: application.candidate.city.state.code || undefined,
-                            country: {
-                                id: application.candidate.city.state.country.id,
-                                name: application.candidate.city.state.country.name,
-                                code: application.candidate.city.state.country.code,
+                    city: application.candidate.city
+                        ? {
+                            id: application.candidate.city.id,
+                            name: application.candidate.city.name,
+                            state_id: application.candidate.city.state_id,
+                            state_code: application.candidate.city.state_code,
+                            state_name: application.candidate.city.state_name,
+                            country_id: application.candidate.city.country_id,
+                            country_code: application.candidate.city.country_code,
+                            country_name: application.candidate.city.country_name,
+                            latitude: application.candidate.city.latitude,
+                            longitude: application.candidate.city.longitude,
+                            wikiDataId: application.candidate.city.wikiDataId,
+                            isActive: application.candidate.city.isActive,
+                            createdAt: application.candidate.city.createdAt,
+                            updatedAt: application.candidate.city.updatedAt,
+                            state: {
+                                id: application.candidate.city.state.id,
+                                name: application.candidate.city.state.name,
+                                country_id: application.candidate.city.state.country_id,
+                                country_code: application.candidate.city.state.country_code,
+                                country_name: application.candidate.city.state.country_name,
+                                iso2: application.candidate.city.state.iso2,
+                                fips_code: application.candidate.city.state.fips_code,
+                                type: application.candidate.city.state.type,
+                                latitude: application.candidate.city.state.latitude,
+                                longitude: application.candidate.city.state.longitude,
+                                isActive: application.candidate.city.state.isActive,
+                                createdAt: application.candidate.city.state.createdAt,
+                                updatedAt: application.candidate.city.state.updatedAt,
+                                country: application.candidate.city.state.country
+                                    ? {
+                                        id: application.candidate.city.state.country.id,
+                                        name: application.candidate.city.state.country.name,
+                                        iso3: application.candidate.city.state.country.iso3,
+                                        iso2: application.candidate.city.state.country.iso2,
+                                        numeric_code: application.candidate.city.state.country.numeric_code,
+                                        phonecode: application.candidate.city.state.country.phonecode,
+                                        capital: application.candidate.city.state.country.capital,
+                                        currency: application.candidate.city.state.country.currency,
+                                        currency_name: application.candidate.city.state.country.currency_name,
+                                        currency_symbol: application.candidate.city.state.country.currency_symbol,
+                                        tld: application.candidate.city.state.country.tld,
+                                        native: application.candidate.city.state.country.native,
+                                        region: application.candidate.city.state.country.region,
+                                        region_id: application.candidate.city.state.country.region_id,
+                                        subregion: application.candidate.city.state.country.subregion,
+                                        subregion_id: application.candidate.city.state.country.subregion_id,
+                                        nationality: application.candidate.city.state.country.nationality,
+                                        latitude: application.candidate.city.state.country.latitude,
+                                        longitude: application.candidate.city.state.country.longitude,
+                                        isActive: application.candidate.city.state.country.isActive,
+                                        createdAt: application.candidate.city.state.country.createdAt,
+                                        updatedAt: application.candidate.city.state.country.updatedAt,
+                                    }
+                                    : undefined,
                             },
-                        },
-                    } : undefined,
+                        }
+                        : undefined,
                 },
-                resume: application.resume ? {
-                    id: application.resume.id,
-                    title: application.resume.title,
-                    fileName: application.resume.fileName,
-                    uploadedAt: application.resume.uploadedAt,
-                } : undefined,
+                resume: application.resume
+                    ? {
+                        id: Number(application.resume.id),
+                        title: application.resume.title,
+                        fileName: application.resume.fileName,
+                        uploadedAt: application.resume.uploadedAt,
+                    }
+                    : undefined,
             };
         }
         catch (error) {
@@ -1651,10 +2048,10 @@ let AdminService = class AdminService {
             });
             await this.logActivity(currentUser.id, client_1.LogAction.UPDATE, client_1.LogLevel.INFO, 'JobApplication', applicationId, `Application status updated to ${updateDto.status}`);
             return {
-                id: updatedApplication.id,
-                jobId: updatedApplication.jobId,
-                candidateId: updatedApplication.candidateId,
-                resumeId: updatedApplication.resumeId || undefined,
+                id: Number(updatedApplication.id),
+                jobId: Number(updatedApplication.jobId),
+                candidateId: Number(updatedApplication.candidateId),
+                resumeId: updatedApplication.resumeId ? Number(updatedApplication.resumeId) : undefined,
                 coverLetter: updatedApplication.coverLetter || undefined,
                 status: updatedApplication.status,
                 appliedAt: updatedApplication.appliedAt,
@@ -1663,31 +2060,76 @@ let AdminService = class AdminService {
                 feedback: updatedApplication.feedback || undefined,
                 updatedAt: updatedApplication.updatedAt,
                 job: {
-                    id: updatedApplication.job.id,
+                    id: Number(updatedApplication.job.id),
                     title: updatedApplication.job.title,
                     slug: updatedApplication.job.slug,
                     description: updatedApplication.job.description,
                     company: {
-                        id: updatedApplication.job.company.id,
+                        id: Number(updatedApplication.job.company.id),
                         name: updatedApplication.job.company.name,
                         logo: updatedApplication.job.company.logo || undefined,
                     },
-                    location: updatedApplication.job.city ? {
-                        city: {
-                            id: updatedApplication.job.city.id,
-                            name: updatedApplication.job.city.name,
-                            state: {
-                                id: updatedApplication.job.city.state.id,
-                                name: updatedApplication.job.city.state.name,
-                                code: updatedApplication.job.city.state.code || undefined,
-                                country: {
-                                    id: updatedApplication.job.city.state.country.id,
-                                    name: updatedApplication.job.city.state.country.name,
-                                    code: updatedApplication.job.city.state.country.code,
+                    location: updatedApplication.job.city
+                        ? {
+                            city: {
+                                id: updatedApplication.job.city.id,
+                                name: updatedApplication.job.city.name,
+                                state_id: updatedApplication.job.city.state_id,
+                                state_code: updatedApplication.job.city.state_code,
+                                state_name: updatedApplication.job.city.state_name,
+                                country_id: updatedApplication.job.city.country_id,
+                                country_code: updatedApplication.job.city.country_code,
+                                country_name: updatedApplication.job.city.country_name,
+                                latitude: updatedApplication.job.city.latitude,
+                                longitude: updatedApplication.job.city.longitude,
+                                wikiDataId: updatedApplication.job.city.wikiDataId,
+                                isActive: updatedApplication.job.city.isActive,
+                                createdAt: updatedApplication.job.city.createdAt,
+                                updatedAt: updatedApplication.job.city.updatedAt,
+                                state: {
+                                    id: updatedApplication.job.city.state.id,
+                                    name: updatedApplication.job.city.state.name,
+                                    country_id: updatedApplication.job.city.state.country_id,
+                                    country_code: updatedApplication.job.city.state.country_code,
+                                    country_name: updatedApplication.job.city.state.country_name,
+                                    iso2: updatedApplication.job.city.state.iso2,
+                                    fips_code: updatedApplication.job.city.state.fips_code,
+                                    type: updatedApplication.job.city.state.type,
+                                    latitude: updatedApplication.job.city.state.latitude,
+                                    longitude: updatedApplication.job.city.state.longitude,
+                                    isActive: updatedApplication.job.city.state.isActive,
+                                    createdAt: updatedApplication.job.city.state.createdAt,
+                                    updatedAt: updatedApplication.job.city.state.updatedAt,
+                                    country: updatedApplication.job.city.state.country
+                                        ? {
+                                            id: updatedApplication.job.city.state.country.id,
+                                            name: updatedApplication.job.city.state.country.name,
+                                            iso3: updatedApplication.job.city.state.country.iso3,
+                                            iso2: updatedApplication.job.city.state.country.iso2,
+                                            numeric_code: updatedApplication.job.city.state.country.numeric_code,
+                                            phonecode: updatedApplication.job.city.state.country.phonecode,
+                                            capital: updatedApplication.job.city.state.country.capital,
+                                            currency: updatedApplication.job.city.state.country.currency,
+                                            currency_name: updatedApplication.job.city.state.country.currency_name,
+                                            currency_symbol: updatedApplication.job.city.state.country.currency_symbol,
+                                            tld: updatedApplication.job.city.state.country.tld,
+                                            native: updatedApplication.job.city.state.country.native,
+                                            region: updatedApplication.job.city.state.country.region,
+                                            region_id: updatedApplication.job.city.state.country.region_id,
+                                            subregion: updatedApplication.job.city.state.country.subregion,
+                                            subregion_id: updatedApplication.job.city.state.country.subregion_id,
+                                            nationality: updatedApplication.job.city.state.country.nationality,
+                                            latitude: updatedApplication.job.city.state.country.latitude,
+                                            longitude: updatedApplication.job.city.state.country.longitude,
+                                            isActive: updatedApplication.job.city.state.country.isActive,
+                                            createdAt: updatedApplication.job.city.state.country.createdAt,
+                                            updatedAt: updatedApplication.job.city.state.country.updatedAt,
+                                        }
+                                        : undefined,
                                 },
                             },
-                        },
-                    } : undefined,
+                        }
+                        : undefined,
                 },
                 candidate: {
                     id: updatedApplication.candidate.id,
@@ -1698,27 +2140,74 @@ let AdminService = class AdminService {
                     profilePicture: updatedApplication.candidate.profilePicture || undefined,
                     currentTitle: updatedApplication.candidate.currentTitle || undefined,
                     experienceYears: updatedApplication.candidate.experienceYears || undefined,
-                    city: updatedApplication.candidate.city ? {
-                        id: updatedApplication.candidate.city.id,
-                        name: updatedApplication.candidate.city.name,
-                        state: {
-                            id: updatedApplication.candidate.city.state.id,
-                            name: updatedApplication.candidate.city.state.name,
-                            code: updatedApplication.candidate.city.state.code || undefined,
-                            country: {
-                                id: updatedApplication.candidate.city.state.country.id,
-                                name: updatedApplication.candidate.city.state.country.name,
-                                code: updatedApplication.candidate.city.state.country.code,
+                    city: updatedApplication.candidate.city
+                        ? {
+                            id: updatedApplication.candidate.city.id,
+                            name: updatedApplication.candidate.city.name,
+                            state_id: updatedApplication.candidate.city.state_id,
+                            state_code: updatedApplication.candidate.city.state_code,
+                            state_name: updatedApplication.candidate.city.state_name,
+                            country_id: updatedApplication.candidate.city.country_id,
+                            country_code: updatedApplication.candidate.city.country_code,
+                            country_name: updatedApplication.candidate.city.country_name,
+                            latitude: updatedApplication.candidate.city.latitude,
+                            longitude: updatedApplication.candidate.city.longitude,
+                            wikiDataId: updatedApplication.candidate.city.wikiDataId,
+                            isActive: updatedApplication.candidate.city.isActive,
+                            createdAt: updatedApplication.candidate.city.createdAt,
+                            updatedAt: updatedApplication.candidate.city.updatedAt,
+                            state: {
+                                id: updatedApplication.candidate.city.state.id,
+                                name: updatedApplication.candidate.city.state.name,
+                                country_id: updatedApplication.candidate.city.state.country_id,
+                                country_code: updatedApplication.candidate.city.state.country_code,
+                                country_name: updatedApplication.candidate.city.state.country_name,
+                                iso2: updatedApplication.candidate.city.state.iso2,
+                                fips_code: updatedApplication.candidate.city.state.fips_code,
+                                type: updatedApplication.candidate.city.state.type,
+                                latitude: updatedApplication.candidate.city.state.latitude,
+                                longitude: updatedApplication.candidate.city.state.longitude,
+                                isActive: updatedApplication.candidate.city.state.isActive,
+                                createdAt: updatedApplication.candidate.city.state.createdAt,
+                                updatedAt: updatedApplication.candidate.city.state.updatedAt,
+                                country: updatedApplication.candidate.city.state.country
+                                    ? {
+                                        id: updatedApplication.candidate.city.state.country.id,
+                                        name: updatedApplication.candidate.city.state.country.name,
+                                        iso3: updatedApplication.candidate.city.state.country.iso3,
+                                        iso2: updatedApplication.candidate.city.state.country.iso2,
+                                        numeric_code: updatedApplication.candidate.city.state.country.numeric_code,
+                                        phonecode: updatedApplication.candidate.city.state.country.phonecode,
+                                        capital: updatedApplication.candidate.city.state.country.capital,
+                                        currency: updatedApplication.candidate.city.state.country.currency,
+                                        currency_name: updatedApplication.candidate.city.state.country.currency_name,
+                                        currency_symbol: updatedApplication.candidate.city.state.country.currency_symbol,
+                                        tld: updatedApplication.candidate.city.state.country.tld,
+                                        native: updatedApplication.candidate.city.state.country.native,
+                                        region: updatedApplication.candidate.city.state.country.region,
+                                        region_id: updatedApplication.candidate.city.state.country.region_id,
+                                        subregion: updatedApplication.candidate.city.state.country.subregion,
+                                        subregion_id: updatedApplication.candidate.city.state.country.subregion_id,
+                                        nationality: updatedApplication.candidate.city.state.country.nationality,
+                                        latitude: updatedApplication.candidate.city.state.country.latitude,
+                                        longitude: updatedApplication.candidate.city.state.country.longitude,
+                                        isActive: updatedApplication.candidate.city.state.country.isActive,
+                                        createdAt: updatedApplication.candidate.city.state.country.createdAt,
+                                        updatedAt: updatedApplication.candidate.city.state.country.updatedAt,
+                                    }
+                                    : undefined,
                             },
-                        },
-                    } : undefined,
+                        }
+                        : undefined,
                 },
-                resume: updatedApplication.resume ? {
-                    id: updatedApplication.resume.id,
-                    title: updatedApplication.resume.title,
-                    fileName: updatedApplication.resume.fileName,
-                    uploadedAt: updatedApplication.resume.uploadedAt,
-                } : undefined,
+                resume: updatedApplication.resume
+                    ? {
+                        id: Number(updatedApplication.resume.id),
+                        title: updatedApplication.resume.title,
+                        fileName: updatedApplication.resume.fileName,
+                        uploadedAt: updatedApplication.resume.uploadedAt,
+                    }
+                    : undefined,
             };
         }
         catch (error) {
@@ -1795,10 +2284,10 @@ let AdminService = class AdminService {
             });
             await this.logActivity(currentUser.id, client_1.LogAction.UPDATE, client_1.LogLevel.INFO, 'JobApplication', applicationId, 'Feedback added to application');
             return {
-                id: updatedApplication.id,
-                jobId: updatedApplication.jobId,
-                candidateId: updatedApplication.candidateId,
-                resumeId: updatedApplication.resumeId || undefined,
+                id: Number(updatedApplication.id),
+                jobId: Number(updatedApplication.jobId),
+                candidateId: Number(updatedApplication.candidateId),
+                resumeId: updatedApplication.resumeId ? Number(updatedApplication.resumeId) : undefined,
                 coverLetter: updatedApplication.coverLetter || undefined,
                 status: updatedApplication.status,
                 appliedAt: updatedApplication.appliedAt,
@@ -1807,31 +2296,76 @@ let AdminService = class AdminService {
                 feedback: updatedApplication.feedback || undefined,
                 updatedAt: updatedApplication.updatedAt,
                 job: {
-                    id: updatedApplication.job.id,
+                    id: Number(updatedApplication.job.id),
                     title: updatedApplication.job.title,
                     slug: updatedApplication.job.slug,
                     description: updatedApplication.job.description,
                     company: {
-                        id: updatedApplication.job.company.id,
+                        id: Number(updatedApplication.job.company.id),
                         name: updatedApplication.job.company.name,
                         logo: updatedApplication.job.company.logo || undefined,
                     },
-                    location: updatedApplication.job.city ? {
-                        city: {
-                            id: updatedApplication.job.city.id,
-                            name: updatedApplication.job.city.name,
-                            state: {
-                                id: updatedApplication.job.city.state.id,
-                                name: updatedApplication.job.city.state.name,
-                                code: updatedApplication.job.city.state.code || undefined,
-                                country: {
-                                    id: updatedApplication.job.city.state.country.id,
-                                    name: updatedApplication.job.city.state.country.name,
-                                    code: updatedApplication.job.city.state.country.code,
+                    location: updatedApplication.job.city
+                        ? {
+                            city: {
+                                id: updatedApplication.job.city.id,
+                                name: updatedApplication.job.city.name,
+                                state_id: updatedApplication.job.city.state_id,
+                                state_code: updatedApplication.job.city.state_code,
+                                state_name: updatedApplication.job.city.state_name,
+                                country_id: updatedApplication.job.city.country_id,
+                                country_code: updatedApplication.job.city.country_code,
+                                country_name: updatedApplication.job.city.country_name,
+                                latitude: updatedApplication.job.city.latitude,
+                                longitude: updatedApplication.job.city.longitude,
+                                wikiDataId: updatedApplication.job.city.wikiDataId,
+                                isActive: updatedApplication.job.city.isActive,
+                                createdAt: updatedApplication.job.city.createdAt,
+                                updatedAt: updatedApplication.job.city.updatedAt,
+                                state: {
+                                    id: updatedApplication.job.city.state.id,
+                                    name: updatedApplication.job.city.state.name,
+                                    country_id: updatedApplication.job.city.state.country_id,
+                                    country_code: updatedApplication.job.city.state.country_code,
+                                    country_name: updatedApplication.job.city.state.country_name,
+                                    iso2: updatedApplication.job.city.state.iso2,
+                                    fips_code: updatedApplication.job.city.state.fips_code,
+                                    type: updatedApplication.job.city.state.type,
+                                    latitude: updatedApplication.job.city.state.latitude,
+                                    longitude: updatedApplication.job.city.state.longitude,
+                                    isActive: updatedApplication.job.city.state.isActive,
+                                    createdAt: updatedApplication.job.city.state.createdAt,
+                                    updatedAt: updatedApplication.job.city.state.updatedAt,
+                                    country: updatedApplication.job.city.state.country
+                                        ? {
+                                            id: updatedApplication.job.city.state.country.id,
+                                            name: updatedApplication.job.city.state.country.name,
+                                            iso3: updatedApplication.job.city.state.country.iso3,
+                                            iso2: updatedApplication.job.city.state.country.iso2,
+                                            numeric_code: updatedApplication.job.city.state.country.numeric_code,
+                                            phonecode: updatedApplication.job.city.state.country.phonecode,
+                                            capital: updatedApplication.job.city.state.country.capital,
+                                            currency: updatedApplication.job.city.state.country.currency,
+                                            currency_name: updatedApplication.job.city.state.country.currency_name,
+                                            currency_symbol: updatedApplication.job.city.state.country.currency_symbol,
+                                            tld: updatedApplication.job.city.state.country.tld,
+                                            native: updatedApplication.job.city.state.country.native,
+                                            region: updatedApplication.job.city.state.country.region,
+                                            region_id: updatedApplication.job.city.state.country.region_id,
+                                            subregion: updatedApplication.job.city.state.country.subregion,
+                                            subregion_id: updatedApplication.job.city.state.country.subregion_id,
+                                            nationality: updatedApplication.job.city.state.country.nationality,
+                                            latitude: updatedApplication.job.city.state.country.latitude,
+                                            longitude: updatedApplication.job.city.state.country.longitude,
+                                            isActive: updatedApplication.job.city.state.country.isActive,
+                                            createdAt: updatedApplication.job.city.state.country.createdAt,
+                                            updatedAt: updatedApplication.job.city.state.country.updatedAt,
+                                        }
+                                        : undefined,
                                 },
                             },
-                        },
-                    } : undefined,
+                        }
+                        : undefined,
                 },
                 candidate: {
                     id: updatedApplication.candidate.id,
@@ -1842,27 +2376,74 @@ let AdminService = class AdminService {
                     profilePicture: updatedApplication.candidate.profilePicture || undefined,
                     currentTitle: updatedApplication.candidate.currentTitle || undefined,
                     experienceYears: updatedApplication.candidate.experienceYears || undefined,
-                    city: updatedApplication.candidate.city ? {
-                        id: updatedApplication.candidate.city.id,
-                        name: updatedApplication.candidate.city.name,
-                        state: {
-                            id: updatedApplication.candidate.city.state.id,
-                            name: updatedApplication.candidate.city.state.name,
-                            code: updatedApplication.candidate.city.state.code || undefined,
-                            country: {
-                                id: updatedApplication.candidate.city.state.country.id,
-                                name: updatedApplication.candidate.city.state.country.name,
-                                code: updatedApplication.candidate.city.state.country.code,
+                    city: updatedApplication.candidate.city
+                        ? {
+                            id: updatedApplication.candidate.city.id,
+                            name: updatedApplication.candidate.city.name,
+                            state_id: updatedApplication.candidate.city.state_id,
+                            state_code: updatedApplication.candidate.city.state_code,
+                            state_name: updatedApplication.candidate.city.state_name,
+                            country_id: updatedApplication.candidate.city.country_id,
+                            country_code: updatedApplication.candidate.city.country_code,
+                            country_name: updatedApplication.candidate.city.country_name,
+                            latitude: updatedApplication.candidate.city.latitude,
+                            longitude: updatedApplication.candidate.city.longitude,
+                            wikiDataId: updatedApplication.candidate.city.wikiDataId,
+                            isActive: updatedApplication.candidate.city.isActive,
+                            createdAt: updatedApplication.candidate.city.createdAt,
+                            updatedAt: updatedApplication.candidate.city.updatedAt,
+                            state: {
+                                id: updatedApplication.candidate.city.state.id,
+                                name: updatedApplication.candidate.city.state.name,
+                                country_id: updatedApplication.candidate.city.state.country_id,
+                                country_code: updatedApplication.candidate.city.state.country_code,
+                                country_name: updatedApplication.candidate.city.state.country_name,
+                                iso2: updatedApplication.candidate.city.state.iso2,
+                                fips_code: updatedApplication.candidate.city.state.fips_code,
+                                type: updatedApplication.candidate.city.state.type,
+                                latitude: updatedApplication.candidate.city.state.latitude,
+                                longitude: updatedApplication.candidate.city.state.longitude,
+                                isActive: updatedApplication.candidate.city.state.isActive,
+                                createdAt: updatedApplication.candidate.city.state.createdAt,
+                                updatedAt: updatedApplication.candidate.city.state.updatedAt,
+                                country: updatedApplication.candidate.city.state.country
+                                    ? {
+                                        id: updatedApplication.candidate.city.state.country.id,
+                                        name: updatedApplication.candidate.city.state.country.name,
+                                        iso3: updatedApplication.candidate.city.state.country.iso3,
+                                        iso2: updatedApplication.candidate.city.state.country.iso2,
+                                        numeric_code: updatedApplication.candidate.city.state.country.numeric_code,
+                                        phonecode: updatedApplication.candidate.city.state.country.phonecode,
+                                        capital: updatedApplication.candidate.city.state.country.capital,
+                                        currency: updatedApplication.candidate.city.state.country.currency,
+                                        currency_name: updatedApplication.candidate.city.state.country.currency_name,
+                                        currency_symbol: updatedApplication.candidate.city.state.country.currency_symbol,
+                                        tld: updatedApplication.candidate.city.state.country.tld,
+                                        native: updatedApplication.candidate.city.state.country.native,
+                                        region: updatedApplication.candidate.city.state.country.region,
+                                        region_id: updatedApplication.candidate.city.state.country.region_id,
+                                        subregion: updatedApplication.candidate.city.state.country.subregion,
+                                        subregion_id: updatedApplication.candidate.city.state.country.subregion_id,
+                                        nationality: updatedApplication.candidate.city.state.country.nationality,
+                                        latitude: updatedApplication.candidate.city.state.country.latitude,
+                                        longitude: updatedApplication.candidate.city.state.country.longitude,
+                                        isActive: updatedApplication.candidate.city.state.country.isActive,
+                                        createdAt: updatedApplication.candidate.city.state.country.createdAt,
+                                        updatedAt: updatedApplication.candidate.city.state.country.updatedAt,
+                                    }
+                                    : undefined,
                             },
-                        },
-                    } : undefined,
+                        }
+                        : undefined,
                 },
-                resume: updatedApplication.resume ? {
-                    id: updatedApplication.resume.id,
-                    title: updatedApplication.resume.title,
-                    fileName: updatedApplication.resume.fileName,
-                    uploadedAt: updatedApplication.resume.uploadedAt,
-                } : undefined,
+                resume: updatedApplication.resume
+                    ? {
+                        id: Number(updatedApplication.resume.id),
+                        title: updatedApplication.resume.title,
+                        fileName: updatedApplication.resume.fileName,
+                        uploadedAt: updatedApplication.resume.uploadedAt,
+                    }
+                    : undefined,
             };
         }
         catch (error) {
@@ -1874,22 +2455,24 @@ let AdminService = class AdminService {
     }
     async getApplicationStats(currentUser) {
         try {
-            const [total, byStatus, byJobType, byExperienceLevel, recentApplications, averageResponseTime] = await Promise.all([
+            const [total, byStatus, byJobType, byExperienceLevel, recentApplications, averageResponseTime,] = await Promise.all([
                 this.prisma.jobApplication.count(),
                 this.prisma.jobApplication.groupBy({
                     by: ['status'],
                     _count: { status: true },
                 }),
-                this.prisma.jobApplication.groupBy({
+                this.prisma.jobApplication
+                    .groupBy({
                     by: ['jobId'],
                     _count: { jobId: true },
-                }).then(async (result) => {
-                    const jobIds = result.map(r => r.jobId);
+                })
+                    .then(async (result) => {
+                    const jobIds = result.map((r) => r.jobId);
                     const jobs = await this.prisma.job.findMany({
                         where: { id: { in: jobIds } },
                         select: { id: true, jobType: true },
                     });
-                    const jobTypeMap = new Map(jobs.map(job => [job.id, job.jobType]));
+                    const jobTypeMap = new Map(jobs.map((job) => [job.id, job.jobType]));
                     const byJobType = {
                         FULL_TIME: 0,
                         PART_TIME: 0,
@@ -1897,7 +2480,7 @@ let AdminService = class AdminService {
                         INTERNSHIP: 0,
                         FREELANCE: 0,
                     };
-                    result.forEach(r => {
+                    result.forEach((r) => {
                         const jobType = jobTypeMap.get(r.jobId);
                         if (jobType && byJobType.hasOwnProperty(jobType)) {
                             byJobType[jobType] += r._count.jobId;
@@ -1905,25 +2488,28 @@ let AdminService = class AdminService {
                     });
                     return byJobType;
                 }),
-                this.prisma.jobApplication.groupBy({
+                this.prisma.jobApplication
+                    .groupBy({
                     by: ['jobId'],
                     _count: { jobId: true },
-                }).then(async (result) => {
-                    const jobIds = result.map(r => r.jobId);
+                })
+                    .then(async (result) => {
+                    const jobIds = result.map((r) => r.jobId);
                     const jobs = await this.prisma.job.findMany({
                         where: { id: { in: jobIds } },
                         select: { id: true, experienceLevel: true },
                     });
-                    const experienceLevelMap = new Map(jobs.map(job => [job.id, job.experienceLevel]));
+                    const experienceLevelMap = new Map(jobs.map((job) => [job.id, job.experienceLevel]));
                     const byExperienceLevel = {
                         ENTRY_LEVEL: 0,
                         MID_LEVEL: 0,
                         SENIOR_LEVEL: 0,
                         EXECUTIVE: 0,
                     };
-                    result.forEach(r => {
+                    result.forEach((r) => {
                         const experienceLevel = experienceLevelMap.get(r.jobId);
-                        if (experienceLevel && byExperienceLevel.hasOwnProperty(experienceLevel)) {
+                        if (experienceLevel &&
+                            byExperienceLevel.hasOwnProperty(experienceLevel)) {
                             byExperienceLevel[experienceLevel] += r._count.jobId;
                         }
                     });
@@ -1936,7 +2522,8 @@ let AdminService = class AdminService {
                         },
                     },
                 }),
-                this.prisma.jobApplication.findMany({
+                this.prisma.jobApplication
+                    .findMany({
                     where: {
                         reviewedAt: { not: null },
                     },
@@ -1944,11 +2531,13 @@ let AdminService = class AdminService {
                         appliedAt: true,
                         reviewedAt: true,
                     },
-                }).then((applications) => {
+                })
+                    .then((applications) => {
                     if (applications.length === 0)
                         return 0;
                     const totalDays = applications.reduce((sum, app) => {
-                        const days = (app.reviewedAt.getTime() - app.appliedAt.getTime()) / (1000 * 60 * 60 * 24);
+                        const days = (app.reviewedAt.getTime() - app.appliedAt.getTime()) /
+                            (1000 * 60 * 60 * 24);
                         return sum + days;
                     }, 0);
                     return totalDays / applications.length;
@@ -1963,7 +2552,7 @@ let AdminService = class AdminService {
                 REJECTED: 0,
                 WITHDRAWN: 0,
             };
-            byStatus.forEach(status => {
+            byStatus.forEach((status) => {
                 if (statusData.hasOwnProperty(status.status)) {
                     statusData[status.status] = status._count.status;
                 }
@@ -2042,7 +2631,10 @@ let AdminService = class AdminService {
             if (exportQuery.jobTitle || exportQuery.companyName) {
                 whereClause.job = {};
                 if (exportQuery.jobTitle) {
-                    whereClause.job.title = { contains: exportQuery.jobTitle, mode: 'insensitive' };
+                    whereClause.job.title = {
+                        contains: exportQuery.jobTitle,
+                        mode: 'insensitive',
+                    };
                 }
                 if (exportQuery.companyName) {
                     whereClause.job.company = {
@@ -2053,8 +2645,18 @@ let AdminService = class AdminService {
             if (exportQuery.candidateName) {
                 whereClause.candidate = {
                     OR: [
-                        { firstName: { contains: exportQuery.candidateName, mode: 'insensitive' } },
-                        { lastName: { contains: exportQuery.candidateName, mode: 'insensitive' } },
+                        {
+                            firstName: {
+                                contains: exportQuery.candidateName,
+                                mode: 'insensitive',
+                            },
+                        },
+                        {
+                            lastName: {
+                                contains: exportQuery.candidateName,
+                                mode: 'insensitive',
+                            },
+                        },
                     ],
                 };
             }
@@ -2111,19 +2713,23 @@ let AdminService = class AdminService {
                 },
                 orderBy: { appliedAt: 'desc' },
             });
-            const exportData = applications.map(app => ({
+            const exportData = applications.map((app) => ({
                 'Application ID': app.id,
                 'Job Title': app.job.title,
-                'Company': app.job.company.name,
+                Company: app.job.company.name,
                 'Candidate Name': `${app.candidate.firstName} ${app.candidate.lastName}`,
                 'Candidate Email': app.candidate.user.email,
                 'Candidate Phone': app.candidate.user.phone || '',
-                'Status': app.status,
+                Status: app.status,
                 'Applied Date': app.appliedAt.toISOString().split('T')[0],
-                'Reviewed Date': app.reviewedAt ? app.reviewedAt.toISOString().split('T')[0] : '',
+                'Reviewed Date': app.reviewedAt
+                    ? app.reviewedAt.toISOString().split('T')[0]
+                    : '',
                 'Cover Letter': app.coverLetter || '',
-                'Feedback': app.feedback || '',
-                'Location': app.job.city ? `${app.job.city.name}, ${app.job.city.state.name}, ${app.job.city.state.country.name}` : '',
+                Feedback: app.feedback || '',
+                Location: app.job.city && app.job.city.state && app.job.city.state.country
+                    ? `${app.job.city.name}, ${app.job.city.state.name}, ${app.job.city.state.country.name}`
+                    : '',
                 'Job Type': app.job.jobType,
                 'Experience Level': app.job.experienceLevel,
                 'Work Mode': app.job.workMode,
@@ -2180,12 +2786,14 @@ let AdminService = class AdminService {
                 where.OR = [
                     { title: { contains: query.search, mode: 'insensitive' } },
                     { fileName: { contains: query.search, mode: 'insensitive' } },
-                    { candidate: {
+                    {
+                        candidate: {
                             OR: [
                                 { firstName: { contains: query.search, mode: 'insensitive' } },
-                                { lastName: { contains: query.search, mode: 'insensitive' } }
-                            ]
-                        } }
+                                { lastName: { contains: query.search, mode: 'insensitive' } },
+                            ],
+                        },
+                    },
                 ];
             }
             const orderBy = {};
@@ -2218,7 +2826,7 @@ let AdminService = class AdminService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                resumes: resumes.map(resume => ({
+                resumes: resumes.map((resume) => ({
                     id: resume.id,
                     candidateId: resume.candidateId,
                     title: resume.title,
@@ -2441,20 +3049,21 @@ let AdminService = class AdminService {
     }
     async sendNotification(sendNotificationDto, currentUser) {
         try {
-            const { userIds, type, title, message, data, expiresAt, sendEmail, sendPush, sendSms } = sendNotificationDto;
-            if (currentUser.role !== client_1.UserRole.ADMIN && currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
+            const { userIds, type, title, message, data, expiresAt, sendEmail, sendPush, sendSms, } = sendNotificationDto;
+            if (currentUser.role !== client_1.UserRole.ADMIN &&
+                currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
                 throw new common_1.ForbiddenException('Only admins can send notifications');
             }
             const existingUsers = await this.prisma.user.findMany({
                 where: { id: { in: userIds } },
                 select: { id: true },
             });
-            const validUserIds = existingUsers.map(user => user.id);
-            const invalidUserIds = userIds.filter(id => !validUserIds.includes(id));
+            const validUserIds = existingUsers.map((user) => user.id);
+            const invalidUserIds = userIds.filter((id) => !validUserIds.includes(id));
             if (validUserIds.length === 0) {
                 throw new common_1.BadRequestException('No valid users found to send notifications to');
             }
-            const notificationsData = validUserIds.map(userId => ({
+            const notificationsData = validUserIds.map((userId) => ({
                 userId,
                 type,
                 title,
@@ -2478,7 +3087,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.BadRequestException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.BadRequestException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to send notifications');
@@ -2486,8 +3096,9 @@ let AdminService = class AdminService {
     }
     async broadcastNotification(broadcastNotificationDto, currentUser) {
         try {
-            const { userIds, roleFilters, excludeUserIds, type, title, message, data, expiresAt, sendEmail, sendPush, sendSms } = broadcastNotificationDto;
-            if (currentUser.role !== client_1.UserRole.ADMIN && currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
+            const { userIds, roleFilters, excludeUserIds, type, title, message, data, expiresAt, sendEmail, sendPush, sendSms, } = broadcastNotificationDto;
+            if (currentUser.role !== client_1.UserRole.ADMIN &&
+                currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
                 throw new common_1.ForbiddenException('Only admins can broadcast notifications');
             }
             const whereClause = {};
@@ -2498,7 +3109,9 @@ let AdminService = class AdminService {
                 whereClause.role = { in: roleFilters };
             }
             if (excludeUserIds && excludeUserIds.length > 0) {
-                if (whereClause.id && typeof whereClause.id === 'object' && 'in' in whereClause.id) {
+                if (whereClause.id &&
+                    typeof whereClause.id === 'object' &&
+                    'in' in whereClause.id) {
                     whereClause.id = {
                         in: whereClause.id.in,
                         notIn: excludeUserIds,
@@ -2526,7 +3139,7 @@ let AdminService = class AdminService {
                 where: whereClause,
                 select: { id: true },
             });
-            const notificationsData = users.map(user => ({
+            const notificationsData = users.map((user) => ({
                 userId: user.id,
                 type,
                 title,
@@ -2537,7 +3150,12 @@ let AdminService = class AdminService {
             const createdNotifications = await this.prisma.notification.createMany({
                 data: notificationsData,
             });
-            await this.logActivity(currentUser.id, client_1.LogAction.CREATE, client_1.LogLevel.INFO, 'Notification', 'broadcast', `Broadcasted ${type} notification to ${users.length} users`, { type, title, totalUsers: users.length, filters: { roleFilters, excludeUserIds } });
+            await this.logActivity(currentUser.id, client_1.LogAction.CREATE, client_1.LogLevel.INFO, 'Notification', 'broadcast', `Broadcasted ${type} notification to ${users.length} users`, {
+                type,
+                title,
+                totalUsers: users.length,
+                filters: { roleFilters, excludeUserIds },
+            });
             return {
                 message: `Broadcast notification sent successfully to ${users.length} users`,
                 notificationsSent: users.length,
@@ -2549,7 +3167,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.BadRequestException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.BadRequestException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to broadcast notifications');
@@ -2557,7 +3176,8 @@ let AdminService = class AdminService {
     }
     async getNotificationTemplates(query, currentUser) {
         try {
-            if (currentUser.role !== client_1.UserRole.ADMIN && currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
+            if (currentUser.role !== client_1.UserRole.ADMIN &&
+                currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
                 throw new common_1.ForbiddenException('Only admins can view notification templates');
             }
             const { search, type, isActive, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc', } = query;
@@ -2587,7 +3207,7 @@ let AdminService = class AdminService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                templates: templates.map(template => ({
+                templates: templates.map((template) => ({
                     id: template.id,
                     name: template.name,
                     description: template.description ?? undefined,
@@ -2615,8 +3235,9 @@ let AdminService = class AdminService {
     }
     async createNotificationTemplate(createTemplateDto, currentUser) {
         try {
-            const { name, description, type, title, message, defaultData, variables, isActive = true } = createTemplateDto;
-            if (currentUser.role !== client_1.UserRole.ADMIN && currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
+            const { name, description, type, title, message, defaultData, variables, isActive = true, } = createTemplateDto;
+            if (currentUser.role !== client_1.UserRole.ADMIN &&
+                currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
                 throw new common_1.ForbiddenException('Only admins can create notification templates');
             }
             const existingTemplate = await this.prisma.notificationTemplate.findUnique({
@@ -2653,7 +3274,8 @@ let AdminService = class AdminService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.BadRequestException || error instanceof common_1.ForbiddenException) {
+            if (error instanceof common_1.BadRequestException ||
+                error instanceof common_1.ForbiddenException) {
                 throw error;
             }
             throw new common_1.BadRequestException('Failed to create notification template');
@@ -2663,6 +3285,7 @@ let AdminService = class AdminService {
 exports.AdminService = AdminService;
 exports.AdminService = AdminService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService])
+    __metadata("design:paramtypes", [database_service_1.DatabaseService,
+        jwt_1.JwtService])
 ], AdminService);
 //# sourceMappingURL=admin.service.js.map

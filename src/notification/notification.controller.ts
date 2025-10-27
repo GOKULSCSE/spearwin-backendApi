@@ -13,10 +13,10 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { NotificationService } from './notification.service';
-import { 
-  NotificationQueryDto, 
-  NotificationResponseDto, 
-  NotificationsListResponseDto, 
+import {
+  NotificationQueryDto,
+  NotificationResponseDto,
+  NotificationsListResponseDto,
   UnreadCountResponseDto,
   MarkAsReadResponseDto,
   MarkAllAsReadResponseDto,
@@ -24,7 +24,7 @@ import {
   NotificationStatsResponseDto,
   CreateNotificationWithPushDto,
   BulkNotificationDto,
-  BulkNotificationResponseDto
+  BulkNotificationResponseDto,
 } from './dto/notification.dto';
 import {
   RegisterFCMTokenDto,
@@ -43,7 +43,7 @@ import {
   FCMResponseDto,
   FCMTopicResponseDto,
   ValidateTokenDto,
-  ValidateTokenResponseDto
+  ValidateTokenResponseDto,
 } from './dto/fcm.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetCurrentUser } from '../auth/decorators/current-user.decorator';
@@ -67,7 +67,10 @@ export class NotificationController {
     @Param('id') notificationId: string,
     @GetCurrentUser() user: CurrentUser,
   ): Promise<NotificationResponseDto> {
-    return this.notificationService.getNotificationById(notificationId, user.id);
+    return this.notificationService.getNotificationById(
+      notificationId,
+      user.id,
+    );
   }
 
   @Put(':id/read')
@@ -124,7 +127,7 @@ export class NotificationController {
     if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
       throw new Error('Unauthorized: Only admins can create notifications');
     }
-    
+
     return this.notificationService.createNotification(createDto);
   }
 
@@ -138,7 +141,7 @@ export class NotificationController {
     if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
       throw new Error('Unauthorized: Only admins can create notifications');
     }
-    
+
     return this.notificationService.createNotificationWithPush(createDto);
   }
 
@@ -152,7 +155,7 @@ export class NotificationController {
     if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
       throw new Error('Unauthorized: Only admins can send bulk notifications');
     }
-    
+
     return this.notificationService.sendBulkNotifications(bulkDto);
   }
 
@@ -166,7 +169,11 @@ export class NotificationController {
     @Body(ValidationPipe) registerDto: RegisterFCMTokenDto,
     @GetCurrentUser() user: CurrentUser,
   ): Promise<{ success: boolean; message: string }> {
-    return this.notificationService.registerFCMToken(user.id, registerDto.token, registerDto.deviceInfo);
+    return this.notificationService.registerFCMToken(
+      user.id,
+      registerDto.token,
+      registerDto.deviceInfo,
+    );
   }
 
   @Post('fcm/unregister')
@@ -175,7 +182,10 @@ export class NotificationController {
     @Body(ValidationPipe) unregisterDto: UnregisterFCMTokenDto,
     @GetCurrentUser() user: CurrentUser,
   ): Promise<{ success: boolean; message: string }> {
-    return this.notificationService.unregisterFCMToken(user.id, unregisterDto.token);
+    return this.notificationService.unregisterFCMToken(
+      user.id,
+      unregisterDto.token,
+    );
   }
 
   @Get('fcm/tokens')
@@ -217,7 +227,7 @@ export class NotificationController {
           data: sendDto.data,
           imageUrl: sendDto.imageUrl,
           clickAction: sendDto.clickAction,
-        }
+        },
       );
 
       return {
@@ -252,16 +262,13 @@ export class NotificationController {
 
       for (const userId of sendDto.userIds) {
         try {
-          const response = await this.notificationService.sendToUser(
-            userId,
-            {
-              title: sendDto.title,
-              body: sendDto.body,
-              data: sendDto.data,
-              imageUrl: sendDto.imageUrl,
-              clickAction: sendDto.clickAction,
-            }
-          );
+          const response = await this.notificationService.sendToUser(userId, {
+            title: sendDto.title,
+            body: sendDto.body,
+            data: sendDto.data,
+            imageUrl: sendDto.imageUrl,
+            clickAction: sendDto.clickAction,
+          });
           totalSuccess += response.successCount;
           totalFailure += response.failureCount;
         } catch (error) {
@@ -305,7 +312,7 @@ export class NotificationController {
           data: sendDto.data,
           imageUrl: sendDto.imageUrl,
           clickAction: sendDto.clickAction,
-        }
+        },
       );
 
       return {
@@ -345,7 +352,7 @@ export class NotificationController {
           data: sendDto.data,
           imageUrl: sendDto.imageUrl,
           clickAction: sendDto.clickAction,
-        }
+        },
       );
 
       return {
@@ -382,7 +389,7 @@ export class NotificationController {
           data: sendDto.data,
           imageUrl: sendDto.imageUrl,
           clickAction: sendDto.clickAction,
-        }
+        },
       );
 
       return {
@@ -411,7 +418,7 @@ export class NotificationController {
     try {
       const response = await this.notificationService.subscribeToTopic(
         subscribeDto.tokens,
-        subscribeDto.topic
+        subscribeDto.topic,
       );
 
       return {
@@ -440,7 +447,7 @@ export class NotificationController {
     try {
       const response = await this.notificationService.unsubscribeFromTopic(
         unsubscribeDto.tokens,
-        unsubscribeDto.topic
+        unsubscribeDto.topic,
       );
 
       return {

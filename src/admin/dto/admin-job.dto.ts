@@ -18,22 +18,30 @@ export class CreateJobDto {
   title: string;
 
   @IsString({ message: 'Description must be a string' })
-  @Length(10, 5000, { message: 'Description must be between 10 and 5000 characters' })
+  @Length(10, 5000, {
+    message: 'Description must be between 10 and 5000 characters',
+  })
   description: string;
 
   @IsOptional()
   @IsString({ message: 'Requirements must be a string' })
-  @Length(10, 2000, { message: 'Requirements must be between 10 and 2000 characters' })
+  @Length(10, 2000, {
+    message: 'Requirements must be between 10 and 2000 characters',
+  })
   requirements?: string;
 
   @IsOptional()
   @IsString({ message: 'Responsibilities must be a string' })
-  @Length(10, 2000, { message: 'Responsibilities must be between 10 and 2000 characters' })
+  @Length(10, 2000, {
+    message: 'Responsibilities must be between 10 and 2000 characters',
+  })
   responsibilities?: string;
 
   @IsOptional()
   @IsString({ message: 'Benefits must be a string' })
-  @Length(10, 1000, { message: 'Benefits must be between 10 and 1000 characters' })
+  @Length(10, 1000, {
+    message: 'Benefits must be between 10 and 1000 characters',
+  })
   benefits?: string;
 
   @IsString({ message: 'Company ID must be a string' })
@@ -48,17 +56,19 @@ export class CreateJobDto {
   address?: string;
 
   @IsEnum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'FREELANCE'], {
-    message: 'Job type must be one of: FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP, FREELANCE'
+    message:
+      'Job type must be one of: FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP, FREELANCE',
   })
   jobType: string;
 
   @IsEnum(['REMOTE', 'ONSITE', 'HYBRID'], {
-    message: 'Work mode must be one of: REMOTE, ONSITE, HYBRID'
+    message: 'Work mode must be one of: REMOTE, ONSITE, HYBRID',
   })
   workMode: string;
 
   @IsEnum(['ENTRY_LEVEL', 'MID_LEVEL', 'SENIOR_LEVEL', 'EXECUTIVE'], {
-    message: 'Experience level must be one of: ENTRY_LEVEL, MID_LEVEL, SENIOR_LEVEL, EXECUTIVE'
+    message:
+      'Experience level must be one of: ENTRY_LEVEL, MID_LEVEL, SENIOR_LEVEL, EXECUTIVE',
   })
   experienceLevel: string;
 
@@ -96,9 +106,20 @@ export class CreateJobDto {
   skillsRequired?: string[];
 
   @IsOptional()
-  @IsEnum(['HIGH_SCHOOL', 'DIPLOMA', 'BACHELOR', 'MASTER', 'DOCTORATE', 'PROFESSIONAL'], {
-    message: 'Education level must be one of: HIGH_SCHOOL, DIPLOMA, BACHELOR, MASTER, DOCTORATE, PROFESSIONAL'
-  })
+  @IsEnum(
+    [
+      'HIGH_SCHOOL',
+      'DIPLOMA',
+      'BACHELOR',
+      'MASTER',
+      'DOCTORATE',
+      'PROFESSIONAL',
+    ],
+    {
+      message:
+        'Education level must be one of: HIGH_SCHOOL, DIPLOMA, BACHELOR, MASTER, DOCTORATE, PROFESSIONAL',
+    },
+  )
   educationLevel?: string;
 
   @IsOptional()
@@ -107,7 +128,7 @@ export class CreateJobDto {
 
   @IsOptional()
   @IsEnum(['DRAFT', 'PUBLISHED', 'CLOSED', 'ARCHIVED'], {
-    message: 'Status must be one of: DRAFT, PUBLISHED, CLOSED, ARCHIVED'
+    message: 'Status must be one of: DRAFT, PUBLISHED, CLOSED, ARCHIVED',
   })
   status?: string = 'DRAFT';
 }
@@ -120,22 +141,30 @@ export class UpdateJobDto {
 
   @IsOptional()
   @IsString({ message: 'Description must be a string' })
-  @Length(10, 5000, { message: 'Description must be between 10 and 5000 characters' })
+  @Length(10, 5000, {
+    message: 'Description must be between 10 and 5000 characters',
+  })
   description?: string;
 
   @IsOptional()
   @IsString({ message: 'Requirements must be a string' })
-  @Length(10, 2000, { message: 'Requirements must be between 10 and 2000 characters' })
+  @Length(10, 2000, {
+    message: 'Requirements must be between 10 and 2000 characters',
+  })
   requirements?: string;
 
   @IsOptional()
   @IsString({ message: 'Responsibilities must be a string' })
-  @Length(10, 2000, { message: 'Responsibilities must be between 10 and 2000 characters' })
+  @Length(10, 2000, {
+    message: 'Responsibilities must be between 10 and 2000 characters',
+  })
   responsibilities?: string;
 
   @IsOptional()
   @IsString({ message: 'Benefits must be a string' })
-  @Length(10, 1000, { message: 'Benefits must be between 10 and 1000 characters' })
+  @Length(10, 1000, {
+    message: 'Benefits must be between 10 and 1000 characters',
+  })
   benefits?: string;
 
   @IsOptional()
@@ -152,19 +181,21 @@ export class UpdateJobDto {
 
   @IsOptional()
   @IsEnum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'FREELANCE'], {
-    message: 'Job type must be one of: FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP, FREELANCE'
+    message:
+      'Job type must be one of: FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP, FREELANCE',
   })
   jobType?: string;
 
   @IsOptional()
   @IsEnum(['REMOTE', 'ONSITE', 'HYBRID'], {
-    message: 'Work mode must be one of: REMOTE, ONSITE, HYBRID'
+    message: 'Work mode must be one of: REMOTE, ONSITE, HYBRID',
   })
   workMode?: string;
 
   @IsOptional()
   @IsEnum(['ENTRY_LEVEL', 'MID_LEVEL', 'SENIOR_LEVEL', 'EXECUTIVE'], {
-    message: 'Experience level must be one of: ENTRY_LEVEL, MID_LEVEL, SENIOR_LEVEL, EXECUTIVE'
+    message:
+      'Experience level must be one of: ENTRY_LEVEL, MID_LEVEL, SENIOR_LEVEL, EXECUTIVE',
   })
   experienceLevel?: string;
 
@@ -202,9 +233,20 @@ export class UpdateJobDto {
   skillsRequired?: string[];
 
   @IsOptional()
-  @IsEnum(['HIGH_SCHOOL', 'DIPLOMA', 'BACHELOR', 'MASTER', 'DOCTORATE', 'PROFESSIONAL'], {
-    message: 'Education level must be one of: HIGH_SCHOOL, DIPLOMA, BACHELOR, MASTER, DOCTORATE, PROFESSIONAL'
-  })
+  @IsEnum(
+    [
+      'HIGH_SCHOOL',
+      'DIPLOMA',
+      'BACHELOR',
+      'MASTER',
+      'DOCTORATE',
+      'PROFESSIONAL',
+    ],
+    {
+      message:
+        'Education level must be one of: HIGH_SCHOOL, DIPLOMA, BACHELOR, MASTER, DOCTORATE, PROFESSIONAL',
+    },
+  )
   educationLevel?: string;
 
   @IsOptional()
@@ -213,7 +255,7 @@ export class UpdateJobDto {
 
   @IsOptional()
   @IsEnum(['DRAFT', 'PUBLISHED', 'CLOSED', 'ARCHIVED'], {
-    message: 'Status must be one of: DRAFT, PUBLISHED, CLOSED, ARCHIVED'
+    message: 'Status must be one of: DRAFT, PUBLISHED, CLOSED, ARCHIVED',
   })
   status?: string;
 }

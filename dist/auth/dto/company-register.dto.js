@@ -23,7 +23,9 @@ class CompanyRegisterDto {
     employeeCount;
     headquarters;
     address;
-    cityId;
+    country;
+    state;
+    city;
     linkedinUrl;
     twitterUrl;
     facebookUrl;
@@ -65,7 +67,7 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsInt)({ message: 'Founded year must be a number' }),
-    (0, class_transformer_1.Transform)(({ value }) => value ? parseInt(value) : undefined),
+    (0, class_transformer_1.Transform)(({ value }) => (value ? parseInt(value) : undefined)),
     __metadata("design:type", Number)
 ], CompanyRegisterDto.prototype, "foundedYear", void 0);
 __decorate([
@@ -85,9 +87,19 @@ __decorate([
 ], CompanyRegisterDto.prototype, "address", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'City ID must be a string' }),
+    (0, class_validator_1.IsString)({ message: 'Country must be a string' }),
     __metadata("design:type", String)
-], CompanyRegisterDto.prototype, "cityId", void 0);
+], CompanyRegisterDto.prototype, "country", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'State must be a string' }),
+    __metadata("design:type", String)
+], CompanyRegisterDto.prototype, "state", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'City must be a string' }),
+    __metadata("design:type", String)
+], CompanyRegisterDto.prototype, "city", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsUrl)({}, { message: 'LinkedIn URL must be a valid URL' }),

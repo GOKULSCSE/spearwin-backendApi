@@ -20,7 +20,9 @@ class CreateCompanyDto {
     employeeCount;
     headquarters;
     address;
-    cityId;
+    country;
+    state;
+    city;
     linkedinUrl;
     twitterUrl;
     facebookUrl;
@@ -72,7 +74,17 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], CreateCompanyDto.prototype, "cityId", void 0);
+], CreateCompanyDto.prototype, "country", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCompanyDto.prototype, "state", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCompanyDto.prototype, "city", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsUrl)(),

@@ -55,7 +55,9 @@ let CandidateService = class CandidateService {
                 bio: candidate.bio || undefined,
                 currentTitle: candidate.currentTitle || undefined,
                 experienceYears: candidate.experienceYears || undefined,
-                expectedSalary: candidate.expectedSalary ? Number(candidate.expectedSalary) : undefined,
+                expectedSalary: candidate.expectedSalary
+                    ? Number(candidate.expectedSalary)
+                    : undefined,
                 address: candidate.address || undefined,
                 linkedinUrl: candidate.linkedinUrl || undefined,
                 githubUrl: candidate.githubUrl || undefined,
@@ -63,19 +65,63 @@ let CandidateService = class CandidateService {
                 isAvailable: candidate.isAvailable,
                 createdAt: candidate.createdAt,
                 updatedAt: candidate.updatedAt,
-                city: candidate.city ? {
-                    id: candidate.city.id,
-                    name: candidate.city.name,
-                    state: {
-                        id: candidate.city.state.id,
-                        name: candidate.city.state.name,
-                        country: {
-                            id: candidate.city.state.country.id,
-                            name: candidate.city.state.country.name,
-                            code: candidate.city.state.country.code,
+                city: candidate.city
+                    ? {
+                        id: candidate.city.id,
+                        name: candidate.city.name,
+                        state_id: candidate.city.state_id,
+                        state_code: candidate.city.state_code,
+                        state_name: candidate.city.state?.name,
+                        country_id: candidate.city.country_id,
+                        country_code: candidate.city.country_code,
+                        country_name: candidate.city.country_name,
+                        latitude: candidate.city.latitude,
+                        longitude: candidate.city.longitude,
+                        wikiDataId: candidate.city.wikiDataId,
+                        isActive: candidate.city.isActive,
+                        createdAt: candidate.city.createdAt,
+                        updatedAt: candidate.city.updatedAt,
+                        state: {
+                            id: candidate.city.state.id,
+                            name: candidate.city.state.name,
+                            country_id: candidate.city.state.country_id,
+                            country_code: candidate.city.state.country_code,
+                            country_name: candidate.city.state.country_name,
+                            iso2: candidate.city.state.iso2,
+                            fips_code: candidate.city.state.fips_code,
+                            type: candidate.city.state.type,
+                            latitude: candidate.city.state.latitude,
+                            longitude: candidate.city.state.longitude,
+                            isActive: candidate.city.state.isActive,
+                            createdAt: candidate.city.state.createdAt,
+                            updatedAt: candidate.city.state.updatedAt,
+                            country: candidate.city.state.country ? {
+                                id: candidate.city.state.country.id,
+                                name: candidate.city.state.country.name,
+                                iso3: candidate.city.state.country.iso3,
+                                iso2: candidate.city.state.country.iso2,
+                                numeric_code: candidate.city.state.country.numeric_code,
+                                phonecode: candidate.city.state.country.phonecode,
+                                capital: candidate.city.state.country.capital,
+                                currency: candidate.city.state.country.currency,
+                                currency_name: candidate.city.state.country.currency_name,
+                                currency_symbol: candidate.city.state.country.currency_symbol,
+                                tld: candidate.city.state.country.tld,
+                                native: candidate.city.state.country.native,
+                                region: candidate.city.state.country.region,
+                                region_id: candidate.city.state.country.region_id,
+                                subregion: candidate.city.state.country.subregion,
+                                subregion_id: candidate.city.state.country.subregion_id,
+                                nationality: candidate.city.state.country.nationality,
+                                latitude: candidate.city.state.country.latitude,
+                                longitude: candidate.city.state.country.longitude,
+                                isActive: candidate.city.state.country.isActive,
+                                createdAt: candidate.city.state.country.createdAt,
+                                updatedAt: candidate.city.state.country.updatedAt,
+                            } : undefined,
                         },
-                    },
-                } : undefined,
+                    }
+                    : undefined,
             };
         }
         catch (error) {
@@ -85,44 +131,31 @@ let CandidateService = class CandidateService {
     }
     async getCandidateProfile(userId) {
         try {
-            const candidate = await this.db.candidate.findFirst({
-                where: { userId },
-                include: {
-                    city: {
-                        include: {
-                            state: {
-                                include: {
-                                    country: true,
-                                },
-                            },
-                        },
-                    },
-                    user: {
-                        select: {
-                            email: true,
-                            phone: true,
-                        },
-                    },
-                    skills: true,
-                    education: true,
-                    experience: true,
-                },
-            });
-            if (!candidate) {
-                throw new common_1.NotFoundException('Candidate profile not found');
-            }
+            const candidate = await this.getOrCreateCandidate(userId);
             return {
                 id: candidate.id,
                 userId: candidate.userId,
                 firstName: candidate.firstName,
                 lastName: candidate.lastName,
+                fatherName: candidate.fatherName || undefined,
                 dateOfBirth: candidate.dateOfBirth || undefined,
                 gender: candidate.gender || undefined,
+                maritalStatus: candidate.maritalStatus || undefined,
                 profilePicture: candidate.profilePicture || undefined,
                 bio: candidate.bio || undefined,
                 currentTitle: candidate.currentTitle || undefined,
+                currentCompany: candidate.currentCompany || undefined,
+                currentLocation: candidate.currentLocation || undefined,
+                preferredLocation: candidate.preferredLocation || undefined,
+                noticePeriod: candidate.noticePeriod || undefined,
+                currentSalary: candidate.currentSalary
+                    ? Number(candidate.currentSalary)
+                    : undefined,
+                expectedSalary: candidate.expectedSalary
+                    ? Number(candidate.expectedSalary)
+                    : undefined,
+                profileType: candidate.profileType || undefined,
                 experienceYears: candidate.experienceYears || undefined,
-                expectedSalary: candidate.expectedSalary ? Number(candidate.expectedSalary) : undefined,
                 address: candidate.address || undefined,
                 linkedinUrl: candidate.linkedinUrl || undefined,
                 githubUrl: candidate.githubUrl || undefined,
@@ -130,6 +163,8 @@ let CandidateService = class CandidateService {
                 isAvailable: candidate.isAvailable,
                 createdAt: candidate.createdAt,
                 updatedAt: candidate.updatedAt,
+                user: candidate.user,
+                city: candidate.city,
             };
         }
         catch (error) {
@@ -181,7 +216,9 @@ let CandidateService = class CandidateService {
                 bio: updatedCandidate.bio || undefined,
                 currentTitle: updatedCandidate.currentTitle || undefined,
                 experienceYears: updatedCandidate.experienceYears || undefined,
-                expectedSalary: updatedCandidate.expectedSalary ? Number(updatedCandidate.expectedSalary) : undefined,
+                expectedSalary: updatedCandidate.expectedSalary
+                    ? Number(updatedCandidate.expectedSalary)
+                    : undefined,
                 address: updatedCandidate.address || undefined,
                 linkedinUrl: updatedCandidate.linkedinUrl || undefined,
                 githubUrl: updatedCandidate.githubUrl || undefined,
@@ -189,19 +226,63 @@ let CandidateService = class CandidateService {
                 isAvailable: updatedCandidate.isAvailable,
                 createdAt: updatedCandidate.createdAt,
                 updatedAt: updatedCandidate.updatedAt,
-                city: updatedCandidate.city ? {
-                    id: updatedCandidate.city.id,
-                    name: updatedCandidate.city.name,
-                    state: {
-                        id: updatedCandidate.city.state.id,
-                        name: updatedCandidate.city.state.name,
-                        country: {
-                            id: updatedCandidate.city.state.country.id,
-                            name: updatedCandidate.city.state.country.name,
-                            code: updatedCandidate.city.state.country.code,
+                city: updatedCandidate.city
+                    ? {
+                        id: updatedCandidate.city.id,
+                        name: updatedCandidate.city.name,
+                        state_id: updatedCandidate.city.state_id,
+                        state_code: updatedCandidate.city.state_code,
+                        state_name: updatedCandidate.city.state?.name,
+                        country_id: updatedCandidate.city.country_id,
+                        country_code: updatedCandidate.city.country_code,
+                        country_name: updatedCandidate.city.country_name,
+                        latitude: updatedCandidate.city.latitude,
+                        longitude: updatedCandidate.city.longitude,
+                        wikiDataId: updatedCandidate.city.wikiDataId,
+                        isActive: updatedCandidate.city.isActive,
+                        createdAt: updatedCandidate.city.createdAt,
+                        updatedAt: updatedCandidate.city.updatedAt,
+                        state: {
+                            id: updatedCandidate.city.state.id,
+                            name: updatedCandidate.city.state.name,
+                            country_id: updatedCandidate.city.state.country_id,
+                            country_code: updatedCandidate.city.state.country_code,
+                            country_name: updatedCandidate.city.state.country_name,
+                            iso2: updatedCandidate.city.state.iso2,
+                            fips_code: updatedCandidate.city.state.fips_code,
+                            type: updatedCandidate.city.state.type,
+                            latitude: updatedCandidate.city.state.latitude,
+                            longitude: updatedCandidate.city.state.longitude,
+                            isActive: updatedCandidate.city.state.isActive,
+                            createdAt: updatedCandidate.city.state.createdAt,
+                            updatedAt: updatedCandidate.city.state.updatedAt,
+                            country: updatedCandidate.city.state.country ? {
+                                id: updatedCandidate.city.state.country.id,
+                                name: updatedCandidate.city.state.country.name,
+                                iso3: updatedCandidate.city.state.country.iso3,
+                                iso2: updatedCandidate.city.state.country.iso2,
+                                numeric_code: updatedCandidate.city.state.country.numeric_code,
+                                phonecode: updatedCandidate.city.state.country.phonecode,
+                                capital: updatedCandidate.city.state.country.capital,
+                                currency: updatedCandidate.city.state.country.currency,
+                                currency_name: updatedCandidate.city.state.country.currency_name,
+                                currency_symbol: updatedCandidate.city.state.country.currency_symbol,
+                                tld: updatedCandidate.city.state.country.tld,
+                                native: updatedCandidate.city.state.country.native,
+                                region: updatedCandidate.city.state.country.region,
+                                region_id: updatedCandidate.city.state.country.region_id,
+                                subregion: updatedCandidate.city.state.country.subregion,
+                                subregion_id: updatedCandidate.city.state.country.subregion_id,
+                                nationality: updatedCandidate.city.state.country.nationality,
+                                latitude: updatedCandidate.city.state.country.latitude,
+                                longitude: updatedCandidate.city.state.country.longitude,
+                                isActive: updatedCandidate.city.state.country.isActive,
+                                createdAt: updatedCandidate.city.state.country.createdAt,
+                                updatedAt: updatedCandidate.city.state.country.updatedAt,
+                            } : undefined,
                         },
-                    },
-                } : undefined,
+                    }
+                    : undefined,
             };
         }
         catch (error) {
@@ -257,21 +338,25 @@ let CandidateService = class CandidateService {
                     name: `${candidate.firstName} ${candidate.lastName}`,
                     email: candidate.user.email,
                     phone: candidate.user.phone || '',
-                    location: candidate.city ? `${candidate.city.name}, ${candidate.city.state.name}, ${candidate.city.state.country.name}` : '',
+                    location: candidate.city
+                        ? `${candidate.city.name}, ${candidate.city.state.name}, ${candidate.city.state.country?.name || 'Unknown'}`
+                        : '',
                 },
-                experience: candidate.experience.map(exp => ({
+                experience: candidate.experience.map((exp) => ({
                     company: exp.company,
                     position: exp.position,
                     duration: `${exp.startDate.toISOString().split('T')[0]} - ${exp.endDate ? exp.endDate.toISOString().split('T')[0] : 'Present'}`,
                     description: exp.description || '',
                 })),
-                education: candidate.education.map(edu => ({
+                education: candidate.education.map((edu) => ({
                     institution: edu.institution,
                     degree: edu.degree,
                     field: edu.fieldOfStudy || '',
-                    graduationYear: edu.endDate ? edu.endDate.getFullYear().toString() : '',
+                    graduationYear: edu.endDate
+                        ? edu.endDate.getFullYear().toString()
+                        : '',
                 })),
-                skills: candidate.skills.map(skill => skill.skillName),
+                skills: candidate.skills.map((skill) => skill.skillName),
                 summary: candidate.bio || 'Professional with relevant experience and skills',
             };
             await this.logActivity(userId, client_1.LogAction.VIEW, client_1.LogLevel.INFO, 'Resume', resume?.id || 'parse', 'Resume parsed for data extraction');
@@ -332,7 +417,12 @@ let CandidateService = class CandidateService {
             const educationScore = this.calculateEducationScore(candidate.education);
             const skillsScore = this.calculateSkillsScore(candidate.skills);
             const summaryScore = this.calculateSummaryScore(candidate.bio);
-            const overallScore = Math.round((personalInfoScore + experienceScore + educationScore + skillsScore + summaryScore) / 5);
+            const overallScore = Math.round((personalInfoScore +
+                experienceScore +
+                educationScore +
+                skillsScore +
+                summaryScore) /
+                5);
             const analysis = {
                 resumeId,
                 overallScore,
@@ -455,8 +545,10 @@ let CandidateService = class CandidateService {
             return 0;
         let score = 0;
         score += Math.min(experience.length * 15, 60);
-        score += experience.some(exp => exp.achievements) ? 20 : 0;
-        score += experience.some(exp => exp.description && exp.description.length > 50) ? 20 : 0;
+        score += experience.some((exp) => exp.achievements) ? 20 : 0;
+        score += experience.some((exp) => exp.description && exp.description.length > 50)
+            ? 20
+            : 0;
         return Math.min(score, 100);
     }
     calculateEducationScore(education) {
@@ -464,8 +556,8 @@ let CandidateService = class CandidateService {
             return 0;
         let score = 0;
         score += Math.min(education.length * 25, 75);
-        score += education.some(edu => edu.isCompleted) ? 15 : 0;
-        score += education.some(edu => edu.grade) ? 10 : 0;
+        score += education.some((edu) => edu.isCompleted) ? 15 : 0;
+        score += education.some((edu) => edu.grade) ? 10 : 0;
         return Math.min(score, 100);
     }
     calculateSkillsScore(skills) {
@@ -473,8 +565,8 @@ let CandidateService = class CandidateService {
             return 0;
         let score = 0;
         score += Math.min(skills.length * 8, 60);
-        score += skills.some(skill => skill.level) ? 20 : 0;
-        score += skills.some(skill => skill.yearsUsed) ? 20 : 0;
+        score += skills.some((skill) => skill.level) ? 20 : 0;
+        score += skills.some((skill) => skill.yearsUsed) ? 20 : 0;
         return Math.min(score, 100);
     }
     calculateSummaryScore(bio) {
@@ -497,13 +589,20 @@ let CandidateService = class CandidateService {
         let fields = 0;
         let completed = 0;
         const requiredFields = ['firstName', 'lastName', 'user.email'];
-        const optionalFields = ['user.phone', 'city', 'bio', 'linkedinUrl', 'githubUrl', 'portfolioUrl'];
-        requiredFields.forEach(field => {
+        const optionalFields = [
+            'user.phone',
+            'city',
+            'bio',
+            'linkedinUrl',
+            'githubUrl',
+            'portfolioUrl',
+        ];
+        requiredFields.forEach((field) => {
             fields++;
             if (this.getNestedValue(candidate, field))
                 completed++;
         });
-        optionalFields.forEach(field => {
+        optionalFields.forEach((field) => {
             fields++;
             if (this.getNestedValue(candidate, field))
                 completed++;
@@ -531,16 +630,16 @@ let CandidateService = class CandidateService {
         return Math.min(experience.length * 20, 100);
     }
     calculateAchievementsScore(experience) {
-        const withAchievements = experience.filter(exp => exp.achievements && exp.achievements.length > 0).length;
+        const withAchievements = experience.filter((exp) => exp.achievements && exp.achievements.length > 0).length;
         return Math.round((withAchievements / experience.length) * 100) || 0;
     }
     getExperienceIssues(experience) {
         const issues = [];
         if (experience.length === 0)
             issues.push('No work experience listed');
-        if (!experience.some(exp => exp.achievements))
+        if (!experience.some((exp) => exp.achievements))
             issues.push('Missing quantifiable achievements');
-        if (!experience.some(exp => exp.description && exp.description.length > 50))
+        if (!experience.some((exp) => exp.description && exp.description.length > 50))
             issues.push('Job descriptions are too brief');
         return issues;
     }
@@ -553,7 +652,7 @@ let CandidateService = class CandidateService {
         const issues = [];
         if (education.length === 0)
             issues.push('No education listed');
-        if (!education.some(edu => edu.isCompleted))
+        if (!education.some((edu) => edu.isCompleted))
             issues.push('Some education entries are incomplete');
         return issues;
     }
@@ -565,7 +664,7 @@ let CandidateService = class CandidateService {
     calculateSkillsDiversity(skills) {
         if (skills.length === 0)
             return 0;
-        const categories = new Set(skills.map(skill => skill.skillName.toLowerCase().split(' ')[0]));
+        const categories = new Set(skills.map((skill) => skill.skillName.toLowerCase().split(' ')[0]));
         return Math.min(categories.size * 20, 100);
     }
     getSkillsIssues(skills) {
@@ -574,7 +673,7 @@ let CandidateService = class CandidateService {
             issues.push('No skills listed');
         if (skills.length < 3)
             issues.push('Too few skills listed');
-        if (!skills.some(skill => skill.level))
+        if (!skills.some((skill) => skill.level))
             issues.push('Skill levels not specified');
         return issues;
     }
@@ -744,8 +843,8 @@ let CandidateService = class CandidateService {
         const overused = ['Experienced', 'Skilled', 'Proficient'];
         const suggested = ['Expert', 'Advanced', 'Specialized', 'Certified'];
         return {
-            missing: missing.filter(keyword => !candidate.skills.some((skill) => skill.skillName.toLowerCase().includes(keyword.toLowerCase()))),
-            overused: overused.filter(keyword => candidate.bio?.toLowerCase().includes(keyword.toLowerCase())),
+            missing: missing.filter((keyword) => !candidate.skills.some((skill) => skill.skillName.toLowerCase().includes(keyword.toLowerCase()))),
+            overused: overused.filter((keyword) => candidate.bio?.toLowerCase().includes(keyword.toLowerCase())),
             suggested,
         };
     }
@@ -810,17 +909,80 @@ let CandidateService = class CandidateService {
             console.error('Failed to log activity:', error);
         }
     }
+    async getOrCreateCandidate(userId) {
+        let candidate = await this.db.candidate.findFirst({
+            where: { userId },
+            include: {
+                city: {
+                    include: {
+                        state: {
+                            include: {
+                                country: true,
+                            },
+                        },
+                    },
+                },
+                user: {
+                    select: {
+                        email: true,
+                        phone: true,
+                    },
+                },
+                skills: true,
+                education: true,
+                experience: true,
+            },
+        });
+        if (!candidate) {
+            candidate = await this.db.candidate.create({
+                data: {
+                    userId,
+                    firstName: '',
+                    lastName: '',
+                    email: '',
+                    mobileNumber: '',
+                    jobExperience: '',
+                    country: '',
+                    state: '',
+                    cityName: '',
+                    streetAddress: '',
+                    profileSummary: '',
+                    isAvailable: true,
+                },
+                include: {
+                    city: {
+                        include: {
+                            state: {
+                                include: {
+                                    country: true,
+                                },
+                            },
+                        },
+                    },
+                    user: {
+                        select: {
+                            email: true,
+                            phone: true,
+                        },
+                    },
+                    skills: true,
+                    education: true,
+                    experience: true,
+                },
+            });
+            await this.logActivity(userId, client_1.LogAction.CREATE, client_1.LogLevel.INFO, 'Candidate', candidate.id, 'Candidate profile auto-created');
+        }
+        return candidate;
+    }
     async updateCandidateProfile(userId, updateDto) {
         try {
-            const candidate = await this.db.candidate.findFirst({
-                where: { userId },
-            });
-            if (!candidate) {
-                throw new common_1.NotFoundException('Candidate profile not found');
-            }
+            const candidate = await this.getOrCreateCandidate(userId);
             const updateData = { ...updateDto };
             if (updateDto.dateOfBirth) {
                 updateData.dateOfBirth = new Date(updateDto.dateOfBirth);
+            }
+            if (updateDto.cityId) {
+                updateData.cityId = parseInt(updateDto.cityId);
             }
             const updatedCandidate = await this.db.candidate.update({
                 where: { id: candidate.id },
@@ -852,20 +1014,98 @@ let CandidateService = class CandidateService {
                 userId: updatedCandidate.userId,
                 firstName: updatedCandidate.firstName,
                 lastName: updatedCandidate.lastName,
+                fatherName: updatedCandidate.fatherName || undefined,
                 dateOfBirth: updatedCandidate.dateOfBirth || undefined,
                 gender: updatedCandidate.gender || undefined,
+                maritalStatus: updatedCandidate.maritalStatus || undefined,
                 profilePicture: updatedCandidate.profilePicture || undefined,
                 bio: updatedCandidate.bio || undefined,
                 currentTitle: updatedCandidate.currentTitle || undefined,
+                currentCompany: updatedCandidate.currentCompany || undefined,
+                currentLocation: updatedCandidate.currentLocation || undefined,
+                preferredLocation: updatedCandidate.preferredLocation || undefined,
+                noticePeriod: updatedCandidate.noticePeriod || undefined,
+                currentSalary: updatedCandidate.currentSalary
+                    ? Number(updatedCandidate.currentSalary)
+                    : undefined,
+                expectedSalary: updatedCandidate.expectedSalary
+                    ? Number(updatedCandidate.expectedSalary)
+                    : undefined,
+                profileType: updatedCandidate.profileType || undefined,
                 experienceYears: updatedCandidate.experienceYears || undefined,
-                expectedSalary: updatedCandidate.expectedSalary ? Number(updatedCandidate.expectedSalary) : undefined,
                 address: updatedCandidate.address || undefined,
                 linkedinUrl: updatedCandidate.linkedinUrl || undefined,
                 githubUrl: updatedCandidate.githubUrl || undefined,
                 portfolioUrl: updatedCandidate.portfolioUrl || undefined,
                 isAvailable: updatedCandidate.isAvailable,
+                email: updatedCandidate.email || undefined,
+                mobileNumber: updatedCandidate.mobileNumber || undefined,
+                jobExperience: updatedCandidate.jobExperience || undefined,
+                country: updatedCandidate.country || undefined,
+                state: updatedCandidate.state || undefined,
+                cityName: updatedCandidate.cityName || undefined,
+                streetAddress: updatedCandidate.streetAddress || undefined,
+                profileSummary: updatedCandidate.profileSummary || undefined,
                 createdAt: updatedCandidate.createdAt,
                 updatedAt: updatedCandidate.updatedAt,
+                user: updatedCandidate.user,
+                city: updatedCandidate.city ? {
+                    id: updatedCandidate.city.id,
+                    name: updatedCandidate.city.name,
+                    state_id: updatedCandidate.city.state_id,
+                    state_code: updatedCandidate.city.state_code,
+                    state_name: updatedCandidate.city.state_name,
+                    country_id: updatedCandidate.city.country_id,
+                    country_code: updatedCandidate.city.country_code,
+                    country_name: updatedCandidate.city.country_name,
+                    latitude: updatedCandidate.city.latitude,
+                    longitude: updatedCandidate.city.longitude,
+                    wikiDataId: updatedCandidate.city.wikiDataId,
+                    isActive: updatedCandidate.city.isActive,
+                    createdAt: updatedCandidate.city.createdAt,
+                    updatedAt: updatedCandidate.city.updatedAt,
+                    state: {
+                        id: updatedCandidate.city.state.id,
+                        name: updatedCandidate.city.state.name,
+                        country_id: updatedCandidate.city.state.country_id,
+                        country_code: updatedCandidate.city.state.country_code,
+                        country_name: updatedCandidate.city.state.country_name,
+                        iso2: updatedCandidate.city.state.iso2,
+                        fips_code: updatedCandidate.city.state.fips_code,
+                        type: updatedCandidate.city.state.type,
+                        level: updatedCandidate.city.state.level,
+                        parent_id: updatedCandidate.city.state.parent_id,
+                        latitude: updatedCandidate.city.state.latitude,
+                        longitude: updatedCandidate.city.state.longitude,
+                        isActive: updatedCandidate.city.state.isActive,
+                        createdAt: updatedCandidate.city.state.createdAt,
+                        updatedAt: updatedCandidate.city.state.updatedAt,
+                        country: updatedCandidate.city.state.country ? {
+                            id: updatedCandidate.city.state.country.id,
+                            name: updatedCandidate.city.state.country.name,
+                            iso3: updatedCandidate.city.state.country.iso3,
+                            iso2: updatedCandidate.city.state.country.iso2,
+                            numeric_code: updatedCandidate.city.state.country.numeric_code,
+                            phonecode: updatedCandidate.city.state.country.phonecode,
+                            capital: updatedCandidate.city.state.country.capital,
+                            currency: updatedCandidate.city.state.country.currency,
+                            currency_name: updatedCandidate.city.state.country.currency_name,
+                            currency_symbol: updatedCandidate.city.state.country.currency_symbol,
+                            tld: updatedCandidate.city.state.country.tld,
+                            native: updatedCandidate.city.state.country.native,
+                            region: updatedCandidate.city.state.country.region,
+                            region_id: updatedCandidate.city.state.country.region_id,
+                            subregion: updatedCandidate.city.state.country.subregion,
+                            subregion_id: updatedCandidate.city.state.country.subregion_id,
+                            nationality: updatedCandidate.city.state.country.nationality,
+                            latitude: updatedCandidate.city.state.country.latitude,
+                            longitude: updatedCandidate.city.state.country.longitude,
+                            isActive: updatedCandidate.city.state.country.isActive,
+                            createdAt: updatedCandidate.city.state.country.createdAt,
+                            updatedAt: updatedCandidate.city.state.country.updatedAt,
+                        } : undefined,
+                    },
+                } : undefined,
             };
         }
         catch (error) {
@@ -890,7 +1130,10 @@ let CandidateService = class CandidateService {
                 data: { profilePicture },
             });
             await this.logActivity(userId, client_1.LogAction.UPDATE, client_1.LogLevel.INFO, 'Candidate', candidate.id, 'Profile picture uploaded');
-            return { message: 'Profile picture uploaded successfully', profilePicture };
+            return {
+                message: 'Profile picture uploaded successfully',
+                profilePicture,
+            };
         }
         catch (error) {
             if (error instanceof common_1.NotFoundException) {
@@ -958,7 +1201,7 @@ let CandidateService = class CandidateService {
                 where: { candidateId: candidate.id },
                 orderBy: { skillName: 'asc' },
             });
-            return skills.map(skill => ({
+            return skills.map((skill) => ({
                 id: skill.id,
                 candidateId: skill.candidateId,
                 skillName: skill.skillName,
@@ -1009,7 +1252,8 @@ let CandidateService = class CandidateService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.BadRequestException) {
                 throw error;
             }
             this.handleException(error);
@@ -1059,7 +1303,8 @@ let CandidateService = class CandidateService {
             };
         }
         catch (error) {
-            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.BadRequestException) {
                 throw error;
             }
             this.handleException(error);
@@ -1109,7 +1354,7 @@ let CandidateService = class CandidateService {
                 where: { candidateId: candidate.id },
                 orderBy: { startDate: 'desc' },
             });
-            return education.map(edu => ({
+            return education.map((edu) => ({
                 id: edu.id,
                 candidateId: edu.candidateId,
                 institution: edu.institution,
@@ -1273,7 +1518,7 @@ let CandidateService = class CandidateService {
                 where: { candidateId: candidate.id },
                 orderBy: { startDate: 'desc' },
             });
-            return experience.map(exp => ({
+            return experience.map((exp) => ({
                 id: exp.id,
                 candidateId: exp.candidateId,
                 company: exp.company,
@@ -1441,7 +1686,7 @@ let CandidateService = class CandidateService {
                 status: 'PUBLISHED',
             };
             if (candidate.skills && candidate.skills.length > 0) {
-                const candidateSkills = candidate.skills.map(skill => skill.skillName);
+                const candidateSkills = candidate.skills.map((skill) => skill.skillName);
                 whereClause.skillsRequired = {
                     hasSome: candidateSkills,
                 };
@@ -1449,8 +1694,13 @@ let CandidateService = class CandidateService {
             if (candidate.experience && candidate.experience.length > 0) {
                 const totalExperience = candidate.experience.reduce((total, exp) => {
                     const startDate = new Date(exp.startDate);
-                    const endDate = exp.isCurrent ? new Date() : (exp.endDate ? new Date(exp.endDate) : new Date());
-                    const years = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
+                    const endDate = exp.isCurrent
+                        ? new Date()
+                        : exp.endDate
+                            ? new Date(exp.endDate)
+                            : new Date();
+                    const years = (endDate.getTime() - startDate.getTime()) /
+                        (1000 * 60 * 60 * 24 * 365);
                     return total + years;
                 }, 0);
                 if (totalExperience >= 5) {
@@ -1498,7 +1748,7 @@ let CandidateService = class CandidateService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                jobs: jobs.map(job => ({
+                jobs: jobs.map((job) => ({
                     id: job.id,
                     title: job.title,
                     slug: job.slug,
@@ -1526,22 +1776,24 @@ let CandidateService = class CandidateService {
                     publishedAt: job.publishedAt,
                     createdAt: job.createdAt,
                     company: job.company,
-                    location: job.city ? {
-                        city: {
-                            id: job.city.id,
-                            name: job.city.name,
-                            state: {
-                                id: job.city.state.id,
-                                name: job.city.state.name,
-                                code: job.city.state.code,
-                                country: {
-                                    id: job.city.state.country.id,
-                                    name: job.city.state.country.name,
-                                    code: job.city.state.country.code,
+                    location: job.city
+                        ? {
+                            city: {
+                                id: job.city.id,
+                                name: job.city.name,
+                                state: {
+                                    id: job.city.state.id,
+                                    name: job.city.state.name,
+                                    iso2: job.city.state.iso2,
+                                    country: job.city.state.country ? {
+                                        id: job.city.state.country.id,
+                                        name: job.city.state.country.name,
+                                        iso2: job.city.state.country.iso2,
+                                    } : undefined,
                                 },
                             },
-                        },
-                    } : null,
+                        }
+                        : null,
                 })),
                 total,
                 page,
@@ -1581,7 +1833,7 @@ let CandidateService = class CandidateService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                alerts: alerts.map(alert => ({
+                alerts: alerts.map((alert) => ({
                     id: alert.id,
                     candidateId: alert.candidateId,
                     title: alert.title,
@@ -1760,7 +2012,7 @@ let CandidateService = class CandidateService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                applications: applications.map(app => ({
+                applications: applications.map((app) => ({
                     id: app.id,
                     jobId: app.jobId,
                     candidateId: app.candidateId,
@@ -1782,29 +2034,74 @@ let CandidateService = class CandidateService {
                             name: app.job.company.name,
                             logo: app.job.company.logo || undefined,
                         },
-                        location: app.job.city ? {
-                            city: {
-                                id: app.job.city.id,
-                                name: app.job.city.name,
-                                state: {
-                                    id: app.job.city.state.id,
-                                    name: app.job.city.state.name,
-                                    code: app.job.city.state.code || undefined,
-                                    country: {
-                                        id: app.job.city.state.country.id,
-                                        name: app.job.city.state.country.name,
-                                        code: app.job.city.state.country.code,
+                        location: app.job.city
+                            ? {
+                                city: {
+                                    id: app.job.city.id,
+                                    name: app.job.city.name,
+                                    state_id: app.job.city.state_id,
+                                    state_code: app.job.city.state_code,
+                                    state_name: app.job.city.state_name,
+                                    country_id: app.job.city.country_id,
+                                    country_code: app.job.city.country_code,
+                                    country_name: app.job.city.country_name,
+                                    latitude: app.job.city.latitude,
+                                    longitude: app.job.city.longitude,
+                                    wikiDataId: app.job.city.wikiDataId,
+                                    isActive: app.job.city.isActive,
+                                    createdAt: app.job.city.createdAt,
+                                    updatedAt: app.job.city.updatedAt,
+                                    state: {
+                                        id: app.job.city.state.id,
+                                        name: app.job.city.state.name,
+                                        country_id: app.job.city.state.country_id,
+                                        country_code: app.job.city.state.country_code,
+                                        country_name: app.job.city.state.country_name,
+                                        iso2: app.job.city.state.iso2,
+                                        fips_code: app.job.city.state.fips_code,
+                                        type: app.job.city.state.type,
+                                        latitude: app.job.city.state.latitude,
+                                        longitude: app.job.city.state.longitude,
+                                        isActive: app.job.city.state.isActive,
+                                        createdAt: app.job.city.state.createdAt,
+                                        updatedAt: app.job.city.state.updatedAt,
+                                        country: app.job.city.state.country ? {
+                                            id: app.job.city.state.country.id,
+                                            name: app.job.city.state.country.name,
+                                            iso3: app.job.city.state.country.iso3,
+                                            iso2: app.job.city.state.country.iso2,
+                                            numeric_code: app.job.city.state.country.numeric_code,
+                                            phonecode: app.job.city.state.country.phonecode,
+                                            capital: app.job.city.state.country.capital,
+                                            currency: app.job.city.state.country.currency,
+                                            currency_name: app.job.city.state.country.currency_name,
+                                            currency_symbol: app.job.city.state.country.currency_symbol,
+                                            tld: app.job.city.state.country.tld,
+                                            native: app.job.city.state.country.native,
+                                            region: app.job.city.state.country.region,
+                                            region_id: app.job.city.state.country.region_id,
+                                            subregion: app.job.city.state.country.subregion,
+                                            subregion_id: app.job.city.state.country.subregion_id,
+                                            nationality: app.job.city.state.country.nationality,
+                                            latitude: app.job.city.state.country.latitude,
+                                            longitude: app.job.city.state.country.longitude,
+                                            isActive: app.job.city.state.country.isActive,
+                                            createdAt: app.job.city.state.country.createdAt,
+                                            updatedAt: app.job.city.state.country.updatedAt,
+                                        } : undefined,
                                     },
                                 },
-                            },
-                        } : undefined,
+                            }
+                            : undefined,
                     },
-                    resume: app.resume ? {
-                        id: app.resume.id,
-                        title: app.resume.title,
-                        fileName: app.resume.fileName,
-                        uploadedAt: app.resume.uploadedAt,
-                    } : undefined,
+                    resume: app.resume
+                        ? {
+                            id: app.resume.id,
+                            title: app.resume.title,
+                            fileName: app.resume.fileName,
+                            uploadedAt: app.resume.uploadedAt,
+                        }
+                        : undefined,
                 })),
                 total,
                 page,
@@ -1840,7 +2137,10 @@ let CandidateService = class CandidateService {
             if (query.jobTitle || query.companyName) {
                 whereClause.job = {};
                 if (query.jobTitle) {
-                    whereClause.job.title = { contains: query.jobTitle, mode: 'insensitive' };
+                    whereClause.job.title = {
+                        contains: query.jobTitle,
+                        mode: 'insensitive',
+                    };
                 }
                 if (query.companyName) {
                     whereClause.job.company = {
@@ -1898,7 +2198,7 @@ let CandidateService = class CandidateService {
             ]);
             const totalPages = Math.ceil(total / limit);
             return {
-                applications: applications.map(app => ({
+                applications: applications.map((app) => ({
                     id: app.id,
                     jobId: app.jobId,
                     candidateId: app.candidateId,
@@ -1920,29 +2220,74 @@ let CandidateService = class CandidateService {
                             name: app.job.company.name,
                             logo: app.job.company.logo || undefined,
                         },
-                        location: app.job.city ? {
-                            city: {
-                                id: app.job.city.id,
-                                name: app.job.city.name,
-                                state: {
-                                    id: app.job.city.state.id,
-                                    name: app.job.city.state.name,
-                                    code: app.job.city.state.code || undefined,
-                                    country: {
-                                        id: app.job.city.state.country.id,
-                                        name: app.job.city.state.country.name,
-                                        code: app.job.city.state.country.code,
+                        location: app.job.city
+                            ? {
+                                city: {
+                                    id: app.job.city.id,
+                                    name: app.job.city.name,
+                                    state_id: app.job.city.state_id,
+                                    state_code: app.job.city.state_code,
+                                    state_name: app.job.city.state_name,
+                                    country_id: app.job.city.country_id,
+                                    country_code: app.job.city.country_code,
+                                    country_name: app.job.city.country_name,
+                                    latitude: app.job.city.latitude,
+                                    longitude: app.job.city.longitude,
+                                    wikiDataId: app.job.city.wikiDataId,
+                                    isActive: app.job.city.isActive,
+                                    createdAt: app.job.city.createdAt,
+                                    updatedAt: app.job.city.updatedAt,
+                                    state: {
+                                        id: app.job.city.state.id,
+                                        name: app.job.city.state.name,
+                                        country_id: app.job.city.state.country_id,
+                                        country_code: app.job.city.state.country_code,
+                                        country_name: app.job.city.state.country_name,
+                                        iso2: app.job.city.state.iso2,
+                                        fips_code: app.job.city.state.fips_code,
+                                        type: app.job.city.state.type,
+                                        latitude: app.job.city.state.latitude,
+                                        longitude: app.job.city.state.longitude,
+                                        isActive: app.job.city.state.isActive,
+                                        createdAt: app.job.city.state.createdAt,
+                                        updatedAt: app.job.city.state.updatedAt,
+                                        country: app.job.city.state.country ? {
+                                            id: app.job.city.state.country.id,
+                                            name: app.job.city.state.country.name,
+                                            iso3: app.job.city.state.country.iso3,
+                                            iso2: app.job.city.state.country.iso2,
+                                            numeric_code: app.job.city.state.country.numeric_code,
+                                            phonecode: app.job.city.state.country.phonecode,
+                                            capital: app.job.city.state.country.capital,
+                                            currency: app.job.city.state.country.currency,
+                                            currency_name: app.job.city.state.country.currency_name,
+                                            currency_symbol: app.job.city.state.country.currency_symbol,
+                                            tld: app.job.city.state.country.tld,
+                                            native: app.job.city.state.country.native,
+                                            region: app.job.city.state.country.region,
+                                            region_id: app.job.city.state.country.region_id,
+                                            subregion: app.job.city.state.country.subregion,
+                                            subregion_id: app.job.city.state.country.subregion_id,
+                                            nationality: app.job.city.state.country.nationality,
+                                            latitude: app.job.city.state.country.latitude,
+                                            longitude: app.job.city.state.country.longitude,
+                                            isActive: app.job.city.state.country.isActive,
+                                            createdAt: app.job.city.state.country.createdAt,
+                                            updatedAt: app.job.city.state.country.updatedAt,
+                                        } : undefined,
                                     },
                                 },
-                            },
-                        } : undefined,
+                            }
+                            : undefined,
                     },
-                    resume: app.resume ? {
-                        id: app.resume.id,
-                        title: app.resume.title,
-                        fileName: app.resume.fileName,
-                        uploadedAt: app.resume.uploadedAt,
-                    } : undefined,
+                    resume: app.resume
+                        ? {
+                            id: app.resume.id,
+                            title: app.resume.title,
+                            fileName: app.resume.fileName,
+                            uploadedAt: app.resume.uploadedAt,
+                        }
+                        : undefined,
                 })),
                 total,
                 page,
@@ -2029,29 +2374,78 @@ let CandidateService = class CandidateService {
                         name: application.job.company.name,
                         logo: application.job.company.logo || undefined,
                     },
-                    location: application.job.city ? {
-                        city: {
-                            id: application.job.city.id,
-                            name: application.job.city.name,
-                            state: {
-                                id: application.job.city.state.id,
-                                name: application.job.city.state.name,
-                                code: application.job.city.state.code || undefined,
-                                country: {
-                                    id: application.job.city.state.country.id,
-                                    name: application.job.city.state.country.name,
-                                    code: application.job.city.state.country.code,
+                    location: application.job.city
+                        ? {
+                            city: {
+                                id: application.job.city.id,
+                                name: application.job.city.name,
+                                state_id: application.job.city.state_id,
+                                state_code: application.job.city.state_code,
+                                state_name: application.job.city.state_name,
+                                country_id: application.job.city.country_id,
+                                country_code: application.job.city.country_code,
+                                country_name: application.job.city.country_name,
+                                latitude: application.job.city.latitude,
+                                longitude: application.job.city.longitude,
+                                wikiDataId: application.job.city.wikiDataId,
+                                isActive: application.job.city.isActive,
+                                createdAt: application.job.city.createdAt,
+                                updatedAt: application.job.city.updatedAt,
+                                state: {
+                                    id: application.job.city.state.id,
+                                    name: application.job.city.state.name,
+                                    country_id: application.job.city.state.country_id,
+                                    country_code: application.job.city.state.country_code,
+                                    country_name: application.job.city.state.country_name,
+                                    iso2: application.job.city.state.iso2,
+                                    fips_code: application.job.city.state.fips_code,
+                                    type: application.job.city.state.type,
+                                    level: application.job.city.state.level,
+                                    parent_id: application.job.city.state.parent_id,
+                                    latitude: application.job.city.state.latitude,
+                                    longitude: application.job.city.state.longitude,
+                                    isActive: application.job.city.state.isActive,
+                                    createdAt: application.job.city.state.createdAt,
+                                    updatedAt: application.job.city.state.updatedAt,
+                                    country: application.job.city.state.country
+                                        ? {
+                                            id: application.job.city.state.country.id,
+                                            name: application.job.city.state.country.name,
+                                            iso3: application.job.city.state.country.iso3,
+                                            iso2: application.job.city.state.country.iso2,
+                                            numeric_code: application.job.city.state.country.numeric_code,
+                                            phonecode: application.job.city.state.country.phonecode,
+                                            capital: application.job.city.state.country.capital,
+                                            currency: application.job.city.state.country.currency,
+                                            currency_name: application.job.city.state.country.currency_name,
+                                            currency_symbol: application.job.city.state.country.currency_symbol,
+                                            tld: application.job.city.state.country.tld,
+                                            native: application.job.city.state.country.native,
+                                            region: application.job.city.state.country.region,
+                                            region_id: application.job.city.state.country.region_id,
+                                            subregion: application.job.city.state.country.subregion,
+                                            subregion_id: application.job.city.state.country.subregion_id,
+                                            nationality: application.job.city.state.country.nationality,
+                                            latitude: application.job.city.state.country.latitude,
+                                            longitude: application.job.city.state.country.longitude,
+                                            isActive: application.job.city.state.country.isActive,
+                                            createdAt: application.job.city.state.country.createdAt,
+                                            updatedAt: application.job.city.state.country.updatedAt,
+                                        }
+                                        : undefined,
                                 },
                             },
-                        },
-                    } : undefined,
+                        }
+                        : undefined,
                 },
-                resume: application.resume ? {
-                    id: application.resume.id,
-                    title: application.resume.title,
-                    fileName: application.resume.fileName,
-                    uploadedAt: application.resume.uploadedAt,
-                } : undefined,
+                resume: application.resume
+                    ? {
+                        id: application.resume.id,
+                        title: application.resume.title,
+                        fileName: application.resume.fileName,
+                        uploadedAt: application.resume.uploadedAt,
+                    }
+                    : undefined,
             };
         }
         catch (error) {
@@ -2143,29 +2537,78 @@ let CandidateService = class CandidateService {
                         name: updatedApplication.job.company.name,
                         logo: updatedApplication.job.company.logo || undefined,
                     },
-                    location: updatedApplication.job.city ? {
-                        city: {
-                            id: updatedApplication.job.city.id,
-                            name: updatedApplication.job.city.name,
-                            state: {
-                                id: updatedApplication.job.city.state.id,
-                                name: updatedApplication.job.city.state.name,
-                                code: updatedApplication.job.city.state.code || undefined,
-                                country: {
-                                    id: updatedApplication.job.city.state.country.id,
-                                    name: updatedApplication.job.city.state.country.name,
-                                    code: updatedApplication.job.city.state.country.code,
+                    location: updatedApplication.job.city
+                        ? {
+                            city: {
+                                id: updatedApplication.job.city.id,
+                                name: updatedApplication.job.city.name,
+                                state_id: updatedApplication.job.city.state_id,
+                                state_code: updatedApplication.job.city.state_code,
+                                state_name: updatedApplication.job.city.state_name,
+                                country_id: updatedApplication.job.city.country_id,
+                                country_code: updatedApplication.job.city.country_code,
+                                country_name: updatedApplication.job.city.country_name,
+                                latitude: updatedApplication.job.city.latitude,
+                                longitude: updatedApplication.job.city.longitude,
+                                wikiDataId: updatedApplication.job.city.wikiDataId,
+                                isActive: updatedApplication.job.city.isActive,
+                                createdAt: updatedApplication.job.city.createdAt,
+                                updatedAt: updatedApplication.job.city.updatedAt,
+                                state: {
+                                    id: updatedApplication.job.city.state.id,
+                                    name: updatedApplication.job.city.state.name,
+                                    country_id: updatedApplication.job.city.state.country_id,
+                                    country_code: updatedApplication.job.city.state.country_code,
+                                    country_name: updatedApplication.job.city.state.country_name,
+                                    iso2: updatedApplication.job.city.state.iso2,
+                                    fips_code: updatedApplication.job.city.state.fips_code,
+                                    type: updatedApplication.job.city.state.type,
+                                    level: updatedApplication.job.city.state.level,
+                                    parent_id: updatedApplication.job.city.state.parent_id,
+                                    latitude: updatedApplication.job.city.state.latitude,
+                                    longitude: updatedApplication.job.city.state.longitude,
+                                    isActive: updatedApplication.job.city.state.isActive,
+                                    createdAt: updatedApplication.job.city.state.createdAt,
+                                    updatedAt: updatedApplication.job.city.state.updatedAt,
+                                    country: updatedApplication.job.city.state.country
+                                        ? {
+                                            id: updatedApplication.job.city.state.country.id,
+                                            name: updatedApplication.job.city.state.country.name,
+                                            iso3: updatedApplication.job.city.state.country.iso3,
+                                            iso2: updatedApplication.job.city.state.country.iso2,
+                                            numeric_code: updatedApplication.job.city.state.country.numeric_code,
+                                            phonecode: updatedApplication.job.city.state.country.phonecode,
+                                            capital: updatedApplication.job.city.state.country.capital,
+                                            currency: updatedApplication.job.city.state.country.currency,
+                                            currency_name: updatedApplication.job.city.state.country.currency_name,
+                                            currency_symbol: updatedApplication.job.city.state.country.currency_symbol,
+                                            tld: updatedApplication.job.city.state.country.tld,
+                                            native: updatedApplication.job.city.state.country.native,
+                                            region: updatedApplication.job.city.state.country.region,
+                                            region_id: updatedApplication.job.city.state.country.region_id,
+                                            subregion: updatedApplication.job.city.state.country.subregion,
+                                            subregion_id: updatedApplication.job.city.state.country.subregion_id,
+                                            nationality: updatedApplication.job.city.state.country.nationality,
+                                            latitude: updatedApplication.job.city.state.country.latitude,
+                                            longitude: updatedApplication.job.city.state.country.longitude,
+                                            isActive: updatedApplication.job.city.state.country.isActive,
+                                            createdAt: updatedApplication.job.city.state.country.createdAt,
+                                            updatedAt: updatedApplication.job.city.state.country.updatedAt,
+                                        }
+                                        : undefined,
                                 },
                             },
-                        },
-                    } : undefined,
+                        }
+                        : undefined,
                 },
-                resume: updatedApplication.resume ? {
-                    id: updatedApplication.resume.id,
-                    title: updatedApplication.resume.title,
-                    fileName: updatedApplication.resume.fileName,
-                    uploadedAt: updatedApplication.resume.uploadedAt,
-                } : undefined,
+                resume: updatedApplication.resume
+                    ? {
+                        id: updatedApplication.resume.id,
+                        title: updatedApplication.resume.title,
+                        fileName: updatedApplication.resume.fileName,
+                        uploadedAt: updatedApplication.resume.uploadedAt,
+                    }
+                    : undefined,
             };
         }
         catch (error) {

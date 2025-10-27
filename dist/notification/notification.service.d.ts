@@ -54,8 +54,8 @@ export declare class NotificationService {
     unregisterDeviceToken(userId: string, token: string): Promise<void>;
     private removeInvalidTokens;
     validateToken(token: string): Promise<boolean>;
-    subscribeToTopic(tokens: string[], topic: string): Promise<admin.messaging.TopicManagementResponse>;
-    unsubscribeFromTopic(tokens: string[], topic: string): Promise<admin.messaging.TopicManagementResponse>;
+    subscribeToTopic(tokens: string[], topic: string): Promise<admin.messaging.MessagingTopicManagementResponse>;
+    unsubscribeFromTopic(tokens: string[], topic: string): Promise<admin.messaging.MessagingTopicManagementResponse>;
     getUserFCMTokens(userId: string): Promise<string[]>;
     registerFCMToken(userId: string, token: string, deviceInfo?: any): Promise<{
         success: boolean;

@@ -15,7 +15,9 @@ const class_transformer_1 = require("class-transformer");
 class CompanyQueryDto {
     search;
     industry;
-    cityId;
+    country;
+    state;
+    city;
     isVerified;
     isActive;
     page = 1;
@@ -36,9 +38,19 @@ __decorate([
 ], CompanyQueryDto.prototype, "industry", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'City ID must be a string' }),
+    (0, class_validator_1.IsString)({ message: 'Country must be a string' }),
     __metadata("design:type", String)
-], CompanyQueryDto.prototype, "cityId", void 0);
+], CompanyQueryDto.prototype, "country", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'State must be a string' }),
+    __metadata("design:type", String)
+], CompanyQueryDto.prototype, "state", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'City must be a string' }),
+    __metadata("design:type", String)
+], CompanyQueryDto.prototype, "city", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsBoolean)({ message: 'Is verified must be a boolean value' }),

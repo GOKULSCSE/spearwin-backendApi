@@ -8,9 +8,38 @@ const app_module_1 = require("./app.module");
 const common_1 = require("@nestjs/common");
 const helmet_1 = __importDefault(require("helmet"));
 async function bootstrap() {
-    const app = await core_1.NestFactory.create(app_module_1.AppModule, { cors: true });
-    app.enableCors(true);
-    app.use((0, helmet_1.default)());
+    const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    app.enableCors({
+        origin: [
+            'http://localhost:3000',
+            'http://localhost:3001',
+            'https://admin.spearwin.com',
+            'https://frontend.spearwin.com'
+        ],
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+        allowedHeaders: [
+            'Content-Type',
+            'Authorization',
+            'Accept',
+            'Origin',
+            'X-Requested-With',
+            'X-User-Type',
+            'X-User-Email',
+            'Cache-Control',
+            'Pragma',
+        ],
+        exposedHeaders: [
+            'Authorization',
+            'X-Total-Count',
+            'X-Page-Count',
+        ],
+        credentials: true,
+        preflightContinue: false,
+        optionsSuccessStatus: 204,
+    });
+    app.use((0, helmet_1.default)({
+        crossOriginResourcePolicy: { policy: "cross-origin" }
+    }));
     app.useGlobalPipes(new common_1.ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,

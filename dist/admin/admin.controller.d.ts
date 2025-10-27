@@ -1,5 +1,6 @@
 import { AdminService } from './admin.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
+import { AdminLoginDto } from '../auth/dto/admin-login.dto';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdatePermissionsDto } from './dto/update-permissions.dto';
 import { UpdateAdminProfileDto, type AdminProfileResponseDto } from './dto/admin-profile.dto';
@@ -9,15 +10,20 @@ import { CreateJobDto, UpdateJobDto, JobListQueryDto, JobStatsResponseDto, JobAp
 import { UpdateApplicationStatusDto, AddApplicationFeedbackDto, ApplicationQueryDto, AdminApplicationResponseDto, ApplicationsListResponseDto, ApplicationStatsResponseDto, BulkUpdateApplicationsDto, BulkUpdateResponseDto, BulkExportQueryDto, BulkExportResponseDto } from './dto/admin-application.dto';
 import { ResumeQueryDto, AdminResumeResponseDto, ResumesListResponseDto, ResumeStatsResponseDto, BulkDownloadDto, BulkDownloadResponseDto } from './dto/admin-resume.dto';
 import { SendNotificationDto, BroadcastNotificationDto, CreateNotificationTemplateDto, NotificationTemplateResponseDto, SendNotificationResponseDto, BroadcastNotificationResponseDto, NotificationTemplatesListResponseDto, NotificationQueryDto } from './dto/admin-notification.dto';
+import { ChangePasswordDto } from '../user/dto/change-password.dto';
 import type { CurrentUser } from '../auth/decorators/current-user.decorator';
 export declare class AdminController {
     private readonly adminService;
     constructor(adminService: AdminService);
-    createAdmin(createAdminDto: CreateAdminDto, user: CurrentUser): Promise<import("./dto/admin-response.dto").CreateAdminResponseDto>;
+    adminLogin(adminLoginDto: AdminLoginDto): Promise<import("./dto/admin-auth-response.dto").AdminLoginResponseDto>;
+    createAdmin(createAdminDto: CreateAdminDto): Promise<import("./dto/admin-response.dto").CreateAdminResponseDto>;
     createCompany(createCompanyDto: CreateCompanyDto, user: CurrentUser): Promise<import("./dto/admin-response.dto").CreateCompanyResponseDto>;
     updatePermissions(updatePermissionsDto: UpdatePermissionsDto, user: CurrentUser): Promise<import("./dto/admin-response.dto").UpdatePermissionsResponseDto>;
     getAdminProfile(user: CurrentUser): Promise<AdminProfileResponseDto>;
     updateAdminProfile(user: CurrentUser, updateDto: UpdateAdminProfileDto): Promise<AdminProfileResponseDto>;
+    changeAdminPassword(user: CurrentUser, changePasswordDto: ChangePasswordDto): Promise<{
+        message: string;
+    }>;
     getAllAdmins(query: AdminListQueryDto): Promise<AdminListResponseDto>;
     getAdminById(adminId: string): Promise<AdminProfileResponseDto>;
     updateAdminPermissions(adminId: string, user: CurrentUser, updateDto: UpdatePermissionsDto): Promise<import("./dto/admin-response.dto").UpdatePermissionsResponseDto>;

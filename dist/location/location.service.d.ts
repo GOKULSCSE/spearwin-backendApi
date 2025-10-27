@@ -1,7 +1,7 @@
 import { DatabaseService } from '../database/database.service';
 import { CreateCountryDto, UpdateCountryDto, CountryResponseDto } from './dto/country.dto';
-import { CreateStateDto, UpdateStateDto, StateResponseDto } from './dto/state.dto';
-import { CreateCityDto, UpdateCityDto, CityResponseDto, CitySearchQueryDto } from './dto/city.dto';
+import { CreateStateDto, UpdateStateDto, StateResponseDto, StateListQueryDto, StateListResponseDto } from './dto/state.dto';
+import { CreateCityDto, UpdateCityDto, CityResponseDto, CitySearchQueryDto, CityListQueryDto, CityListResponseDto } from './dto/city.dto';
 import { CreatePincodeDto, UpdatePincodeDto, PincodeResponseDto } from './dto/pincode.dto';
 export declare class LocationService {
     private readonly db;
@@ -13,21 +13,23 @@ export declare class LocationService {
     deleteCountry(countryId: string, userId: string): Promise<{
         message: string;
     }>;
+    getAllStates(query: StateListQueryDto): Promise<StateListResponseDto>;
     getStatesByCountry(countryId: string): Promise<StateResponseDto[]>;
     getStateById(stateId: string): Promise<StateResponseDto>;
     createState(createDto: CreateStateDto, userId: string): Promise<StateResponseDto>;
     updateState(stateId: string, updateDto: UpdateStateDto, userId: string): Promise<StateResponseDto>;
+    getAllCities(query: CityListQueryDto): Promise<CityListResponseDto>;
     deleteState(stateId: string, userId: string): Promise<{
         message: string;
     }>;
     getCitiesByState(stateId: string): Promise<CityResponseDto[]>;
     getCityById(cityId: string): Promise<CityResponseDto>;
+    searchCities(query: CitySearchQueryDto): Promise<CityResponseDto[]>;
     createCity(createDto: CreateCityDto, userId: string): Promise<CityResponseDto>;
     updateCity(cityId: string, updateDto: UpdateCityDto, userId: string): Promise<CityResponseDto>;
     deleteCity(cityId: string, userId: string): Promise<{
         message: string;
     }>;
-    searchCities(query: CitySearchQueryDto): Promise<CityResponseDto[]>;
     getPincodesByCity(cityId: string): Promise<PincodeResponseDto[]>;
     getPincodeById(pincodeId: string): Promise<PincodeResponseDto>;
     createPincode(createDto: CreatePincodeDto, userId: string): Promise<PincodeResponseDto>;
@@ -35,6 +37,5 @@ export declare class LocationService {
     deletePincode(pincodeId: string, userId: string): Promise<{
         message: string;
     }>;
-    private logActivity;
     private handleException;
 }
