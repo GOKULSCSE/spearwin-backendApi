@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
-import { CandidateService } from './candidate.service';
 import { CandidateController } from './candidate.controller';
+import { CandidateService } from './candidate.service';
 import { DatabaseModule } from '../database/database.module';
-import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [DatabaseModule, AuthModule],
+  imports: [DatabaseModule],
   controllers: [CandidateController],
   providers: [CandidateService],
   exports: [CandidateService],

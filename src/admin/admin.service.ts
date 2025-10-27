@@ -807,6 +807,8 @@ export class AdminService {
 
       // Build order by clause
       const orderBy: Prisma.AdminOrderByWithRelationInput = {};
+      const sortDirection = sortOrder === 'asc' ? 'asc' : 'desc';
+      
       if (
         sortBy === 'firstName' ||
         sortBy === 'lastName' ||
@@ -814,10 +816,10 @@ export class AdminService {
         sortBy === 'designation'
       ) {
         orderBy[sortBy as keyof Prisma.AdminOrderByWithRelationInput] =
-          sortOrder;
+          sortDirection;
       } else {
         orderBy.user = {
-          [sortBy as keyof Prisma.UserOrderByWithRelationInput]: sortOrder,
+          [sortBy as keyof Prisma.UserOrderByWithRelationInput]: sortDirection,
         };
       }
 

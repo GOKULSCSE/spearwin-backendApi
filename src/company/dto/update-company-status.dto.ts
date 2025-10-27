@@ -1,6 +1,10 @@
-import { IsBoolean } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class UpdateCompanyStatusDto {
-  @IsBoolean({ message: 'Is active must be a boolean value' })
+  @IsBoolean()
   isActive: boolean;
+
+  @IsOptional()
+  @IsString()
+  reason?: string;
 }

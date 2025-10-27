@@ -1,122 +1,120 @@
-import {
-  IsOptional,
-  IsString,
-  IsNumber,
-  IsBoolean,
-  IsArray,
-  Min,
-  Max,
-} from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { IsOptional, IsString, IsNumber, Min, Max, IsBoolean } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class JobQueryDto {
   @IsOptional()
-  @IsString({ message: 'Search must be a string' })
+  @IsString()
   search?: string;
 
   @IsOptional()
-  @IsString({ message: 'Company ID must be a string' })
-  company?: string;
+  @IsString()
+  location?: string;
 
   @IsOptional()
-  @IsString({ message: 'City ID must be a string' })
-  city?: string;
+  @IsString()
+  category?: string;
 
   @IsOptional()
-  @IsString({ message: 'Job type must be a string' })
-  type?: string;
-
-  @IsOptional()
-  @IsString({ message: 'Experience level must be a string' })
+  @IsString()
   experience?: string;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber({}, { message: 'Minimum salary must be a number' })
-  @Min(0, { message: 'Minimum salary must be positive' })
+  @IsString()
+  company?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  type?: string;
+
+  @IsOptional()
+  @IsNumber()
   salary_min?: number;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber({}, { message: 'Maximum salary must be a number' })
-  @Min(0, { message: 'Maximum salary must be positive' })
+  @IsNumber()
   salary_max?: number;
 
   @IsOptional()
-  @IsArray({ message: 'Skills must be an array' })
-  @IsString({ each: true, message: 'Each skill must be a string' })
-  skills?: string[];
+  @IsString()
+  skills?: string;
 
   @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
-  @IsBoolean({ message: 'Remote must be a boolean' })
+  @IsBoolean()
   remote?: boolean;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber({}, { message: 'Page must be a number' })
-  @Min(1, { message: 'Page must be at least 1' })
+  @IsString()
+  sortBy?: string;
+
+  @IsOptional()
+  @IsString()
+  sortOrder?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
+  @Min(1)
   page?: number = 1;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber({}, { message: 'Limit must be a number' })
-  @Min(1, { message: 'Limit must be at least 1' })
-  @Max(100, { message: 'Limit must not exceed 100' })
-  limit?: number = 20;
-
-  @IsOptional()
-  @IsString({ message: 'Sort by must be a string' })
-  sortBy?: string = 'createdAt';
-
-  @IsOptional()
-  @IsString({ message: 'Sort order must be a string' })
-  sortOrder?: 'asc' | 'desc' = 'desc';
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  limit?: number = 10;
 }
 
 export class JobSearchDto {
   @IsOptional()
-  @IsString({ message: 'Query must be a string' })
+  @IsString()
   q?: string;
 
   @IsOptional()
-  @IsString({ message: 'Location must be a string' })
+  @IsString()
+  keyword?: string;
+
+  @IsOptional()
+  @IsString()
   location?: string;
 
   @IsOptional()
-  @IsString({ message: 'Job type must be a string' })
-  type?: string;
+  @IsString()
+  category?: string;
 
   @IsOptional()
-  @IsString({ message: 'Experience level must be a string' })
+  @IsString()
   experience?: string;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber({}, { message: 'Minimum salary must be a number' })
-  @Min(0, { message: 'Minimum salary must be positive' })
+  @IsString()
+  type?: string;
+
+  @IsOptional()
+  @IsNumber()
   salary_min?: number;
 
   @IsOptional()
-  @IsArray({ message: 'Skills must be an array' })
-  @IsString({ each: true, message: 'Each skill must be a string' })
-  skills?: string[];
+  @IsString()
+  skills?: string;
 
   @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
-  @IsBoolean({ message: 'Remote must be a boolean' })
+  @IsBoolean()
   remote?: boolean;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber({}, { message: 'Page must be a number' })
-  @Min(1, { message: 'Page must be at least 1' })
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
+  @Min(1)
   page?: number = 1;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber({}, { message: 'Limit must be a number' })
-  @Min(1, { message: 'Limit must be at least 1' })
-  @Max(100, { message: 'Limit must not exceed 100' })
-  limit?: number = 20;
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  limit?: number = 10;
 }

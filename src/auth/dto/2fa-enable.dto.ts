@@ -1,11 +1,15 @@
-import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty } from 'class-validator';
 
 export class Enable2FaDto {
-  @IsString({ message: 'Password must be a string' })
-  @IsNotEmpty({ message: 'Password is required' })
-  password: string;
+  @IsString()
+  @IsNotEmpty()
+  secret: string;
 
-  @IsOptional()
-  @IsString({ message: 'Phone number must be a string' })
-  phone?: string;
+  @IsString()
+  @IsNotEmpty()
+  token: string;
+
+  @IsString()
+  @IsNotEmpty()
+  password: string;
 }

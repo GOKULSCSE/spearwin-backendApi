@@ -45,6 +45,13 @@ export class CompanyController {
     return this.companyService.getAllCompanies(query);
   }
 
+
+  @Get('active')
+  async getActiveCompanies(): Promise<{ companies: { id: string; name: string; slug: string }[] }> {
+    return this.companyService.getActiveCompanies();
+  }
+
+
   @Get(':id')
   async getCompanyById(
     @Param('id') companyId: string,
