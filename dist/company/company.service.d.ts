@@ -9,6 +9,24 @@ export declare class CompanyService {
     private readonly db;
     constructor(db: DatabaseService);
     getAllCompanies(query: CompanyQueryDto): Promise<CompanyListResponseDto>;
+    getActiveCompanies(): Promise<{
+        companies: {
+            id: string;
+            name: string;
+            slug: string;
+        }[];
+    }>;
+    getActiveCompaniesWithPagination(query: CompanyQueryDto): Promise<{
+        companies: {
+            id: string;
+            name: string;
+            slug: string;
+        }[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    }>;
     getCompanyById(companyId: string): Promise<CompanyResponseDto>;
     createCompany(createDto: CreateCompanyDto, adminUserId: string): Promise<CompanyResponseDto>;
     updateCompany(companyId: string, updateDto: UpdateCompanyDto, adminUserId: string): Promise<CompanyResponseDto>;

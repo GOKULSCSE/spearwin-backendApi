@@ -17,14 +17,14 @@ class ResetPasswordDto {
 }
 exports.ResetPasswordDto = ResetPasswordDto;
 __decorate([
-    (0, class_validator_1.IsString)({ message: 'Token must be a string' }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'Token is required' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], ResetPasswordDto.prototype, "token", void 0);
 __decorate([
-    (0, class_validator_1.IsString)({ message: 'New password must be a string' }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'New password is required' }),
-    (0, class_validator_1.MinLength)(6, { message: 'New password must be at least 6 characters long' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.MinLength)(8),
     __metadata("design:type", String)
 ], ResetPasswordDto.prototype, "newPassword", void 0);
 //# sourceMappingURL=reset-password.dto.js.map

@@ -32,6 +32,9 @@ let CompanyController = class CompanyController {
     async getAllCompanies(query) {
         return this.companyService.getAllCompanies(query);
     }
+    async getActiveCompanies() {
+        return this.companyService.getActiveCompanies();
+    }
     async getCompanyById(companyId) {
         return this.companyService.getCompanyById(companyId);
     }
@@ -65,6 +68,12 @@ __decorate([
     __metadata("design:paramtypes", [company_query_dto_1.CompanyQueryDto]),
     __metadata("design:returntype", Promise)
 ], CompanyController.prototype, "getAllCompanies", null);
+__decorate([
+    (0, common_1.Get)('active'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], CompanyController.prototype, "getActiveCompanies", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),

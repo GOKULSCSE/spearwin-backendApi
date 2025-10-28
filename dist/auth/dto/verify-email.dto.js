@@ -12,18 +12,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.VerifyEmailDto = void 0;
 const class_validator_1 = require("class-validator");
 class VerifyEmailDto {
-    code;
     userId;
+    code;
 }
 exports.VerifyEmailDto = VerifyEmailDto;
 __decorate([
-    (0, class_validator_1.IsString)({ message: 'OTP code must be a string' }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'OTP code is required' }),
-    __metadata("design:type", String)
-], VerifyEmailDto.prototype, "code", void 0);
-__decorate([
-    (0, class_validator_1.IsUUID)('4', { message: 'User ID must be a valid UUID' }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'User ID is required' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], VerifyEmailDto.prototype, "userId", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], VerifyEmailDto.prototype, "code", void 0);
 //# sourceMappingURL=verify-email.dto.js.map

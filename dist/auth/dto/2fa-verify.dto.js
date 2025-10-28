@@ -12,18 +12,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Verify2FaDto = void 0;
 const class_validator_1 = require("class-validator");
 class Verify2FaDto {
-    code;
     userId;
+    code;
 }
 exports.Verify2FaDto = Verify2FaDto;
 __decorate([
-    (0, class_validator_1.IsString)({ message: '2FA code must be a string' }),
-    (0, class_validator_1.IsNotEmpty)({ message: '2FA code is required' }),
-    __metadata("design:type", String)
-], Verify2FaDto.prototype, "code", void 0);
-__decorate([
-    (0, class_validator_1.IsUUID)('4', { message: 'User ID must be a valid UUID' }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'User ID is required' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], Verify2FaDto.prototype, "userId", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], Verify2FaDto.prototype, "code", void 0);
 //# sourceMappingURL=2fa-verify.dto.js.map

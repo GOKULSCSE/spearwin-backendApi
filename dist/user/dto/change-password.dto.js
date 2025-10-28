@@ -17,21 +17,14 @@ class ChangePasswordDto {
 }
 exports.ChangePasswordDto = ChangePasswordDto;
 __decorate([
-    (0, class_validator_1.IsString)({ message: 'Current password must be a string' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], ChangePasswordDto.prototype, "currentPassword", void 0);
 __decorate([
-    (0, class_validator_1.IsString)({ message: 'New password must be a string' }),
-    (0, class_validator_1.MinLength)(8, { message: 'New password must be at least 8 characters long' }),
-    (0, class_validator_1.MaxLength)(128, { message: 'New password must not exceed 128 characters' }),
-    (0, class_validator_1.IsStrongPassword)({
-        minLowercase: 1,
-        minUppercase: 1,
-        minNumbers: 1,
-        minSymbols: 1,
-    }, {
-        message: 'New password must contain at least 1 lowercase, 1 uppercase, 1 number and 1 symbol',
-    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.MinLength)(8),
     __metadata("design:type", String)
 ], ChangePasswordDto.prototype, "newPassword", void 0);
 //# sourceMappingURL=change-password.dto.js.map

@@ -18,7 +18,6 @@ const job_service_1 = require("./job.service");
 const job_query_dto_1 = require("./dto/job-query.dto");
 const update_job_dto_1 = require("./dto/update-job.dto");
 const job_application_dto_1 = require("../candidate/dto/job-application.dto");
-const job_attribute_dto_1 = require("./dto/job-attribute.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
 let JobController = class JobController {
@@ -49,27 +48,6 @@ let JobController = class JobController {
     }
     async updateJob(jobId, updateJobDto) {
         return this.jobService.updateJob(jobId, updateJobDto);
-    }
-    async createJobAttribute(createJobAttributeDto) {
-        return this.jobService.createJobAttribute(createJobAttributeDto);
-    }
-    async getJobAttributes(query) {
-        return this.jobService.getJobAttributes(query);
-    }
-    async getJobAttributesByCategory() {
-        return this.jobService.getJobAttributesByCategory();
-    }
-    async getJobAttribute(id) {
-        return this.jobService.getJobAttribute(id);
-    }
-    async updateJobAttribute(id, updateJobAttributeDto) {
-        return this.jobService.updateJobAttribute(id, updateJobAttributeDto);
-    }
-    async deleteJobAttribute(id) {
-        return this.jobService.deleteJobAttribute(id);
-    }
-    async bulkCreateJobAttributes(bulkCreateDto) {
-        return this.jobService.bulkCreateJobAttributes(bulkCreateDto);
     }
 };
 exports.JobController = JobController;
@@ -131,59 +109,6 @@ __decorate([
     __metadata("design:paramtypes", [String, update_job_dto_1.UpdateJobDto]),
     __metadata("design:returntype", Promise)
 ], JobController.prototype, "updateJob", null);
-__decorate([
-    (0, common_1.Post)('attributes'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [job_attribute_dto_1.CreateJobAttributeDto]),
-    __metadata("design:returntype", Promise)
-], JobController.prototype, "createJobAttribute", null);
-__decorate([
-    (0, common_1.Get)('attributes'),
-    __param(0, (0, common_1.Query)(common_1.ValidationPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [job_attribute_dto_1.JobAttributeQueryDto]),
-    __metadata("design:returntype", Promise)
-], JobController.prototype, "getJobAttributes", null);
-__decorate([
-    (0, common_1.Get)('attributes/categories'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], JobController.prototype, "getJobAttributesByCategory", null);
-__decorate([
-    (0, common_1.Get)('attributes/:id'),
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], JobController.prototype, "getJobAttribute", null);
-__decorate([
-    (0, common_1.Put)('attributes/:id'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, job_attribute_dto_1.UpdateJobAttributeDto]),
-    __metadata("design:returntype", Promise)
-], JobController.prototype, "updateJobAttribute", null);
-__decorate([
-    (0, common_1.Delete)('attributes/:id'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], JobController.prototype, "deleteJobAttribute", null);
-__decorate([
-    (0, common_1.Post)('attributes/bulk'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [job_attribute_dto_1.BulkCreateJobAttributesDto]),
-    __metadata("design:returntype", Promise)
-], JobController.prototype, "bulkCreateJobAttributes", null);
 exports.JobController = JobController = __decorate([
     (0, common_1.Controller)('jobs'),
     __metadata("design:paramtypes", [job_service_1.JobService])

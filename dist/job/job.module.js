@@ -8,16 +8,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.JobModule = void 0;
 const common_1 = require("@nestjs/common");
-const job_service_1 = require("./job.service");
 const job_controller_1 = require("./job.controller");
+const job_service_1 = require("./job.service");
 const database_module_1 = require("../database/database.module");
-const auth_module_1 = require("../auth/auth.module");
 let JobModule = class JobModule {
 };
 exports.JobModule = JobModule;
 exports.JobModule = JobModule = __decorate([
     (0, common_1.Module)({
-        imports: [database_module_1.DatabaseModule, auth_module_1.AuthModule],
+        imports: [database_module_1.DatabaseModule],
         controllers: [job_controller_1.JobController],
         providers: [job_service_1.JobService],
         exports: [job_service_1.JobService],
