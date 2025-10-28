@@ -16,8 +16,8 @@ class Disable2FaDto {
 }
 exports.Disable2FaDto = Disable2FaDto;
 __decorate([
-    (0, class_validator_1.IsString)({ message: 'Password must be a string' }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'Password is required' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], Disable2FaDto.prototype, "password", void 0);
 //# sourceMappingURL=2fa-disable.dto.js.map

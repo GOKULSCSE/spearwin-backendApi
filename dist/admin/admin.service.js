@@ -611,16 +611,17 @@ let AdminService = class AdminService {
                 where.user = { ...where.user, status: status };
             }
             const orderBy = {};
+            const sortDirection = sortOrder === 'asc' ? 'asc' : 'desc';
             if (sortBy === 'firstName' ||
                 sortBy === 'lastName' ||
                 sortBy === 'department' ||
                 sortBy === 'designation') {
                 orderBy[sortBy] =
-                    sortOrder;
+                    sortDirection;
             }
             else {
                 orderBy.user = {
-                    [sortBy]: sortOrder,
+                    [sortBy]: sortDirection,
                 };
             }
             const [admins, total] = await Promise.all([

@@ -16,8 +16,8 @@ class RefreshTokenDto {
 }
 exports.RefreshTokenDto = RefreshTokenDto;
 __decorate([
-    (0, class_validator_1.IsString)({ message: 'Refresh token must be a string' }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'Refresh token is required' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], RefreshTokenDto.prototype, "refreshToken", void 0);
 //# sourceMappingURL=refresh-token.dto.js.map

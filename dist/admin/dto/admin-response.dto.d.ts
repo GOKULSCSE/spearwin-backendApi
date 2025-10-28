@@ -1,9 +1,6 @@
-export interface AdminResponseDto {
+export interface CreateAdminResponseDto {
     success: boolean;
     message: string;
-    data?: any;
-}
-export interface CreateAdminResponseDto extends AdminResponseDto {
     data: {
         user: {
             id: string;
@@ -22,11 +19,14 @@ export interface CreateAdminResponseDto extends AdminResponseDto {
             lastName: string;
             department?: string;
             position?: string;
+            permissions?: string[];
             createdAt: Date;
         };
     };
 }
-export interface CreateCompanyResponseDto extends AdminResponseDto {
+export interface CreateCompanyResponseDto {
+    success: boolean;
+    message: string;
     data: {
         user: {
             id: string;
@@ -42,14 +42,18 @@ export interface CreateCompanyResponseDto extends AdminResponseDto {
         company: {
             id: string;
             name: string;
-            slug: string;
-            isVerified: boolean;
-            isActive: boolean;
+            email?: string;
+            status?: string;
+            slug?: string;
+            isVerified?: boolean;
+            isActive?: boolean;
             createdAt: Date;
         };
     };
 }
-export interface UpdatePermissionsResponseDto extends AdminResponseDto {
+export interface UpdatePermissionsResponseDto {
+    success: boolean;
+    message: string;
     data: {
         admin: {
             id: string;

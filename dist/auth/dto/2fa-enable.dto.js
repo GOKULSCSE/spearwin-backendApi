@@ -12,18 +12,24 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Enable2FaDto = void 0;
 const class_validator_1 = require("class-validator");
 class Enable2FaDto {
+    secret;
+    token;
     password;
-    phone;
 }
 exports.Enable2FaDto = Enable2FaDto;
 __decorate([
-    (0, class_validator_1.IsString)({ message: 'Password must be a string' }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'Password is required' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], Enable2FaDto.prototype, "secret", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], Enable2FaDto.prototype, "token", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], Enable2FaDto.prototype, "password", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Phone number must be a string' }),
-    __metadata("design:type", String)
-], Enable2FaDto.prototype, "phone", void 0);
 //# sourceMappingURL=2fa-enable.dto.js.map

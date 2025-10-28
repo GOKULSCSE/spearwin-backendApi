@@ -18,10 +18,10 @@ class UpdatePermissionsDto {
 exports.UpdatePermissionsDto = UpdatePermissionsDto;
 __decorate([
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], UpdatePermissionsDto.prototype, "adminId", void 0);
 __decorate([
-    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)

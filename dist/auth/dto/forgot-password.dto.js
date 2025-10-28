@@ -16,8 +16,8 @@ class ForgotPasswordDto {
 }
 exports.ForgotPasswordDto = ForgotPasswordDto;
 __decorate([
-    (0, class_validator_1.IsEmail)({}, { message: 'Please provide a valid email address' }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'Email is required' }),
+    (0, class_validator_1.IsEmail)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], ForgotPasswordDto.prototype, "email", void 0);
 //# sourceMappingURL=forgot-password.dto.js.map
