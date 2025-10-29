@@ -287,6 +287,29 @@ export class JobAttributeService {
   }
 
   // Utility Methods
+  async toggleAttributeActive(id: string) {
+    const attribute = await this.findAttributeById(id);
+
+    return await this.prisma.jobAttribute.update({
+      where: { id },
+      data: { isActive: !attribute.isActive },
+      include: { category: true }
+    });
+  }
+
+  async getActiveAttributesByCategory() {
+    return await this.prisma.jobAttributeCategory.findMany({
+      where: { isActive: true },
+      include: {
+        attributes: {
+          where: { isActive: true },
+          orderBy: { sortOrder: 'asc' }
+        }
+      },
+      orderBy: { sortOrder: 'asc' }
+    });
+  }
+
   async getCategoriesWithAttributes() {
     return await this.prisma.jobAttributeCategory.findMany({
       where: { isActive: true },

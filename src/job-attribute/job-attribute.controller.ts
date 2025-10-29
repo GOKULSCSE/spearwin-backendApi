@@ -163,6 +163,25 @@ export class JobAttributeController {
   }
 
   // Utility Routes
+  @Patch(':id/toggle-active')
+  @UseGuards(JwtAuthGuard)
+  async toggleAttributeActive(@Param('id', ParseUUIDPipe) id: string) {
+    return {
+      success: true,
+      message: 'Attribute active status toggled successfully',
+      data: await this.jobAttributeService.toggleAttributeActive(id)
+    };
+  }
+
+  @Get('active-by-category')
+  async getActiveAttributesByCategory() {
+    return {
+      success: true,
+      message: 'Active attributes by category retrieved successfully',
+      data: await this.jobAttributeService.getActiveAttributesByCategory()
+    };
+  }
+
   @Post('initialize-categories')
   @UseGuards(JwtAuthGuard)
   async initializeDefaultCategories() {
