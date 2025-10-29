@@ -9,10 +9,12 @@ async function bootstrap() {
   // Enhanced CORS configuration
   app.enableCors({
     origin: [
-      'http://localhost:3000',  // Your frontend URL
-      'http://localhost:3001',  // Alternative frontend port  
-      'https://admin.spearwin.com', 
-      'https://frontend.spearwin.com'// Production backend URL
+      'http://localhost:3000', // Your frontend URL
+      'http://localhost:3001', // Alternative frontend port
+      'https://admin.spearwin.com',
+      'https://admin.spearwin.com/', // With trailing slash
+      'https://frontend.spearwin.com',
+      'https://frontend.spearwin.com/',
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
@@ -25,12 +27,14 @@ async function bootstrap() {
       'X-User-Email',
       'Cache-Control',
       'Pragma',
+      'DNT',
+      'Sec-CH-UA',
+      'Sec-CH-UA-Mobile',
+      'Sec-CH-UA-Platform',
+      'User-Agent',
+      'Referer',
     ],
-    exposedHeaders: [
-      'Authorization',
-      'X-Total-Count',
-      'X-Page-Count',
-    ],
+    exposedHeaders: ['Authorization', 'X-Total-Count', 'X-Page-Count'],
     credentials: true, // Important for cookies/auth
     preflightContinue: false,
     optionsSuccessStatus: 204,
