@@ -46,6 +46,7 @@ exports.AdminService = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const database_service_1 = require("../database/database.service");
+const company_uuid_util_1 = require("../company/utils/company-uuid.util");
 const client_1 = require("@prisma/client");
 const bcrypt = __importStar(require("bcryptjs"));
 const uuid_1 = require("uuid");
@@ -237,6 +238,11 @@ let AdminService = class AdminService {
                 .replace(/(^-|-$)/g, '') +
                 '-' +
                 Date.now();
+            const existingCompanies = await this.prisma.company.findMany({
+                select: { uuid: true },
+            });
+            const existingUuids = existingCompanies.map(c => c.uuid).filter((uuid) => uuid !== null);
+            const companyUuid = (0, company_uuid_util_1.generateCompanyUuid)(createCompanyDto.name, existingUuids);
             const result = await this.prisma.$transaction(async (prisma) => {
                 const user = await prisma.user.create({
                     data: {
@@ -255,6 +261,7 @@ let AdminService = class AdminService {
                         userId: user.id,
                         name: createCompanyDto.name,
                         slug: slug,
+                        uuid: companyUuid,
                         description: createCompanyDto.description,
                         website: createCompanyDto.website,
                         industry: createCompanyDto.industry,

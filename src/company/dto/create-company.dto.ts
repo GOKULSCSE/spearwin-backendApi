@@ -24,6 +24,10 @@ export class CreateCompanyDto {
   slug: string;
 
   @IsOptional()
+  @IsString({ message: 'UUID must be a string' })
+  uuid?: string;
+
+  @IsOptional()
   @IsString({ message: 'Description must be a string' })
   @MaxLength(1000, { message: 'Description must not exceed 1000 characters' })
   description?: string;

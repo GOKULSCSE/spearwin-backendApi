@@ -24,6 +24,7 @@ const job_module_1 = require("./job/job.module");
 const notification_module_1 = require("./notification/notification.module");
 const dashboard_module_1 = require("./dashboard/dashboard.module");
 const job_attribute_module_1 = require("./job-attribute/job-attribute.module");
+const testimonial_module_1 = require("./testimonial/testimonial.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -41,6 +42,7 @@ exports.AppModule = AppModule = __decorate([
             notification_module_1.NotificationModule,
             dashboard_module_1.DashboardModule,
             job_attribute_module_1.JobAttributeModule,
+            testimonial_module_1.TestimonialModule,
             throttler_1.ThrottlerModule.forRoot([
                 {
                     name: 'short',

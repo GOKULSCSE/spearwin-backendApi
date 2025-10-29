@@ -32,6 +32,7 @@ import {
 import { UserRole, UserStatus, OTPType } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
+import { generateCompanyUuid } from '../company/utils/company-uuid.util';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
 
@@ -715,6 +716,13 @@ export class AuthService {
         '-' +
         Date.now();
 
+      // Generate UUID for company
+      const existingCompanies = await this.prisma.company.findMany({
+        select: { uuid: true },
+      });
+      const existingUuids = existingCompanies.map(c => c.uuid).filter((uuid): uuid is string => uuid !== null);
+      const companyUuid = generateCompanyUuid(companyRegisterDto.name, existingUuids);
+
       // Create user and company in a transaction
       const result = await this.prisma.$transaction(async (prisma) => {
         // Create user
@@ -737,6 +745,7 @@ export class AuthService {
             userId: user.id,
             name: companyRegisterDto.name,
             slug: slug,
+            uuid: companyUuid,
             description: companyRegisterDto.description,
             website: companyRegisterDto.website,
             industry: companyRegisterDto.industry,

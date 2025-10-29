@@ -49,6 +49,7 @@ const database_service_1 = require("../database/database.service");
 const client_1 = require("@prisma/client");
 const bcrypt = __importStar(require("bcryptjs"));
 const uuid_1 = require("uuid");
+const company_uuid_util_1 = require("../company/utils/company-uuid.util");
 const speakeasy = __importStar(require("speakeasy"));
 const QRCode = __importStar(require("qrcode"));
 let AuthService = class AuthService {
@@ -565,6 +566,11 @@ let AuthService = class AuthService {
                 .replace(/(^-|-$)/g, '') +
                 '-' +
                 Date.now();
+            const existingCompanies = await this.prisma.company.findMany({
+                select: { uuid: true },
+            });
+            const existingUuids = existingCompanies.map(c => c.uuid).filter((uuid) => uuid !== null);
+            const companyUuid = (0, company_uuid_util_1.generateCompanyUuid)(companyRegisterDto.name, existingUuids);
             const result = await this.prisma.$transaction(async (prisma) => {
                 const user = await prisma.user.create({
                     data: {
@@ -583,6 +589,7 @@ let AuthService = class AuthService {
                         userId: user.id,
                         name: companyRegisterDto.name,
                         slug: slug,
+                        uuid: companyUuid,
                         description: companyRegisterDto.description,
                         website: companyRegisterDto.website,
                         industry: companyRegisterDto.industry,

@@ -18,6 +18,7 @@ import {
   UpdateAdminProfileDto,
   AdminProfileResponseDto,
 } from './dto/admin-profile.dto';
+import { generateCompanyUuid } from '../company/utils/company-uuid.util';
 import { AdminListQueryDto, AdminListResponseDto } from './dto/admin-list.dto';
 import { UpdateAdminStatusDto } from './dto/update-admin-status.dto';
 import {
@@ -318,6 +319,13 @@ export class AdminService {
         '-' +
         Date.now();
 
+      // Generate UUID for company
+      const existingCompanies = await this.prisma.company.findMany({
+        select: { uuid: true },
+      });
+      const existingUuids = existingCompanies.map(c => c.uuid).filter((uuid): uuid is string => uuid !== null);
+      const companyUuid = generateCompanyUuid(createCompanyDto.name, existingUuids);
+
       // Create user and company in a transaction
       const result = await this.prisma.$transaction(async (prisma) => {
         // Create user
@@ -340,6 +348,7 @@ export class AdminService {
             userId: user.id,
             name: createCompanyDto.name,
             slug: slug,
+            uuid: companyUuid,
             description: createCompanyDto.description,
             website: createCompanyDto.website,
             industry: createCompanyDto.industry,

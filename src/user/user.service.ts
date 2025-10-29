@@ -19,6 +19,8 @@ import {
 import { UserProfileResponseDto } from './dto/user-profile-response.dto';
 import { ActivityLogsResponseDto } from './dto/activity-logs-response.dto';
 import { RecentUsersResponseDto } from './dto/recent-users-response.dto';
+import { UserProfilesQueryDto } from './dto/user-profiles-query.dto';
+import { UserProfilesListResponseDto, UserProfileDto } from './dto/user-profiles-response.dto';
 import {
   Prisma,
   UserRole,
@@ -42,7 +44,16 @@ export class UserService {
 
   async findAll() {
     try {
-      const data = await this.db.user.findMany();
+      const data = await this.db.user.findMany({
+        include: {
+          candidate: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      });
       return data;
     } catch (error) {
       this.handleException(error);
@@ -684,6 +695,359 @@ export class UserService {
 
   handleException(error) {
     throw new InternalServerErrorException("Can't fetch user Details");
+  }
+
+  // =================================================================
+  // USER PROFILES MANAGEMENT API
+  // =================================================================
+
+  async getUserProfiles(query: UserProfilesQueryDto): Promise<UserProfilesListResponseDto> {
+    try {
+      const {
+        search,
+        role,
+        status,
+        emailVerified,
+        phoneVerified,
+        profileCompleted,
+        twoFactorEnabled,
+        page = 1,
+        limit = 10,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+      } = query;
+
+      const skip = (page - 1) * limit;
+
+      // Build where clause
+      const where: Prisma.UserWhereInput = {};
+
+      if (search) {
+        where.OR = [
+          { email: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search, mode: 'insensitive' } },
+          {
+            candidate: {
+              OR: [
+                { firstName: { contains: search, mode: 'insensitive' } },
+                { lastName: { contains: search, mode: 'insensitive' } },
+              ],
+            },
+          },
+        ];
+      }
+
+      if (role) {
+        where.role = role;
+      }
+
+      if (status) {
+        where.status = status;
+      }
+
+      if (emailVerified !== undefined) {
+        where.emailVerified = emailVerified;
+      }
+
+      if (phoneVerified !== undefined) {
+        where.phoneVerified = phoneVerified;
+      }
+
+      if (profileCompleted !== undefined) {
+        where.profileCompleted = profileCompleted;
+      }
+
+      if (twoFactorEnabled !== undefined) {
+        where.twoFactorEnabled = twoFactorEnabled;
+      }
+
+      // Build order by clause
+      const orderBy: Prisma.UserOrderByWithRelationInput = {};
+      orderBy[sortBy as keyof Prisma.UserOrderByWithRelationInput] = sortOrder;
+
+      // Get users and total count
+      const [users, total] = await Promise.all([
+        this.db.user.findMany({
+          where,
+          include: {
+            candidate: {
+              include: {
+                city: {
+                  include: {
+                    state: {
+                      include: {
+                        country: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            admin: true,
+            superAdmin: true,
+            company: {
+              select: {
+                id: true,
+                name: true,
+                isVerified: true,
+                isActive: true,
+              },
+            },
+          },
+          orderBy,
+          skip,
+          take: limit,
+        }),
+        this.db.user.count({ where }),
+      ]);
+
+      // Get statistics
+      const [
+        totalUsers,
+        activeUsers,
+        inactiveUsers,
+        pendingUsers,
+        roleStats,
+        statusStats,
+      ] = await Promise.all([
+        this.db.user.count(),
+        this.db.user.count({ where: { status: 'ACTIVE' } }),
+        this.db.user.count({ where: { status: 'INACTIVE' } }),
+        this.db.user.count({ where: { status: 'PENDING_VERIFICATION' } }),
+        this.db.user.groupBy({
+          by: ['role'],
+          _count: { role: true },
+        }),
+        this.db.user.groupBy({
+          by: ['status'],
+          _count: { status: true },
+        }),
+      ]);
+
+      const totalPages = Math.ceil(total / limit);
+
+      // Transform users data
+      const transformedUsers: UserProfileDto[] = users.map((user) => ({
+        id: user.id,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        status: user.status,
+        emailVerified: user.emailVerified,
+        phoneVerified: user.phoneVerified,
+        profileCompleted: user.profileCompleted,
+        twoFactorEnabled: user.twoFactorEnabled,
+        lastLoginAt: user.lastLoginAt,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        candidate: user.candidate
+          ? {
+              id: user.candidate.id,
+              firstName: user.candidate.firstName,
+              lastName: user.candidate.lastName,
+              city: user.candidate.city
+                ? {
+                    id: user.candidate.city.id,
+                    name: user.candidate.city.name,
+                    state: user.candidate.city.state
+                      ? {
+                          id: user.candidate.city.state.id,
+                          name: user.candidate.city.state.name,
+                          country: user.candidate.city.state.country
+                            ? {
+                                id: user.candidate.city.state.country.id,
+                                name: user.candidate.city.state.country.name,
+                                iso2: user.candidate.city.state.country.iso2,
+                              }
+                            : undefined,
+                        }
+                      : undefined,
+                  }
+                : undefined,
+            }
+          : undefined,
+        admin: user.admin
+          ? {
+              id: user.admin.id,
+              permissions: user.admin.permissions,
+            }
+          : undefined,
+        superAdmin: user.superAdmin
+          ? {
+              id: user.superAdmin.id,
+              permissions: user.superAdmin.permissions,
+            }
+          : undefined,
+        company: user.company
+          ? {
+              id: user.company.id,
+              name: user.company.name,
+              isVerified: user.company.isVerified,
+              isActive: user.company.isActive,
+            }
+          : undefined,
+      }));
+
+      // Build statistics
+      const byRole = roleStats.reduce((acc, stat) => {
+        acc[stat.role] = stat._count.role;
+        return acc;
+      }, {} as Record<UserRole, number>);
+
+      const byStatus = statusStats.reduce((acc, stat) => {
+        acc[stat.status] = stat._count.status;
+        return acc;
+      }, {} as Record<UserStatus, number>);
+
+      return {
+        users: transformedUsers,
+        total,
+        page,
+        limit,
+        totalPages,
+        statistics: {
+          totalUsers,
+          activeUsers,
+          inactiveUsers,
+          pendingUsers,
+          byRole,
+          byStatus,
+        },
+      };
+    } catch (error) {
+      this.handleException(error);
+      throw error;
+    }
+  }
+
+  // =================================================================
+  // USER STATUS SPECIFIC ENDPOINTS
+  // =================================================================
+
+  async getActiveUsers(sortBy: string = 'createdAt', sortOrder: 'asc' | 'desc' = 'desc'): Promise<{ users: any[] }> {
+    try {
+      const orderBy: any = {};
+      orderBy[sortBy] = sortOrder;
+
+      const users = await this.db.user.findMany({
+        where: { status: 'ACTIVE' },
+        include: {
+          candidate: {
+            include: {
+              city: {
+                include: {
+                  state: {
+                    include: {
+                      country: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          admin: true,
+          superAdmin: true,
+          company: {
+            select: {
+              id: true,
+              name: true,
+              isVerified: true,
+              isActive: true,
+            },
+          },
+        },
+        orderBy,
+      });
+
+      return { users };
+    } catch (error) {
+      this.handleException(error);
+      throw error;
+    }
+  }
+
+  async getPendingUsers(sortBy: string = 'createdAt', sortOrder: 'asc' | 'desc' = 'desc'): Promise<{ users: any[] }> {
+    try {
+      const orderBy: any = {};
+      orderBy[sortBy] = sortOrder;
+
+      const users = await this.db.user.findMany({
+        where: { status: 'PENDING_VERIFICATION' },
+        include: {
+          candidate: {
+            include: {
+              city: {
+                include: {
+                  state: {
+                    include: {
+                      country: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          admin: true,
+          superAdmin: true,
+          company: {
+            select: {
+              id: true,
+              name: true,
+              isVerified: true,
+              isActive: true,
+            },
+          },
+        },
+        orderBy,
+      });
+
+      return { users };
+    } catch (error) {
+      this.handleException(error);
+      throw error;
+    }
+  }
+
+  async getInactiveUsers(sortBy: string = 'createdAt', sortOrder: 'asc' | 'desc' = 'desc'): Promise<{ users: any[] }> {
+    try {
+      const orderBy: any = {};
+      orderBy[sortBy] = sortOrder;
+
+      const users = await this.db.user.findMany({
+        where: { status: 'INACTIVE' },
+        include: {
+          candidate: {
+            include: {
+              city: {
+                include: {
+                  state: {
+                    include: {
+                      country: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          admin: true,
+          superAdmin: true,
+          company: {
+            select: {
+              id: true,
+              name: true,
+              isVerified: true,
+              isActive: true,
+            },
+          },
+        },
+        orderBy,
+      });
+
+      return { users };
+    } catch (error) {
+      this.handleException(error);
+      throw error;
+    }
   }
 
   // =================================================================

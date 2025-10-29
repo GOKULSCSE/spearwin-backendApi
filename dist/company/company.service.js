@@ -13,6 +13,7 @@ exports.CompanyService = void 0;
 const common_1 = require("@nestjs/common");
 const database_service_1 = require("../database/database.service");
 const client_1 = require("@prisma/client");
+const company_uuid_util_1 = require("./utils/company-uuid.util");
 let CompanyService = class CompanyService {
     db;
     constructor(db) {
@@ -77,6 +78,7 @@ let CompanyService = class CompanyService {
                     userId: company.userId,
                     name: company.name,
                     slug: company.slug,
+                    uuid: company.uuid,
                     description: company.description,
                     website: company.website,
                     logo: company.logo,
@@ -115,16 +117,23 @@ let CompanyService = class CompanyService {
             throw error;
         }
     }
-    async getActiveCompanies() {
+    async getActiveCompanies(sortBy = 'name', sortOrder = 'asc') {
         try {
+            const orderBy = {};
+            orderBy[sortBy] = sortOrder;
             const companies = await this.db.company.findMany({
                 where: { isActive: true },
-                select: {
-                    id: true,
-                    name: true,
-                    slug: true,
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            email: true,
+                            role: true,
+                            status: true,
+                        },
+                    },
                 },
-                orderBy: { name: 'asc' },
+                orderBy,
             });
             return { companies };
         }
@@ -135,7 +144,7 @@ let CompanyService = class CompanyService {
     }
     async getActiveCompaniesWithPagination(query) {
         try {
-            const { search, page = 1, limit = 10 } = query;
+            const { search, page = 1, limit = 10, sortBy = 'name', sortOrder = 'asc' } = query;
             const skip = (page - 1) * limit;
             const where = { isActive: true };
             if (search && search.trim()) {
@@ -144,15 +153,93 @@ let CompanyService = class CompanyService {
                     mode: 'insensitive',
                 };
             }
+            const orderBy = {};
+            orderBy[sortBy] = sortOrder;
             const [companies, total] = await Promise.all([
                 this.db.company.findMany({
                     where,
-                    select: {
-                        id: true,
-                        name: true,
-                        slug: true,
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                email: true,
+                                role: true,
+                                status: true,
+                            },
+                        },
                     },
-                    orderBy: { name: 'asc' },
+                    orderBy,
+                    skip,
+                    take: limit,
+                }),
+                this.db.company.count({ where }),
+            ]);
+            const totalPages = Math.ceil(total / limit);
+            return {
+                companies,
+                total,
+                page,
+                limit,
+                totalPages,
+            };
+        }
+        catch (error) {
+            this.handleException(error);
+            throw error;
+        }
+    }
+    async getInactiveCompanies(sortBy = 'name', sortOrder = 'asc') {
+        try {
+            const orderBy = {};
+            orderBy[sortBy] = sortOrder;
+            const companies = await this.db.company.findMany({
+                where: { isActive: false },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            email: true,
+                            role: true,
+                            status: true,
+                        },
+                    },
+                },
+                orderBy,
+            });
+            return { companies };
+        }
+        catch (error) {
+            this.handleException(error);
+            throw error;
+        }
+    }
+    async getInactiveCompaniesWithPagination(query) {
+        try {
+            const { search, page = 1, limit = 10, sortBy = 'name', sortOrder = 'asc' } = query;
+            const skip = (page - 1) * limit;
+            const where = { isActive: false };
+            if (search && search.trim()) {
+                where.name = {
+                    contains: search.trim(),
+                    mode: 'insensitive',
+                };
+            }
+            const orderBy = {};
+            orderBy[sortBy] = sortOrder;
+            const [companies, total] = await Promise.all([
+                this.db.company.findMany({
+                    where,
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                email: true,
+                                role: true,
+                                status: true,
+                            },
+                        },
+                    },
+                    orderBy,
                     skip,
                     take: limit,
                 }),
@@ -195,6 +282,7 @@ let CompanyService = class CompanyService {
                 userId: company.userId,
                 name: company.name,
                 slug: company.slug,
+                uuid: company.uuid,
                 description: company.description,
                 website: company.website,
                 logo: company.logo,
@@ -239,9 +327,18 @@ let CompanyService = class CompanyService {
             if (existingCompany) {
                 throw new common_1.BadRequestException('Company with this slug already exists');
             }
+            let uuid = createDto.uuid;
+            if (!uuid) {
+                const existingCompanies = await this.db.company.findMany({
+                    select: { uuid: true },
+                });
+                const existingUuids = existingCompanies.map(c => c.uuid).filter((uuid) => uuid !== null);
+                uuid = (0, company_uuid_util_1.generateCompanyUuid)(createDto.name, existingUuids);
+            }
             const company = await this.db.company.create({
                 data: {
                     ...createDto,
+                    uuid,
                 },
                 include: {
                     user: {
@@ -260,6 +357,7 @@ let CompanyService = class CompanyService {
                 userId: company.userId,
                 name: company.name,
                 slug: company.slug,
+                uuid: company.uuid,
                 description: company.description,
                 website: company.website,
                 logo: company.logo,
@@ -334,6 +432,7 @@ let CompanyService = class CompanyService {
                 userId: updatedCompany.userId,
                 name: updatedCompany.name,
                 slug: updatedCompany.slug,
+                uuid: updatedCompany.uuid,
                 description: updatedCompany.description,
                 website: updatedCompany.website,
                 logo: updatedCompany.logo,

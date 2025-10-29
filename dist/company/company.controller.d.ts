@@ -10,12 +10,11 @@ export declare class CompanyController {
     private readonly companyService;
     constructor(companyService: CompanyService);
     getAllCompanies(query: CompanyQueryDto): Promise<CompanyListResponseDto>;
-    getActiveCompanies(): Promise<{
-        companies: {
-            id: string;
-            name: string;
-            slug: string;
-        }[];
+    getActiveCompanies(sortBy?: string, sortOrder?: 'asc' | 'desc'): Promise<{
+        companies: any[];
+    }>;
+    getInactiveCompanies(sortBy?: string, sortOrder?: 'asc' | 'desc'): Promise<{
+        companies: any[];
     }>;
     getCompanyById(companyId: string): Promise<CompanyResponseDto>;
     createCompany(user: CurrentUser, createDto: CreateCompanyDto): Promise<CompanyResponseDto>;

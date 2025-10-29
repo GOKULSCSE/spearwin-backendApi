@@ -23,6 +23,7 @@ const activity_logs_query_dto_1 = require("./dto/activity-logs-query.dto");
 const notification_preferences_dto_1 = require("./dto/notification-preferences.dto");
 const recent_users_query_dto_1 = require("./dto/recent-users-query.dto");
 const recent_users_stats_query_dto_1 = require("./dto/recent-users-stats-query.dto");
+const user_profiles_query_dto_1 = require("./dto/user-profiles-query.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
 let UserController = class UserController {
@@ -35,6 +36,15 @@ let UserController = class UserController {
     }
     findAll() {
         return this.userService.findAll();
+    }
+    async getActiveUsers(sortBy, sortOrder) {
+        return this.userService.getActiveUsers(sortBy, sortOrder);
+    }
+    async getPendingUsers(sortBy, sortOrder) {
+        return this.userService.getPendingUsers(sortBy, sortOrder);
+    }
+    async getInactiveUsers(sortBy, sortOrder) {
+        return this.userService.getInactiveUsers(sortBy, sortOrder);
     }
     findOne(id) {
         return this.userService.findOne(+id);
@@ -69,6 +79,9 @@ let UserController = class UserController {
     async testNotificationSettings(user) {
         return this.userService.testNotificationSettings(user.id);
     }
+    async getUserProfiles(user, query) {
+        return this.userService.getUserProfiles(query);
+    }
     async getRecentUsers(user, query) {
         return this.userService.getRecentUsers(query);
     }
@@ -90,6 +103,33 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('active'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Query)('sortBy')),
+    __param(1, (0, common_1.Query)('sortOrder')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "getActiveUsers", null);
+__decorate([
+    (0, common_1.Get)('pending'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Query)('sortBy')),
+    __param(1, (0, common_1.Query)('sortOrder')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "getPendingUsers", null);
+__decorate([
+    (0, common_1.Get)('inactive'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Query)('sortBy')),
+    __param(1, (0, common_1.Query)('sortOrder')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "getInactiveUsers", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),
@@ -180,6 +220,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "testNotificationSettings", null);
+__decorate([
+    (0, common_1.Get)('profiles'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
+    __param(1, (0, common_1.Query)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, user_profiles_query_dto_1.UserProfilesQueryDto]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "getUserProfiles", null);
 __decorate([
     (0, common_1.Get)('recent'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

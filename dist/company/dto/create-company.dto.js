@@ -15,6 +15,7 @@ const class_transformer_1 = require("class-transformer");
 class CreateCompanyDto {
     name;
     slug;
+    uuid;
     description;
     website;
     logo;
@@ -47,6 +48,11 @@ __decorate([
     (0, class_transformer_1.Transform)(({ value }) => value?.trim().toLowerCase().replace(/\s+/g, '-')),
     __metadata("design:type", String)
 ], CreateCompanyDto.prototype, "slug", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'UUID must be a string' }),
+    __metadata("design:type", String)
+], CreateCompanyDto.prototype, "uuid", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Description must be a string' }),
