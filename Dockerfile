@@ -6,4 +6,4 @@ COPY . .
 ENV PORT=5000
 EXPOSE 5000
 # test the command
-CMD ["npm", "run", "start:prod"]
+CMD ["npm", "run", "start"]
