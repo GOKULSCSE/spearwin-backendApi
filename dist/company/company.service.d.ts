@@ -9,19 +9,21 @@ export declare class CompanyService {
     private readonly db;
     constructor(db: DatabaseService);
     getAllCompanies(query: CompanyQueryDto): Promise<CompanyListResponseDto>;
-    getActiveCompanies(): Promise<{
-        companies: {
-            id: string;
-            name: string;
-            slug: string;
-        }[];
+    getActiveCompanies(sortBy?: string, sortOrder?: 'asc' | 'desc'): Promise<{
+        companies: any[];
     }>;
     getActiveCompaniesWithPagination(query: CompanyQueryDto): Promise<{
-        companies: {
-            id: string;
-            name: string;
-            slug: string;
-        }[];
+        companies: any[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    }>;
+    getInactiveCompanies(sortBy?: string, sortOrder?: 'asc' | 'desc'): Promise<{
+        companies: any[];
+    }>;
+    getInactiveCompaniesWithPagination(query: CompanyQueryDto): Promise<{
+        companies: any[];
         total: number;
         page: number;
         limit: number;

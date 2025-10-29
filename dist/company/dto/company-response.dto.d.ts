@@ -3,6 +3,7 @@ export declare class CompanyResponseDto {
     userId?: string | null;
     name: string;
     slug: string;
+    uuid: string;
     description?: string | null;
     website?: string | null;
     logo?: string | null;

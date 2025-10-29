@@ -47,10 +47,20 @@ export class CompanyController {
 
 
   @Get('active')
-  async getActiveCompanies(): Promise<{ companies: { id: string; name: string; slug: string }[] }> {
-    return this.companyService.getActiveCompanies();
+  async getActiveCompanies(
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+  ): Promise<{ companies: any[] }> {
+    return this.companyService.getActiveCompanies(sortBy, sortOrder);
   }
 
+  @Get('inactive')
+  async getInactiveCompanies(
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+  ): Promise<{ companies: any[] }> {
+    return this.companyService.getInactiveCompanies(sortBy, sortOrder);
+  }
 
   @Get(':id')
   async getCompanyById(

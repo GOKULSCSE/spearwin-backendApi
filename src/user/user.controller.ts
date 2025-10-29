@@ -23,9 +23,11 @@ import {
 } from './dto/notification-preferences.dto';
 import { RecentUsersQueryDto } from './dto/recent-users-query.dto';
 import { RecentUsersStatsQueryDto } from './dto/recent-users-stats-query.dto';
+import { UserProfilesQueryDto } from './dto/user-profiles-query.dto';
 import type { UserProfileResponseDto } from './dto/user-profile-response.dto';
 import type { ActivityLogsResponseDto } from './dto/activity-logs-response.dto';
 import type { RecentUsersResponseDto } from './dto/recent-users-response.dto';
+import type { UserProfilesListResponseDto } from './dto/user-profiles-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
   GetCurrentUser,
@@ -45,6 +47,34 @@ export class UserController {
   @Get()
   findAll() {
     return this.userService.findAll();
+  }
+
+  // Status-specific routes (must be before :id route)
+  @Get('active')
+  @UseGuards(JwtAuthGuard)
+  async getActiveUsers(
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+  ): Promise<{ users: any[] }> {
+    return this.userService.getActiveUsers(sortBy, sortOrder);
+  }
+
+  @Get('pending')
+  @UseGuards(JwtAuthGuard)
+  async getPendingUsers(
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+  ): Promise<{ users: any[] }> {
+    return this.userService.getPendingUsers(sortBy, sortOrder);
+  }
+
+  @Get('inactive')
+  @UseGuards(JwtAuthGuard)
+  async getInactiveUsers(
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+  ): Promise<{ users: any[] }> {
+    return this.userService.getInactiveUsers(sortBy, sortOrder);
   }
 
   @Get(':id')
@@ -133,6 +163,19 @@ export class UserController {
     @GetCurrentUser() user: CurrentUser,
   ): Promise<{ message: string }> {
     return this.userService.testNotificationSettings(user.id);
+  }
+
+  // =================================================================
+  // USER PROFILES MANAGEMENT API (Admin Only)
+  // =================================================================
+
+  @Get('profiles')
+  @UseGuards(JwtAuthGuard)
+  async getUserProfiles(
+    @GetCurrentUser() user: CurrentUser,
+    @Query(ValidationPipe) query: UserProfilesQueryDto,
+  ): Promise<UserProfilesListResponseDto> {
+    return this.userService.getUserProfiles(query);
   }
 
   // =================================================================

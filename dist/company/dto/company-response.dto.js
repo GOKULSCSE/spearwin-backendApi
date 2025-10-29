@@ -6,6 +6,7 @@ class CompanyResponseDto {
     userId;
     name;
     slug;
+    uuid;
     description;
     website;
     logo;

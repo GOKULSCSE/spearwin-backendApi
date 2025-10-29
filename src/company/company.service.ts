@@ -18,6 +18,7 @@ import {
 } from './dto/company-response.dto';
 import { LogAction, LogLevel, UserRole } from '@prisma/client';
 import { Prisma } from '@prisma/client';
+import { generateCompanyUuid } from './utils/company-uuid.util';
 
 @Injectable()
 export class CompanyService {
@@ -116,6 +117,7 @@ export class CompanyService {
           userId: company.userId,
           name: company.name,
           slug: company.slug,
+          uuid: company.uuid,
           description: company.description,
           website: company.website,
           logo: company.logo,
@@ -154,16 +156,24 @@ export class CompanyService {
     }
   }
 
-  async getActiveCompanies(): Promise<{ companies: { id: string; name: string; slug: string }[] }> {
+  async getActiveCompanies(sortBy: string = 'name', sortOrder: 'asc' | 'desc' = 'asc'): Promise<{ companies: any[] }> {
     try {
+      const orderBy: any = {};
+      orderBy[sortBy] = sortOrder;
+
       const companies = await this.db.company.findMany({
         where: { isActive: true },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              role: true,
+              status: true,
+            },
+          },
         },
-        orderBy: { name: 'asc' },
+        orderBy,
       });
 
       return { companies };
@@ -175,9 +185,9 @@ export class CompanyService {
 
   async getActiveCompaniesWithPagination(
     query: CompanyQueryDto,
-  ): Promise<{ companies: { id: string; name: string; slug: string }[]; total: number; page: number; limit: number; totalPages: number }> {
+  ): Promise<{ companies: any[]; total: number; page: number; limit: number; totalPages: number }> {
     try {
-      const { search, page = 1, limit = 10 } = query;
+      const { search, page = 1, limit = 10, sortBy = 'name', sortOrder = 'asc' } = query;
       const skip = (page - 1) * limit;
 
       // Build where clause for active companies only
@@ -191,16 +201,110 @@ export class CompanyService {
         };
       }
 
+      // Build order by clause
+      const orderBy: any = {};
+      orderBy[sortBy] = sortOrder;
+
       // Get companies and total count
       const [companies, total] = await Promise.all([
         this.db.company.findMany({
           where,
-          select: {
-            id: true,
-            name: true,
-            slug: true,
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                role: true,
+                status: true,
+              },
+            },
           },
-          orderBy: { name: 'asc' },
+          orderBy,
+          skip,
+          take: limit,
+        }),
+        this.db.company.count({ where }),
+      ]);
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        companies,
+        total,
+        page,
+        limit,
+        totalPages,
+      };
+    } catch (error) {
+      this.handleException(error);
+      throw error;
+    }
+  }
+
+  async getInactiveCompanies(sortBy: string = 'name', sortOrder: 'asc' | 'desc' = 'asc'): Promise<{ companies: any[] }> {
+    try {
+      const orderBy: any = {};
+      orderBy[sortBy] = sortOrder;
+
+      const companies = await this.db.company.findMany({
+        where: { isActive: false },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              role: true,
+              status: true,
+            },
+          },
+        },
+        orderBy,
+      });
+
+      return { companies };
+    } catch (error) {
+      this.handleException(error);
+      throw error;
+    }
+  }
+
+  async getInactiveCompaniesWithPagination(
+    query: CompanyQueryDto,
+  ): Promise<{ companies: any[]; total: number; page: number; limit: number; totalPages: number }> {
+    try {
+      const { search, page = 1, limit = 10, sortBy = 'name', sortOrder = 'asc' } = query;
+      const skip = (page - 1) * limit;
+
+      // Build where clause for inactive companies only
+      const where: any = { isActive: false };
+
+      // Add search filter if provided
+      if (search && search.trim()) {
+        where.name = {
+          contains: search.trim(),
+          mode: 'insensitive', // Case-insensitive search
+        };
+      }
+
+      // Build order by clause
+      const orderBy: any = {};
+      orderBy[sortBy] = sortOrder;
+
+      // Get companies and total count
+      const [companies, total] = await Promise.all([
+        this.db.company.findMany({
+          where,
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                role: true,
+                status: true,
+              },
+            },
+          },
+          orderBy,
           skip,
           take: limit,
         }),
@@ -247,6 +351,7 @@ export class CompanyService {
         userId: company.userId,
         name: company.name,
         slug: company.slug,
+        uuid: company.uuid,
         description: company.description,
         website: company.website,
         logo: company.logo,
@@ -297,9 +402,21 @@ export class CompanyService {
         throw new BadRequestException('Company with this slug already exists');
       }
 
+      // Generate UUID if not provided
+      let uuid = createDto.uuid;
+      if (!uuid) {
+        // Get all existing UUIDs to ensure uniqueness
+        const existingCompanies = await this.db.company.findMany({
+          select: { uuid: true },
+        });
+        const existingUuids = existingCompanies.map(c => c.uuid).filter((uuid): uuid is string => uuid !== null);
+        uuid = generateCompanyUuid(createDto.name, existingUuids);
+      }
+
       const company = await this.db.company.create({
         data: {
           ...createDto,
+          uuid,
         },
         include: {
           user: {
@@ -328,6 +445,7 @@ export class CompanyService {
         userId: company.userId,
         name: company.name,
         slug: company.slug,
+        uuid: company.uuid,
         description: company.description,
         website: company.website,
         logo: company.logo,
@@ -423,6 +541,7 @@ export class CompanyService {
         userId: updatedCompany.userId,
         name: updatedCompany.name,
         slug: updatedCompany.slug,
+        uuid: updatedCompany.uuid,
         description: updatedCompany.description,
         website: updatedCompany.website,
         logo: updatedCompany.logo,

@@ -7,6 +7,8 @@ import { UpdateNotificationPreferencesDto, NotificationPreferencesResponseDto } 
 import { UserProfileResponseDto } from './dto/user-profile-response.dto';
 import { ActivityLogsResponseDto } from './dto/activity-logs-response.dto';
 import { RecentUsersResponseDto } from './dto/recent-users-response.dto';
+import { UserProfilesQueryDto } from './dto/user-profiles-query.dto';
+import { UserProfilesListResponseDto } from './dto/user-profiles-response.dto';
 import { DatabaseService } from 'src/database/database.service';
 export declare class UserService {
     private readonly db;
@@ -19,16 +21,21 @@ export declare class UserService {
         emailVerified: boolean;
         phoneVerified: boolean;
         twoFactorEnabled: boolean;
+        status: import("@prisma/client").$Enums.UserStatus;
+        profileCompleted: boolean;
+        createdAt: Date;
         id: string;
         emailVerifiedAt: Date | null;
         phoneVerifiedAt: Date | null;
-        status: import("@prisma/client").$Enums.UserStatus;
         lastLoginAt: Date | null;
-        profileCompleted: boolean;
-        createdAt: Date;
         updatedAt: Date;
     } | undefined>;
-    findAll(): Promise<{
+    findAll(): Promise<({
+        candidate: {
+            firstName: string;
+            lastName: string;
+        } | null;
+    } & {
         email: string;
         phone: string | null;
         password: string;
@@ -36,15 +43,15 @@ export declare class UserService {
         emailVerified: boolean;
         phoneVerified: boolean;
         twoFactorEnabled: boolean;
+        status: import("@prisma/client").$Enums.UserStatus;
+        profileCompleted: boolean;
+        createdAt: Date;
         id: string;
         emailVerifiedAt: Date | null;
         phoneVerifiedAt: Date | null;
-        status: import("@prisma/client").$Enums.UserStatus;
         lastLoginAt: Date | null;
-        profileCompleted: boolean;
-        createdAt: Date;
         updatedAt: Date;
-    }[] | undefined>;
+    })[] | undefined>;
     findOne(id: number): string;
     update(id: number, updateUserDto: UpdateUserDto): string;
     remove(id: number): string;
@@ -64,6 +71,16 @@ export declare class UserService {
     }>;
     private logActivity;
     handleException(error: any): void;
+    getUserProfiles(query: UserProfilesQueryDto): Promise<UserProfilesListResponseDto>;
+    getActiveUsers(sortBy?: string, sortOrder?: 'asc' | 'desc'): Promise<{
+        users: any[];
+    }>;
+    getPendingUsers(sortBy?: string, sortOrder?: 'asc' | 'desc'): Promise<{
+        users: any[];
+    }>;
+    getInactiveUsers(sortBy?: string, sortOrder?: 'asc' | 'desc'): Promise<{
+        users: any[];
+    }>;
     getRecentUsers(query: any): Promise<any>;
     getRecentUsersStats(query: any): Promise<RecentUsersResponseDto>;
 }
