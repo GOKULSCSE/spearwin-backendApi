@@ -7,6 +7,7 @@ export class PublicJobController {
 
   @Get()
   async listJobs() {
+    // Only return published jobs to public
     return this.jobService.getAllJobsList();
   }
 }
