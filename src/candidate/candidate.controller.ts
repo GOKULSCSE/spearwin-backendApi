@@ -13,7 +13,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Multer } from 'multer';
+import type { Express } from 'express';
 import { CandidateService } from './candidate.service';
 import {
   UpdateCandidateProfileDto,
@@ -90,7 +90,7 @@ export class CandidateController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadProfilePicture(
     @GetCurrentUser() user: CurrentUser,
-    @UploadedFile() file: Multer.File,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<{ message: string; profilePicture: string }> {
     return this.candidateService.uploadProfilePicture(user.id, file);
   }

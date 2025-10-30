@@ -174,6 +174,93 @@ export class JobService {
     }
   }
 
+  async getAllJobsList(): Promise<{ jobs: any[] }> {
+    try {
+      const jobs = await this.db.job.findMany({
+        include: {
+          company: {
+            select: {
+              id: true,
+              name: true,
+              logo: true,
+              industry: true,
+              employeeCount: true,
+              website: true,
+            },
+          },
+          postedBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              designation: true,
+              department: true,
+            },
+          },
+          city: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const mapped = jobs.map((job) => ({
+        id: job.id,
+        title: job.title,
+        slug: job.slug,
+        description: job.description,
+        requirements: job.requirements ?? null,
+        responsibilities: job.responsibilities ?? null,
+        benefits: job.benefits ?? null,
+        companyId: job.companyId,
+        postedById: job.postedById ?? null,
+        cityId: job.cityId ?? null,
+        address: job.address ?? null,
+        jobType: job.jobType,
+        workMode: job.workMode,
+        experienceLevel: job.experienceLevel,
+        minExperience: job.minExperience ?? null,
+        maxExperience: job.maxExperience ?? null,
+        minSalary: job.minSalary ?? null,
+        maxSalary: job.maxSalary ?? null,
+        salaryNegotiable: job.salaryNegotiable,
+        skillsRequired: job.skillsRequired ?? [],
+        educationLevel: job.educationLevel ?? null,
+        applicationCount: job.applicationCount,
+        viewCount: job.viewCount,
+        status: job.status,
+        expiresAt: job.expiresAt ?? null,
+        publishedAt: job.publishedAt ?? null,
+        closedAt: job.closedAt ?? null,
+        createdAt: job.createdAt,
+        updatedAt: job.updatedAt,
+        company: job.company
+          ? {
+              id: job.company.id,
+              name: job.company.name,
+              logo: job.company.logo ?? null,
+              industry: job.company.industry ?? null,
+              employeeCount: job.company.employeeCount ?? null,
+              website: job.company.website ?? null,
+            }
+          : null,
+        postedBy: job.postedBy
+          ? {
+              id: job.postedBy.id,
+              firstName: job.postedBy.firstName,
+              lastName: job.postedBy.lastName,
+              designation: job.postedBy.designation ?? null,
+              department: job.postedBy.department ?? null,
+            }
+          : null,
+        location: job.city ? null : null,
+      }));
+
+      return { jobs: mapped };
+    } catch (error) {
+      this.handleException(error);
+      throw error;
+    }
+  }
+
   async searchJobs(searchQuery: JobSearchDto): Promise<JobListResponseDto> {
     try {
       const {

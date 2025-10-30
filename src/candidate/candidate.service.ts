@@ -5,7 +5,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { Multer } from 'multer';
+import type { Express } from 'express';
 import {
   UpdateCandidateProfileDto,
   UpdateAvailabilityDto,
@@ -1321,7 +1321,7 @@ export class CandidateService {
 
   async uploadProfilePicture(
     userId: string,
-    file: Multer.File,
+    file: Express.Multer.File,
   ): Promise<{ message: string; profilePicture: string }> {
     try {
       const candidate = await this.db.candidate.findFirst({
