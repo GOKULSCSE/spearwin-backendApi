@@ -337,20 +337,32 @@ model Job {
 }
 
 model JobApplication {
-  id          String            @id @default(cuid())
-  jobId       String
-  candidateId String
-  resumeId    String?
-  coverLetter String?
-  status      ApplicationStatus @default(APPLIED)
-  appliedAt   DateTime          @default(now())
-  reviewedAt  DateTime?
-  reviewedBy  String?
-  feedback    String?
-  updatedAt   DateTime          @updatedAt
-  candidate   Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  job         Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  resume      Resume?           @relation(fields: [resumeId], references: [id])
+  id                  String            @id @default(cuid())
+  jobId               String
+  candidateId         String
+  resumeId            String?
+  coverLetter         String?
+  status              ApplicationStatus @default(APPLIED)
+  appliedAt           DateTime          @default(now())
+  reviewedAt          DateTime?
+  reviewedBy          String?
+  feedback            String?
+  // Contact information from application form
+  fullName            String?
+  email               String?
+  phone               String?
+  location            String?
+  experienceLevel     String?
+  // Additional application details
+  noticePeriod        String?
+  currentCTC          String?
+  expectedCTC         String?
+  javaExperience      String?
+  locationPreference  String?
+  updatedAt           DateTime          @updatedAt
+  candidate           Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  job                 Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resume              Resume?           @relation(fields: [resumeId], references: [id])
 
   @@unique([jobId, candidateId])
   @@index([candidateId, status])
