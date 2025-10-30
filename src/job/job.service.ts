@@ -210,6 +210,7 @@ export class JobService {
         requirements: job.requirements ?? null,
         responsibilities: job.responsibilities ?? null,
         benefits: job.benefits ?? null,
+        currency: job.currency ?? null,
         companyId: job.companyId,
         postedById: job.postedById ?? null,
         cityId: job.cityId ?? null,
@@ -223,6 +224,7 @@ export class JobService {
         maxSalary: job.maxSalary ?? null,
         salaryNegotiable: job.salaryNegotiable,
         skillsRequired: job.skillsRequired ?? [],
+        tags: job.tags ?? [],
         educationLevel: job.educationLevel ?? null,
         applicationCount: job.applicationCount,
         viewCount: job.viewCount,
@@ -251,7 +253,28 @@ export class JobService {
               department: job.postedBy.department ?? null,
             }
           : null,
-        location: job.city ? null : null,
+        location: job.city
+          ? {
+              city: {
+                id: job.city.id,
+                name: job.city.name,
+                state: job.city.state
+                  ? {
+                      id: job.city.state.id,
+                      name: job.city.state.name,
+                      iso2: job.city.state.iso2,
+                      country: job.city.state.country
+                        ? {
+                            id: job.city.state.country.id,
+                            name: job.city.state.country.name,
+                            iso2: job.city.state.country.iso2,
+                          }
+                        : null,
+                    }
+                  : null,
+              },
+            }
+          : null,
       }));
 
       return { jobs: mapped };
