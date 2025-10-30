@@ -16,10 +16,13 @@ import { NotificationModule } from './notification/notification.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { JobAttributeModule } from './job-attribute/job-attribute.module';
 import { TestimonialModule } from './testimonial/testimonial.module';
+import { FileUploadModule } from './image-upload/file-upload.module';
 import { CorsFriendlyThrottlerGuard } from './common/guards/cors-friendly-throttler.guard';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     UserModule,
     DatabaseModule,
     AuthModule,
@@ -32,6 +35,7 @@ import { CorsFriendlyThrottlerGuard } from './common/guards/cors-friendly-thrott
     DashboardModule,
     JobAttributeModule,
     TestimonialModule,
+    FileUploadModule,
     ThrottlerModule.forRoot([
       {
         name: 'short',
