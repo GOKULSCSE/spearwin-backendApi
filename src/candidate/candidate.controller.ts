@@ -78,6 +78,15 @@ export class CandidateController {
     return this.candidateService.getCandidateProfile(user.id);
   }
 
+  @Post('profile')
+  async createCandidateProfile(
+    @GetCurrentUser() user: CurrentUser,
+    @Body(ValidationPipe) createDto: UpdateCandidateProfileDto,
+  ): Promise<CandidateProfileResponseDto> {
+    // Reuse update to upsert profile (creates candidate record if missing)
+    return this.candidateService.updateCandidateProfile(user.id, createDto);
+  }
+
   @Put('profile')
   async updateCandidateProfile(
     @GetCurrentUser() user: CurrentUser,
