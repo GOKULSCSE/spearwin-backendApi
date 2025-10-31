@@ -46,6 +46,7 @@ import {
   ResumeAnalysisResponseDto,
   ResumeOptimizationResponseDto,
 } from './dto/resume-analysis.dto';
+import { UpsertFullProfileDto } from './dto/upsert-full-profile.dto';
 import { LogAction, LogLevel } from '@prisma/client';
 
 @Injectable()
@@ -1314,6 +1315,219 @@ export class CandidateService {
       if (error instanceof NotFoundException) {
         throw error;
       }
+      this.handleException(error);
+      throw error;
+    }
+  }
+
+  async upsertFullProfile(
+    userId: string,
+    body: UpsertFullProfileDto,
+  ): Promise<CandidateProfileResponseDto> {
+    try {
+      const candidate = await this.db.candidate.findFirst({ where: { userId } });
+
+      const resultCandidate = await this.db.$transaction(async (tx) => {
+        // Ensure candidate exists
+        let ensured = candidate;
+        if (!ensured) {
+          ensured = await tx.candidate.create({
+            data: {
+              userId,
+              firstName: '',
+              lastName: '',
+              isAvailable: true,
+            },
+          });
+        }
+
+        // Update candidate profile
+        const p = body.profile || {} as any;
+        const cityIdParsed = p.cityId ? parseInt(p.cityId, 10) : undefined;
+        const updateData: any = {
+          firstName: p.firstName,
+          lastName: p.lastName,
+          fatherName: p.fatherName,
+          dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth) : undefined,
+          gender: p.gender,
+          maritalStatus: p.maritalStatus,
+          bio: p.bio ?? p.profileSummary, // map both
+          currentTitle: p.currentTitle,
+          currentCompany: p.currentCompany,
+          currentLocation: p.currentLocation,
+          preferredLocation: p.preferredLocation,
+          noticePeriod: p.noticePeriod,
+          currentSalary: p.currentSalary,
+          expectedSalary: p.expectedSalary,
+          profileType: p.profileType,
+          experienceYears: p.experienceYears,
+          cityId: typeof cityIdParsed === 'number' && !Number.isNaN(cityIdParsed) ? cityIdParsed : undefined,
+          address: p.address ?? p.streetAddress,
+          linkedinUrl: p.linkedinUrl,
+          githubUrl: p.githubUrl,
+          portfolioUrl: p.portfolioUrl,
+          email: p.email,
+          mobileNumber: p.mobileNumber,
+          jobExperience: p.jobExperience,
+          country: p.country,
+          state: p.state,
+          cityName: p.cityName,
+          streetAddress: p.streetAddress,
+          profileSummary: p.profileSummary ?? p.bio,
+        };
+
+        await tx.candidate.update({
+          where: { id: ensured.id },
+          data: Object.fromEntries(
+            Object.entries(updateData).filter(([, v]) => v !== undefined),
+          ),
+        });
+
+        // Skills upsert/delete
+        if (body.skills) {
+          const { upsert, delete: del } = body.skills;
+          if (Array.isArray(upsert)) {
+            for (const s of upsert) {
+              if (s.id) {
+                await tx.candidateSkill.update({
+                  where: { id: s.id },
+                  data: Object.fromEntries(
+                    Object.entries({
+                      skillName: s.skillName,
+                      level: s.level,
+                      yearsUsed: s.yearsUsed,
+                    }).filter(([, v]) => v !== undefined),
+                  ),
+                });
+              } else {
+                await tx.candidateSkill.upsert({
+                  where: {
+                    candidateId_skillName: {
+                      candidateId: ensured.id,
+                      skillName: s.skillName,
+                    },
+                  },
+                  create: {
+                    candidateId: ensured.id,
+                    skillName: s.skillName,
+                    level: s.level,
+                    yearsUsed: s.yearsUsed,
+                  },
+                  update: {
+                    level: s.level,
+                    yearsUsed: s.yearsUsed,
+                  },
+                });
+              }
+            }
+          }
+          if (Array.isArray(del) && del.length) {
+            await tx.candidateSkill.deleteMany({
+              where: { id: { in: del }, candidateId: ensured.id },
+            });
+          }
+        }
+
+        // Education upsert/delete
+        if (body.education) {
+          const { upsert, delete: del } = body.education;
+          if (Array.isArray(upsert)) {
+            for (const e of upsert) {
+              const data = {
+                institution: e.institution,
+                degree: e.degree,
+                fieldOfStudy: e.fieldOfStudy,
+                level: e.level as any,
+                startDate: e.startDate ? new Date(e.startDate) : undefined,
+                endDate: e.endDate ? new Date(e.endDate) : undefined,
+                isCompleted: e.isCompleted,
+                grade: e.grade,
+                description: e.description,
+              } as any;
+              if (e.id) {
+                await tx.candidateEducation.update({
+                  where: { id: e.id },
+                  data: Object.fromEntries(
+                    Object.entries(data).filter(([, v]) => v !== undefined),
+                  ),
+                });
+              } else {
+                await tx.candidateEducation.create({
+                  data: {
+                    candidateId: ensured.id,
+                    institution: e.institution,
+                    degree: e.degree,
+                    fieldOfStudy: e.fieldOfStudy,
+                    level: e.level as any,
+                    startDate: new Date(e.startDate),
+                    endDate: e.endDate ? new Date(e.endDate) : undefined,
+                    isCompleted: !!e.isCompleted,
+                    grade: e.grade,
+                    description: e.description,
+                  },
+                });
+              }
+            }
+          }
+          if (Array.isArray(del) && del.length) {
+            await tx.candidateEducation.deleteMany({
+              where: { id: { in: del }, candidateId: ensured.id },
+            });
+          }
+        }
+
+        // Experience upsert/delete
+        if (body.experience) {
+          const { upsert, delete: del } = body.experience;
+          if (Array.isArray(upsert)) {
+            for (const ex of upsert) {
+              const data = {
+                company: ex.company,
+                position: ex.position,
+                description: ex.description,
+                startDate: ex.startDate ? new Date(ex.startDate) : undefined,
+                endDate: ex.endDate ? new Date(ex.endDate) : undefined,
+                isCurrent: ex.isCurrent,
+                location: ex.location,
+                achievements: ex.achievements,
+              } as any;
+              if (ex.id) {
+                await tx.candidateExperience.update({
+                  where: { id: ex.id },
+                  data: Object.fromEntries(
+                    Object.entries(data).filter(([, v]) => v !== undefined),
+                  ),
+                });
+              } else {
+                await tx.candidateExperience.create({
+                  data: {
+                    candidateId: ensured.id,
+                    company: ex.company,
+                    position: ex.position,
+                    description: ex.description,
+                    startDate: new Date(ex.startDate),
+                    endDate: ex.endDate ? new Date(ex.endDate) : undefined,
+                    isCurrent: !!ex.isCurrent,
+                    location: ex.location,
+                    achievements: ex.achievements,
+                  },
+                });
+              }
+            }
+          }
+          if (Array.isArray(del) && del.length) {
+            await tx.candidateExperience.deleteMany({
+              where: { id: { in: del }, candidateId: ensured.id },
+            });
+          }
+        }
+
+        return ensured;
+      });
+
+      // Return latest profile view
+      return await this.getCandidateProfile(userId);
+    } catch (error) {
       this.handleException(error);
       throw error;
     }
