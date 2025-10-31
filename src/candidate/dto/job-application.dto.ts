@@ -13,6 +13,48 @@ export class ApplyForJobDto {
   @IsOptional()
   @IsString({ message: 'Cover letter must be a string' })
   coverLetter?: string;
+
+  // Contact information from application form
+  @IsOptional()
+  @IsString({ message: 'Full name must be a string' })
+  fullName?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Email must be a string' })
+  email?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Phone must be a string' })
+  phone?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Location must be a string' })
+  location?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Experience level must be a string' })
+  experienceLevel?: string;
+
+  // Additional application details
+  @IsOptional()
+  @IsString({ message: 'Notice period must be a string' })
+  noticePeriod?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Current CTC must be a string' })
+  currentCTC?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Expected CTC must be a string' })
+  expectedCTC?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Java experience must be a string' })
+  javaExperience?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Location preference must be a string' })
+  locationPreference?: string;
 }
 
 export class UpdateApplicationDto {
@@ -36,6 +78,18 @@ export class ApplicationResponseDto {
   reviewedAt?: Date;
   reviewedBy?: string;
   feedback?: string;
+  // Contact information from application form
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  experienceLevel?: string;
+  // Additional application details
+  noticePeriod?: string;
+  currentCTC?: string;
+  expectedCTC?: string;
+  javaExperience?: string;
+  locationPreference?: string;
   updatedAt: Date;
   job?: {
     id: string;
