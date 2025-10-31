@@ -177,6 +177,9 @@ export class JobService {
   async getAllJobsList(): Promise<{ jobs: any[] }> {
     try {
       const jobs = await this.db.job.findMany({
+        where: {
+          status: 'PUBLISHED', // Only return published jobs to public
+        },
         include: {
           company: {
             select: {
@@ -197,7 +200,24 @@ export class JobService {
               department: true,
             },
           },
-          city: true,
+          city: {
+            select: {
+              id: true,
+              name: true,
+              isActive: true,
+              createdAt: true,
+              updatedAt: true,
+              country_code: true,
+              country_id: true,
+              country_name: true,
+              latitude: true,
+              longitude: true,
+              state_code: true,
+              state_id: true,
+              state_name: true,
+              wikiDataId: true,
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -251,7 +271,16 @@ export class JobService {
               department: job.postedBy.department ?? null,
             }
           : null,
-        location: job.city ? null : null,
+        location: job.city
+          ? {
+              city: {
+                id: job.city.id,
+                name: job.city.name,
+                state_name: job.city.state_name ?? null,
+                country_name: job.city.country_name ?? null,
+              },
+            }
+          : null,
       }));
 
       return { jobs: mapped };
@@ -819,7 +848,7 @@ export class JobService {
       });
 
       if (!job) {
-        throw new NotFoundException('Job not found or not published');
+        throw new NotFoundException('Job not found or not currently accepting applications');
       }
 
       // Get candidate profile
@@ -859,7 +888,7 @@ export class JobService {
         }
       }
 
-      // Create application
+      // Create application with all contact and additional information
       const application = await this.db.jobApplication.create({
         data: {
           jobId,
@@ -867,6 +896,18 @@ export class JobService {
           resumeId: applyDto.resumeId,
           coverLetter: applyDto.coverLetter,
           status: 'APPLIED',
+          // Contact information from application form
+          fullName: applyDto.fullName,
+          email: applyDto.email,
+          phone: applyDto.phone,
+          location: applyDto.location,
+          experienceLevel: applyDto.experienceLevel,
+          // Additional application details
+          noticePeriod: applyDto.noticePeriod,
+          currentCTC: applyDto.currentCTC,
+          expectedCTC: applyDto.expectedCTC,
+          javaExperience: applyDto.javaExperience,
+          locationPreference: applyDto.locationPreference,
         },
         include: {
           job: {
@@ -931,6 +972,18 @@ export class JobService {
         reviewedAt: application.reviewedAt || undefined,
         reviewedBy: application.reviewedBy || undefined,
         feedback: application.feedback || undefined,
+        // Contact information from application form
+        fullName: application.fullName || undefined,
+        email: application.email || undefined,
+        phone: application.phone || undefined,
+        location: application.location || undefined,
+        experienceLevel: application.experienceLevel || undefined,
+        // Additional application details
+        noticePeriod: application.noticePeriod || undefined,
+        currentCTC: application.currentCTC || undefined,
+        expectedCTC: application.expectedCTC || undefined,
+        javaExperience: application.javaExperience || undefined,
+        locationPreference: application.locationPreference || undefined,
         updatedAt: application.updatedAt,
         job: {
           id: application.job.id,
@@ -1055,6 +1108,7 @@ export class JobService {
   }
 
   private handleException(error: any): void {
+    console.error('Job service error:', error);
     throw new InternalServerErrorException("Can't process job request");
   }
 }

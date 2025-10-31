@@ -55,6 +55,8 @@ import {
   ResumeAnalysisResponseDto,
   ResumeOptimizationResponseDto,
 } from './dto/resume-analysis.dto';
+import { UpsertFullProfileDto } from './dto/upsert-full-profile.dto';
+import { ChangePasswordDto } from '../user/dto/change-password.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
   GetCurrentUser,
@@ -95,6 +97,14 @@ export class CandidateController {
     return this.candidateService.updateCandidateProfile(user.id, updateDto);
   }
 
+  @Put('profile/full')
+  async upsertFullProfile(
+    @GetCurrentUser() user: CurrentUser,
+    @Body(ValidationPipe) body: UpsertFullProfileDto,
+  ): Promise<CandidateProfileResponseDto> {
+    return this.candidateService.upsertFullProfile(user.id, body);
+  }
+
   @Post('profile/picture')
   @UseInterceptors(FileInterceptor('file'))
   async uploadProfilePicture(
@@ -117,6 +127,14 @@ export class CandidateController {
     @Body(ValidationPipe) updateDto: UpdateAvailabilityDto,
   ): Promise<{ message: string }> {
     return this.candidateService.updateAvailability(user.id, updateDto);
+  }
+
+  @Put('change-password')
+  async changePassword(
+    @GetCurrentUser() user: CurrentUser,
+    @Body(ValidationPipe) changePasswordDto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    return this.candidateService.changePassword(user.id, changePasswordDto);
   }
 
   // =================================================================
