@@ -157,6 +157,16 @@ export class AdminController {
     return this.adminService.getAdminById(adminId);
   }
 
+  @Put('admins/:id/profile')
+  @UseGuards(JwtAuthGuard)
+  async updateAdminProfileById(
+    @Param('id') adminId: string,
+    @GetCurrentUser() user: CurrentUser,
+    @Body(ValidationPipe) updateDto: UpdateAdminProfileDto,
+  ): Promise<AdminProfileResponseDto> {
+    return this.adminService.updateAdminProfileById(adminId, updateDto);
+  }
+
   @Put('admins/:id/permissions')
   @UseGuards(JwtAuthGuard)
   async updateAdminPermissions(

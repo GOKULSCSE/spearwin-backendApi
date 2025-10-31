@@ -712,6 +712,151 @@ export class AdminService {
     }
   }
 
+  async updateAdminProfileById(
+    adminId: string,
+    updateDto: UpdateAdminProfileDto,
+  ): Promise<AdminProfileResponseDto> {
+    try {
+      const admin = await this.prisma.admin.findUnique({
+        where: { id: adminId },
+        include: { user: true },
+      });
+
+      if (!admin) {
+        throw new NotFoundException('Admin not found');
+      }
+
+      // Check if email is being changed and if it's already taken
+      if (updateDto.email && updateDto.email !== admin.user.email) {
+        const existingUser = await this.prisma.user.findUnique({
+          where: { email: updateDto.email },
+        });
+
+        if (existingUser) {
+          throw new BadRequestException('Email is already in use');
+        }
+      }
+
+      // Check if phone is being changed and if it's already taken
+      if (updateDto.phone && updateDto.phone !== admin.user.phone) {
+        const existingUser = await this.prisma.user.findUnique({
+          where: { phone: updateDto.phone },
+        });
+
+        if (existingUser) {
+          throw new BadRequestException('Phone number is already in use');
+        }
+      }
+
+      // Update admin and user in a transaction
+      const result = await this.prisma.$transaction(async (prisma) => {
+        // Update user data
+        const userUpdateData: any = {};
+        if (updateDto.email) userUpdateData.email = updateDto.email;
+        if (updateDto.phone) userUpdateData.phone = updateDto.phone;
+
+        if (Object.keys(userUpdateData).length > 0) {
+          await prisma.user.update({
+            where: { id: admin.userId },
+            data: {
+              ...userUpdateData,
+              emailVerified:
+                updateDto.email && updateDto.email !== admin.user.email
+                  ? false
+                  : admin.user.emailVerified,
+              phoneVerified:
+                updateDto.phone && updateDto.phone !== admin.user.phone
+                  ? false
+                  : admin.user.phoneVerified,
+            },
+          });
+        }
+
+        // Update admin data
+        const adminUpdateData: any = {};
+        if (updateDto.firstName)
+          adminUpdateData.firstName = updateDto.firstName;
+        if (updateDto.lastName) adminUpdateData.lastName = updateDto.lastName;
+        if (updateDto.department)
+          adminUpdateData.department = updateDto.department;
+        if (updateDto.designation)
+          adminUpdateData.designation = updateDto.designation;
+
+        if (Object.keys(adminUpdateData).length > 0) {
+          await prisma.admin.update({
+            where: { id: adminId },
+            data: adminUpdateData,
+          });
+        }
+
+        // Return updated admin with user data
+        const updatedAdmin = await prisma.admin.findUnique({
+          where: { id: adminId },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                emailVerified: true,
+                phone: true,
+                phoneVerified: true,
+                role: true,
+                status: true,
+                profileCompleted: true,
+                twoFactorEnabled: true,
+                lastLoginAt: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
+          },
+        });
+
+        if (!updatedAdmin) {
+          throw new BadRequestException(
+            'Failed to retrieve updated admin profile',
+          );
+        }
+
+        return updatedAdmin;
+      });
+
+      return {
+        id: result.id,
+        userId: result.userId,
+        firstName: result.firstName,
+        lastName: result.lastName,
+        department: result.department,
+        designation: result.designation,
+        permissions: result.permissions,
+        createdAt: result.createdAt,
+        updatedAt: result.updatedAt,
+        user: {
+          id: result.user.id,
+          email: result.user.email,
+          emailVerified: result.user.emailVerified,
+          phone: result.user.phone,
+          phoneVerified: result.user.phoneVerified,
+          role: result.user.role,
+          status: result.user.status,
+          profileCompleted: result.user.profileCompleted,
+          twoFactorEnabled: result.user.twoFactorEnabled,
+          lastLoginAt: result.user.lastLoginAt,
+          createdAt: result.user.createdAt,
+          updatedAt: result.user.updatedAt,
+        },
+      };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to update admin profile');
+    }
+  }
+
   async changeAdminPassword(
     adminId: string,
     changePasswordDto: ChangePasswordDto,
