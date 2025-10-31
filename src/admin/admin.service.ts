@@ -1684,6 +1684,73 @@ export class AdminService {
     }
   }
 
+  async updateJobStatus(jobId: string, status: string, currentUser: any) {
+    try {
+      // Check if current user is ADMIN or SUPER_ADMIN
+      if (![UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(currentUser.role)) {
+        throw new ForbiddenException('Only admins can update job status');
+      }
+
+      // Validate status
+      const validStatuses = ['DRAFT', 'PUBLISHED', 'CLOSED', 'ARCHIVED'];
+      if (!validStatuses.includes(status)) {
+        throw new BadRequestException(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+      }
+
+      const job = await this.prisma.job.findUnique({
+        where: { id: jobId },
+        select: { id: true, title: true, status: true },
+      });
+
+      if (!job) {
+        throw new NotFoundException('Job not found');
+      }
+
+      const updatedJob = await this.prisma.job.update({
+        where: { id: jobId },
+        data: {
+          status: status as any,
+          ...(status === 'PUBLISHED' && !job.status ? { publishedAt: new Date() } : {}),
+          ...(status === 'CLOSED' ? { closedAt: new Date() } : {}),
+        },
+        include: {
+          company: {
+            select: {
+              id: true,
+              name: true,
+              logo: true,
+            },
+          },
+        },
+      });
+
+      // Log activity
+      await this.logActivity(
+        currentUser.id,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'Job',
+        jobId,
+        `Job status updated from ${job.status} to ${status}: ${job.title}`,
+      );
+
+      return {
+        success: true,
+        message: `Job status updated to ${status} successfully`,
+        data: updatedJob,
+      };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to update job status');
+    }
+  }
+
   async getJobApplications(
     jobId: string,
     query: any,
