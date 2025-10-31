@@ -21,6 +21,27 @@ async function initializeJobAttributes() {
       { name: 'MAJOR_SUBJECT', displayName: 'Major Subjects', sortOrder: 12 }
     ];
 
+    console.log('\n🔄 Updating category displayNames...');
+    
+    // Update existing categories with correct displayNames
+    for (const category of defaultCategories) {
+      try {
+        const existing = await prisma.jobAttributeCategory.findUnique({
+          where: { name: category.name }
+        });
+
+        if (existing && existing.displayName !== category.displayName) {
+          await prisma.jobAttributeCategory.update({
+            where: { name: category.name },
+            data: { displayName: category.displayName }
+          });
+          console.log(`✅ Updated displayName for ${category.name}: "${existing.displayName}" → "${category.displayName}"`);
+        }
+      } catch (error) {
+        console.error(`❌ Failed to update category ${category.name}:`, error.message);
+      }
+    }
+
     const createdCategories = [];
 
     for (const category of defaultCategories) {

@@ -894,6 +894,7 @@ export class JobService {
           jobId,
           candidateId: candidate.id,
           resumeId: applyDto.resumeId,
+          resumeFilePath: applyDto.resumeFilePath, // Store uploaded file path
           coverLetter: applyDto.coverLetter,
           status: 'APPLIED',
           // Contact information from application form
@@ -966,6 +967,7 @@ export class JobService {
         jobId: application.jobId,
         candidateId: application.candidateId,
         resumeId: application.resumeId || undefined,
+        resumeFilePath: application.resumeFilePath || undefined,
         coverLetter: application.coverLetter || undefined,
         status: application.status,
         appliedAt: application.appliedAt,
