@@ -9,8 +9,7 @@ import {
   Query,
   UseGuards,
   HttpCode,
-  HttpStatus,
-  ParseUUIDPipe
+  HttpStatus
 } from '@nestjs/common';
 import { JobAttributeService } from './job-attribute.service';
 import { CreateJobAttributeDto } from './dto/create-job-attribute.dto';
@@ -58,7 +57,7 @@ export class JobAttributeController {
   }
 
   @Get('categories/:id')
-  async findCategoryById(@Param('id', ParseUUIDPipe) id: string) {
+  async findCategoryById(@Param('id') id: string) {
     return {
       success: true,
       message: 'Category retrieved successfully',
@@ -69,7 +68,7 @@ export class JobAttributeController {
   @Patch('categories/:id')
   @UseGuards(JwtAuthGuard)
   async updateCategory(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @Body() updateCategoryDto: UpdateJobAttributeCategoryDto
   ) {
     return {
@@ -82,7 +81,7 @@ export class JobAttributeController {
   @Delete('categories/:id')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteCategory(@Param('id', ParseUUIDPipe) id: string) {
+  async deleteCategory(@Param('id') id: string) {
     await this.jobAttributeService.deleteCategory(id);
     return {
       success: true,
@@ -121,7 +120,7 @@ export class JobAttributeController {
   }
 
   @Get('by-category/:categoryId')
-  async getAttributesByCategory(@Param('categoryId', ParseUUIDPipe) categoryId: string) {
+  async getAttributesByCategory(@Param('categoryId') categoryId: string) {
     return {
       success: true,
       message: 'Attributes retrieved successfully',
@@ -130,7 +129,7 @@ export class JobAttributeController {
   }
 
   @Get(':id')
-  async findAttributeById(@Param('id', ParseUUIDPipe) id: string) {
+  async findAttributeById(@Param('id') id: string) {
     return {
       success: true,
       message: 'Attribute retrieved successfully',
@@ -141,7 +140,7 @@ export class JobAttributeController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   async updateAttribute(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @Body() updateAttributeDto: UpdateJobAttributeDto
   ) {
     return {
@@ -154,7 +153,7 @@ export class JobAttributeController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteAttribute(@Param('id', ParseUUIDPipe) id: string) {
+  async deleteAttribute(@Param('id') id: string) {
     await this.jobAttributeService.deleteAttribute(id);
     return {
       success: true,
@@ -165,7 +164,7 @@ export class JobAttributeController {
   // Utility Routes
   @Patch(':id/toggle-active')
   @UseGuards(JwtAuthGuard)
-  async toggleAttributeActive(@Param('id', ParseUUIDPipe) id: string) {
+  async toggleAttributeActive(@Param('id') id: string) {
     return {
       success: true,
       message: 'Attribute active status toggled successfully',
