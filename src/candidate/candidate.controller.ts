@@ -56,6 +56,7 @@ import {
   ResumeOptimizationResponseDto,
 } from './dto/resume-analysis.dto';
 import { UpsertFullProfileDto } from './dto/upsert-full-profile.dto';
+import { CandidateCompleteProfileResponseDto } from './dto/candidate-complete-profile.dto';
 import { DashboardStatsDto } from './dto/dashboard-stats.dto';
 import { ChangePasswordDto } from '../user/dto/change-password.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -111,6 +112,13 @@ export class CandidateController {
     @Body(ValidationPipe) body: UpsertFullProfileDto,
   ): Promise<CandidateProfileResponseDto> {
     return this.candidateService.upsertFullProfile(user.id, body);
+  }
+
+  @Get('profile/full')
+  async getCompleteProfile(
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<CandidateCompleteProfileResponseDto> {
+    return this.candidateService.getCompleteProfile(user.id);
   }
 
   @Post('profile/picture')

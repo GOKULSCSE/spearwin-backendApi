@@ -49,6 +49,7 @@ import {
   ResumeOptimizationResponseDto,
 } from './dto/resume-analysis.dto';
 import { UpsertFullProfileDto } from './dto/upsert-full-profile.dto';
+import { CandidateCompleteProfileResponseDto } from './dto/candidate-complete-profile.dto';
 import { LogAction, LogLevel } from '@prisma/client';
 
 @Injectable()
@@ -1327,12 +1328,13 @@ export class CandidateService {
     body: UpsertFullProfileDto,
   ): Promise<CandidateProfileResponseDto> {
     try {
-      const candidate = await this.db.candidate.findFirst({ where: { userId } });
-
-      const resultCandidate = await this.db.$transaction(async (tx) => {
-        // Ensure candidate exists
-        let ensured = candidate;
+      const resultCandidate = await this.db.$transaction(
+        async (tx) => {
+        console.log('Transaction started for user:', userId);
+        // Find or create candidate within transaction
+        let ensured = await tx.candidate.findFirst({ where: { userId } });
         if (!ensured) {
+          console.log('Creating new candidate for user:', userId);
           ensured = await tx.candidate.create({
             data: {
               userId,
@@ -1342,53 +1344,84 @@ export class CandidateService {
             },
           });
         }
+        console.log('Candidate found/created:', ensured.id);
 
         // Update candidate profile
         const p = body.profile || {} as any;
-        const cityIdParsed = p.cityId ? parseInt(p.cityId, 10) : undefined;
+        const cityIdParsed = p.cityId && p.cityId.trim() ? parseInt(p.cityId.trim(), 10) : undefined;
         const updateData: any = {
           firstName: p.firstName,
           lastName: p.lastName,
-          fatherName: p.fatherName,
+          fatherName: p.fatherName || undefined,
           dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth) : undefined,
-          gender: p.gender,
-          maritalStatus: p.maritalStatus,
-          bio: p.bio ?? p.profileSummary, // map both
-          currentTitle: p.currentTitle,
-          currentCompany: p.currentCompany,
-          currentLocation: p.currentLocation,
-          preferredLocation: p.preferredLocation,
-          noticePeriod: p.noticePeriod,
-          currentSalary: p.currentSalary,
-          expectedSalary: p.expectedSalary,
-          profileType: p.profileType,
-          experienceYears: p.experienceYears,
+          gender: p.gender || undefined,
+          maritalStatus: p.maritalStatus || undefined,
+          bio: (p.bio ?? p.profileSummary) || undefined,
+          currentTitle: p.currentTitle || undefined,
+          currentCompany: p.currentCompany || undefined,
+          currentLocation: p.currentLocation || undefined,
+          preferredLocation: p.preferredLocation || undefined,
+          noticePeriod: p.noticePeriod || undefined,
+          currentSalary: p.currentSalary != null ? p.currentSalary : undefined,
+          expectedSalary: p.expectedSalary != null ? p.expectedSalary : undefined,
+          profileType: p.profileType || undefined,
+          experienceYears: p.experienceYears != null ? parseInt(String(p.experienceYears), 10) : undefined,
           cityId: typeof cityIdParsed === 'number' && !Number.isNaN(cityIdParsed) ? cityIdParsed : undefined,
-          address: p.address ?? p.streetAddress,
-          linkedinUrl: p.linkedinUrl,
-          githubUrl: p.githubUrl,
-          portfolioUrl: p.portfolioUrl,
-          email: p.email,
-          mobileNumber: p.mobileNumber,
-          jobExperience: p.jobExperience,
-          country: p.country,
-          state: p.state,
-          cityName: p.cityName,
-          streetAddress: p.streetAddress,
-          profileSummary: p.profileSummary ?? p.bio,
+          address: (p.address ?? p.streetAddress) || undefined,
+          linkedinUrl: p.linkedinUrl || undefined,
+          githubUrl: p.githubUrl || undefined,
+          portfolioUrl: p.portfolioUrl || undefined,
+          email: p.email || undefined,
+          mobileNumber: p.mobileNumber || undefined,
+          jobExperience: p.jobExperience || undefined,
+          country: p.country || undefined,
+          state: p.state || undefined,
+          cityName: p.cityName || undefined,
+          streetAddress: p.streetAddress || undefined,
+          profileSummary: (p.profileSummary ?? p.bio) || undefined,
+          // if provided, set profile picture from uploaded key
+          profilePicture: body.profilePictureKey || undefined,
         };
+
+        // Remove undefined and empty string values
+        const cleanedData = Object.fromEntries(
+          Object.entries(updateData).filter(([k, v]) => {
+            if (v === undefined || v === null) return false;
+            if (typeof v === 'string' && v.trim() === '') return false;
+            return true;
+          }),
+        );
 
         await tx.candidate.update({
           where: { id: ensured.id },
-          data: Object.fromEntries(
-            Object.entries(updateData).filter(([, v]) => v !== undefined),
-          ),
+          data: cleanedData,
         });
 
         // Skills upsert/delete
         if (body.skills) {
           const { upsert, delete: del } = body.skills;
           if (Array.isArray(upsert)) {
+            // Batch verify all existing skill records first
+            const skillIdsToUpdate = upsert.filter(s => s.id).map(s => s.id!).filter((id): id is string => id !== undefined);
+            
+            if (skillIdsToUpdate.length > 0) {
+              const existingSkills = await tx.candidateSkill.findMany({
+                where: {
+                  id: { in: skillIdsToUpdate },
+                  candidateId: ensured.id,
+                },
+              });
+              
+              // Check if all IDs exist and belong to candidate
+              const existingIds = new Set(existingSkills.map(r => r.id));
+              for (const id of skillIdsToUpdate) {
+                if (!existingIds.has(id)) {
+                  throw new BadRequestException(`Skill with id ${id} not found or does not belong to candidate`);
+                }
+              }
+            }
+            
+            // Now perform updates and creates
             for (const s of upsert) {
               if (s.id) {
                 await tx.candidateSkill.update({
@@ -1432,28 +1465,97 @@ export class CandidateService {
 
         // Education upsert/delete
         if (body.education) {
+          console.log('Processing education section');
           const { upsert, delete: del } = body.education;
-          if (Array.isArray(upsert)) {
-            for (const e of upsert) {
-              const data = {
-                institution: e.institution,
-                degree: e.degree,
-                fieldOfStudy: e.fieldOfStudy,
-                level: e.level as any,
-                startDate: e.startDate ? new Date(e.startDate) : undefined,
-                endDate: e.endDate ? new Date(e.endDate) : undefined,
-                isCompleted: e.isCompleted,
-                grade: e.grade,
-                description: e.description,
-              } as any;
-              if (e.id) {
-                await tx.candidateEducation.update({
-                  where: { id: e.id },
-                  data: Object.fromEntries(
-                    Object.entries(data).filter(([, v]) => v !== undefined),
-                  ),
-                });
-              } else {
+          if (Array.isArray(upsert) && upsert.length > 0) {
+            console.log(`Education upsert array length: ${upsert.length}`);
+            // Separate updates and creates
+            const updates = upsert.filter(e => e.id);
+            const creates = upsert.filter(e => !e.id);
+            
+            console.log(`Education updates: ${updates.length}, creates: ${creates.length}`);
+            
+            // Batch verify all existing education records first
+            if (updates.length > 0) {
+              const educationIdsToUpdate = updates.map(e => e.id!).filter((id): id is string => id !== undefined);
+              
+              console.log(`Verifying ${educationIdsToUpdate.length} education records...`);
+              const existingEducationRecords = await tx.candidateEducation.findMany({
+                where: {
+                  id: { in: educationIdsToUpdate },
+                  candidateId: ensured.id,
+                },
+              });
+              
+              console.log(`Found ${existingEducationRecords.length} existing education records`);
+              
+              // Check if all IDs exist and belong to candidate
+              const existingIds = new Set(existingEducationRecords.map(r => r.id));
+              for (const id of educationIdsToUpdate) {
+                if (!existingIds.has(id)) {
+                  console.error(`Education ${id} not found for candidate ${ensured.id}`);
+                  throw new BadRequestException(`Education with id ${id} not found or does not belong to candidate`);
+                }
+              }
+              
+              console.log('All education IDs verified. Starting updates...');
+              // Perform updates one by one with error handling
+              for (let i = 0; i < updates.length; i++) {
+                const e = updates[i];
+                console.log(`[${i + 1}/${updates.length}] Updating education ${e.id}...`);
+                if (!e.id) continue;
+                try {
+                  const data = Object.fromEntries(
+                    Object.entries({
+                      institution: e.institution,
+                      degree: e.degree,
+                      fieldOfStudy: e.fieldOfStudy,
+                      level: e.level as any,
+                      startDate: e.startDate ? new Date(e.startDate) : undefined,
+                      endDate: e.endDate ? new Date(e.endDate) : undefined,
+                      isCompleted: e.isCompleted,
+                      grade: e.grade,
+                      description: e.description,
+                    }).filter(([, v]) => v !== undefined),
+                  );
+                  
+                if (Object.keys(data).length > 0) {
+                  // Verify the record still exists and belongs to candidate before update
+                  const record = await tx.candidateEducation.findUnique({
+                    where: { id: e.id },
+                  });
+                  
+                  if (!record || record.candidateId !== ensured.id) {
+                    throw new BadRequestException(
+                      `Education record ${e.id} not found or does not belong to candidate`
+                    );
+                  }
+                  
+                  await tx.candidateEducation.update({
+                    where: { id: e.id },
+                    data,
+                  });
+                  console.log(`[${i + 1}/${updates.length}] Education ${e.id} updated successfully`);
+                } else {
+                  console.log(`[${i + 1}/${updates.length}] Education ${e.id} - no data to update`);
+                }
+                } catch (updateError: any) {
+                  console.error(`[${i + 1}/${updates.length}] Error updating education ${e.id}:`, updateError);
+                  // Re-throw BadRequestException as-is
+                  if (updateError instanceof BadRequestException) {
+                    throw updateError;
+                  }
+                  throw new BadRequestException(
+                    `Failed to update education record ${e.id}: ${updateError.message || 'Unknown error'}`
+                  );
+                }
+              }
+              console.log(`All ${updates.length} education updates completed`);
+            }
+            
+            // Perform creates
+            if (creates.length > 0) {
+              for (const e of creates) {
                 await tx.candidateEducation.create({
                   data: {
                     candidateId: ensured.id,
@@ -1482,23 +1584,44 @@ export class CandidateService {
         if (body.experience) {
           const { upsert, delete: del } = body.experience;
           if (Array.isArray(upsert)) {
+            // Batch verify all existing experience records first
+            const experienceIdsToUpdate = upsert.filter(ex => ex.id).map(ex => ex.id!).filter((id): id is string => id !== undefined);
+            
+            if (experienceIdsToUpdate.length > 0) {
+              const existingExperiences = await tx.candidateExperience.findMany({
+                where: {
+                  id: { in: experienceIdsToUpdate },
+                  candidateId: ensured.id,
+                },
+              });
+              
+              // Check if all IDs exist and belong to candidate
+              const existingIds = new Set(existingExperiences.map(r => r.id));
+              for (const id of experienceIdsToUpdate) {
+                if (!existingIds.has(id)) {
+                  throw new BadRequestException(`Experience with id ${id} not found or does not belong to candidate`);
+                }
+              }
+            }
+            
+            // Now perform updates and creates
             for (const ex of upsert) {
-              const data = {
-                company: ex.company,
-                position: ex.position,
-                description: ex.description,
-                startDate: ex.startDate ? new Date(ex.startDate) : undefined,
-                endDate: ex.endDate ? new Date(ex.endDate) : undefined,
-                isCurrent: ex.isCurrent,
-                location: ex.location,
-                achievements: ex.achievements,
-              } as any;
               if (ex.id) {
+                const data = Object.fromEntries(
+                  Object.entries({
+                    company: ex.company,
+                    position: ex.position,
+                    description: ex.description,
+                    startDate: ex.startDate ? new Date(ex.startDate) : undefined,
+                    endDate: ex.endDate ? new Date(ex.endDate) : undefined,
+                    isCurrent: ex.isCurrent,
+                    location: ex.location,
+                    achievements: ex.achievements,
+                  }).filter(([, v]) => v !== undefined),
+                );
                 await tx.candidateExperience.update({
                   where: { id: ex.id },
-                  data: Object.fromEntries(
-                    Object.entries(data).filter(([, v]) => v !== undefined),
-                  ),
+                  data,
                 });
               } else {
                 await tx.candidateExperience.create({
@@ -1524,12 +1647,284 @@ export class CandidateService {
           }
         }
 
+        // Resumes upsert/delete
+        if (body.resumes) {
+          const { upsert, delete: del } = body.resumes as any;
+          if (Array.isArray(upsert)) {
+            // Batch verify all existing resume records first
+            const resumeIdsToUpdate = upsert.filter(r => r.id).map(r => r.id!).filter((id): id is string => id !== undefined);
+            let existingResumeMap = new Map<string, any>();
+            
+            if (resumeIdsToUpdate.length > 0) {
+              const existingResumes = await tx.resume.findMany({
+                where: {
+                  id: { in: resumeIdsToUpdate },
+                  candidateId: ensured.id,
+                },
+              });
+              
+              // Check if all IDs exist and belong to candidate
+              for (const resume of existingResumes) {
+                existingResumeMap.set(resume.id, resume);
+              }
+              
+              for (const id of resumeIdsToUpdate) {
+                if (!existingResumeMap.has(id)) {
+                  throw new BadRequestException(`Resume with id ${id} not found or does not belong to candidate`);
+                }
+              }
+            }
+            
+            // Now perform updates and creates
+            for (const r of upsert) {
+              let resumeId: string;
+
+              if (r.id) {
+                // Update existing resume
+                const existingResume = existingResumeMap.get(r.id);
+                resumeId = r.id;
+
+                const updateData: any = Object.fromEntries(
+                  Object.entries({
+                    title: r.title,
+                    fileName: r.fileName,
+                    fileSize: r.fileSize,
+                    mimeType: r.mimeType,
+                    isDefault: r.isDefault,
+                    filePath: r.documentKey, // Update filePath if new documentKey provided
+                  }).filter(([, v]) => v !== undefined),
+                );
+
+                await tx.resume.update({
+                  where: { id: r.id },
+                  data: updateData,
+                });
+              } else {
+                // Create new resume - require documentKey
+                if (!r.documentKey) {
+                  throw new BadRequestException('documentKey is required for new resumes');
+                }
+
+                const newResume = await tx.resume.create({
+                  data: {
+                    candidateId: ensured.id,
+                    title: r.title || 'Resume',
+                    fileName: r.fileName || 'document',
+                    filePath: r.documentKey,
+                    fileSize: r.fileSize || 0,
+                    mimeType: r.mimeType || 'application/octet-stream',
+                    isDefault: !!r.isDefault,
+                  },
+                });
+
+                resumeId = newResume.id;
+              }
+
+              // If set as default, unset all other resumes for this candidate
+              if (r.isDefault) {
+                await tx.resume.updateMany({
+                  where: {
+                    candidateId: ensured.id,
+                    id: { not: resumeId },
+                  },
+                  data: { isDefault: false },
+                });
+              }
+            }
+          }
+
+          if (Array.isArray(del) && del.length) {
+            await tx.resume.deleteMany({
+              where: { id: { in: del }, candidateId: ensured.id },
+            });
+          }
+        }
+
+        console.log('Transaction completed successfully');
         return ensured;
+      },
+      {
+        maxWait: 10000, // Maximum time to wait for a transaction slot
+        timeout: 60000, // Maximum time the transaction can run (60 seconds)
+      }
+      );
+
+      // Fetch updated profile directly (skip getOrCreateCandidate since we just updated)
+      console.log('Transaction successful, fetching updated profile...');
+      const updatedCandidate = await this.db.candidate.findFirst({
+        where: { userId },
+        include: {
+          city: {
+            include: {
+              state: {
+                include: {
+                  country: true,
+                },
+              },
+            },
+          },
+          user: {
+            select: {
+              email: true,
+              phone: true,
+            },
+          },
+        },
       });
 
-      // Return latest profile view
-      return await this.getCandidateProfile(userId);
+      if (!updatedCandidate) {
+        console.error('Candidate not found after transaction');
+        throw new NotFoundException('Candidate profile not found');
+      }
+
+      console.log('Profile fetched, building response...');
+      const response: CandidateProfileResponseDto = {
+        id: updatedCandidate.id,
+        userId: updatedCandidate.userId,
+        firstName: updatedCandidate.firstName,
+        lastName: updatedCandidate.lastName,
+        fatherName: updatedCandidate.fatherName || undefined,
+        dateOfBirth: updatedCandidate.dateOfBirth || undefined,
+        gender: updatedCandidate.gender || undefined,
+        maritalStatus: updatedCandidate.maritalStatus || undefined,
+        profilePicture: updatedCandidate.profilePicture || undefined,
+        bio: updatedCandidate.bio || undefined,
+        currentTitle: updatedCandidate.currentTitle || undefined,
+        currentCompany: updatedCandidate.currentCompany || undefined,
+        currentLocation: updatedCandidate.currentLocation || undefined,
+        preferredLocation: updatedCandidate.preferredLocation || undefined,
+        noticePeriod: updatedCandidate.noticePeriod || undefined,
+        currentSalary: updatedCandidate.currentSalary
+          ? Number(updatedCandidate.currentSalary)
+          : undefined,
+        expectedSalary: updatedCandidate.expectedSalary
+          ? Number(updatedCandidate.expectedSalary)
+          : undefined,
+        profileType: updatedCandidate.profileType || undefined,
+        experienceYears: updatedCandidate.experienceYears || undefined,
+        address: updatedCandidate.address || undefined,
+        linkedinUrl: updatedCandidate.linkedinUrl || undefined,
+        githubUrl: updatedCandidate.githubUrl || undefined,
+        portfolioUrl: updatedCandidate.portfolioUrl || undefined,
+        isAvailable: updatedCandidate.isAvailable,
+        createdAt: updatedCandidate.createdAt,
+        updatedAt: updatedCandidate.updatedAt,
+        user: updatedCandidate.user,
+        city: updatedCandidate.city as any,
+      };
+      console.log('Response ready');
+      return response;
     } catch (error) {
+      console.error('Error in upsertFullProfile:', error);
+      console.error('Error stack:', error.stack);
+      console.error('Error message:', error.message);
+      
+      // Re-throw BadRequestException as-is
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      // Log and handle other errors
+      this.handleException(error);
+      throw new InternalServerErrorException(
+        `Failed to update candidate profile: ${error.message || 'Unknown error'}`
+      );
+    }
+  }
+
+  async getCompleteProfile(userId: string): Promise<CandidateCompleteProfileResponseDto> {
+    try {
+      const candidate = await this.db.candidate.findFirst({
+        where: { userId },
+        include: {
+          city: {
+            include: {
+              state: { include: { country: true } },
+            },
+          },
+          user: { select: { email: true, phone: true } },
+          skills: true,
+          education: true,
+          experience: true,
+          resumes: true,
+        },
+      });
+
+      if (!candidate) {
+        throw new NotFoundException('Candidate profile not found');
+      }
+
+      return {
+        id: candidate.id,
+        userId: candidate.userId,
+        firstName: candidate.firstName,
+        lastName: candidate.lastName,
+        fatherName: candidate.fatherName || undefined,
+        dateOfBirth: candidate.dateOfBirth || undefined,
+        gender: candidate.gender || undefined,
+        maritalStatus: candidate.maritalStatus || undefined,
+        profilePicture: candidate.profilePicture || undefined,
+        bio: candidate.bio || undefined,
+        currentTitle: candidate.currentTitle || undefined,
+        currentCompany: candidate.currentCompany || undefined,
+        currentLocation: candidate.currentLocation || undefined,
+        preferredLocation: candidate.preferredLocation || undefined,
+        noticePeriod: candidate.noticePeriod || undefined,
+        currentSalary: candidate.currentSalary ? Number(candidate.currentSalary) : undefined,
+        expectedSalary: candidate.expectedSalary ? Number(candidate.expectedSalary) : undefined,
+        profileType: candidate.profileType || undefined,
+        experienceYears: candidate.experienceYears || undefined,
+        address: candidate.address || undefined,
+        linkedinUrl: candidate.linkedinUrl || undefined,
+        githubUrl: candidate.githubUrl || undefined,
+        portfolioUrl: candidate.portfolioUrl || undefined,
+        isAvailable: candidate.isAvailable,
+        createdAt: candidate.createdAt,
+        updatedAt: candidate.updatedAt,
+        user: candidate.user,
+        city: candidate.city as any,
+        skills: candidate.skills?.map(s => ({
+          id: s.id,
+          skillName: s.skillName,
+          level: s.level || undefined,
+          yearsUsed: s.yearsUsed || undefined,
+        })),
+        education: candidate.education?.map(e => ({
+          id: e.id,
+          institution: e.institution,
+          degree: e.degree,
+          fieldOfStudy: e.fieldOfStudy || undefined,
+          level: e.level,
+          startDate: e.startDate,
+          endDate: e.endDate || undefined,
+          isCompleted: e.isCompleted,
+          grade: e.grade || undefined,
+          description: e.description || undefined,
+        })),
+        experience: candidate.experience?.map(ex => ({
+          id: ex.id,
+          company: ex.company,
+          position: ex.position,
+          description: ex.description || undefined,
+          startDate: ex.startDate,
+          endDate: ex.endDate || undefined,
+          isCurrent: ex.isCurrent,
+          location: ex.location || undefined,
+          achievements: ex.achievements || undefined,
+        })),
+        resumes: candidate.resumes?.map(r => ({
+          id: r.id,
+          title: r.title,
+          fileName: r.fileName,
+          filePath: r.filePath,
+          fileSize: r.fileSize,
+          mimeType: r.mimeType,
+          isDefault: r.isDefault,
+          uploadedAt: r.uploadedAt,
+        })),
+      } as CandidateCompleteProfileResponseDto;
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
       this.handleException(error);
       throw error;
     }
