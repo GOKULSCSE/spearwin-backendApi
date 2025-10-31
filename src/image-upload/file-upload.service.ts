@@ -82,20 +82,20 @@ export class FileUploadService {
       throw new BadRequestException('File size too large. Maximum size is 10MB.');
     }
 
-    return this.uploadFile(file, folder, 'private');
+    return this.uploadFile(file, folder, 'public-read');
   }
 
   private async uploadFile(file: Express.Multer.File, folder: string, acl: 'public-read' | 'private'): Promise<string> {
     const fileExtension = file.originalname.split('.').pop();
     const fileName = `${uuidv4()}.${fileExtension}`;
     const key = `${folder}/${fileName}`;
+    const region = this.configService.get<string>('DO_SPACES_REGION');
 
     try {
-      const params = {
+      const params: any = {
         Bucket: this.bucketName,
         Key: key,
         Body: file.buffer,
-        ACL: acl as ObjectCannedACL,
         ContentType: file.mimetype,
         Metadata: {
           'original-name': file.originalname,
@@ -103,16 +103,30 @@ export class FileUploadService {
         },
       };
 
+      // Set ACL for public files
+      // Note: DigitalOcean Spaces requires bucket-level public access to be enabled
+      // for object-level ACL to work. Ensure your Space is configured for public file access.
+      if (acl === 'public-read') {
+        params.ACL = 'public-read';
+        console.log(`Uploading file as public: ${key}`);
+      } else {
+        params.ACL = 'private';
+        console.log(`Uploading file as private: ${key}`);
+      }
+
       await this.s3Client.send(new PutObjectCommand(params));
       
-      // Return the URL (public for images, private for documents)
+      // Construct and return the public URL for images
       if (acl === 'public-read') {
-        return `https://${this.bucketName}.${this.configService.get<string>('DO_SPACES_REGION')}.digitaloceanspaces.com/${key}`;
+        const publicUrl = `https://${this.bucketName}.${region}.digitaloceanspaces.com/${key}`;
+        console.log(`File uploaded successfully. Public URL: ${publicUrl}`);
+        return publicUrl;
       } else {
-        // For private files, return the key for later retrieval
+        // For private files, return the key for later retrieval via presigned URL
+        console.log(`Private file uploaded successfully. Key: ${key}`);
         return key;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading file:', error);
       console.error('Error details:', {
         message: error.message,
@@ -121,8 +135,17 @@ export class FileUploadService {
         bucketName: this.bucketName,
         key: key,
         fileSize: file.size,
-        fileType: file.mimetype
+        fileType: file.mimetype,
+        acl: acl
       });
+      
+      // If ACL error, provide helpful message
+      if (error.code === 'AccessDenied' || error.message?.includes('ACL')) {
+        throw new BadRequestException(
+          `Failed to set file permissions. Please ensure your DigitalOcean Space bucket is configured for public access. Error: ${error.message}`
+        );
+      }
+      
       throw new BadRequestException(`Failed to upload file: ${error.message}`);
     }
   }
