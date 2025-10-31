@@ -11,6 +11,10 @@ export class ApplyForJobDto {
   resumeId?: string;
 
   @IsOptional()
+  @IsString({ message: 'Resume file path must be a string' })
+  resumeFilePath?: string;
+
+  @IsOptional()
   @IsString({ message: 'Cover letter must be a string' })
   coverLetter?: string;
 
@@ -72,6 +76,7 @@ export class ApplicationResponseDto {
   jobId: string;
   candidateId: string;
   resumeId?: string;
+  resumeFilePath?: string;
   coverLetter?: string;
   status: ApplicationStatus;
   appliedAt: Date;

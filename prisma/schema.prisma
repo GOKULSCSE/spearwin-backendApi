@@ -341,6 +341,7 @@ model JobApplication {
   jobId               String
   candidateId         String
   resumeId            String?
+  resumeFilePath      String?           // Path to uploaded resume file in storage
   coverLetter         String?
   status              ApplicationStatus @default(APPLIED)
   appliedAt           DateTime          @default(now())

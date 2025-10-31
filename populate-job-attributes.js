@@ -6,141 +6,176 @@ async function populateJobAttributes() {
   try {
     console.log('🚀 Populating Job Attributes...');
 
-    // Language Levels
-    await db.jobAttribute.createMany({
-      data: [
-        { name: 'Beginner', category: 'LANGUAGE_LEVEL', sortOrder: 1 },
-        { name: 'Intermediate', category: 'LANGUAGE_LEVEL', sortOrder: 2 },
-        { name: 'Advanced', category: 'LANGUAGE_LEVEL', sortOrder: 3 },
-        { name: 'Native Speaker', category: 'LANGUAGE_LEVEL', sortOrder: 4 },
-      ],
+    // First, get all categories
+    const categories = await db.jobAttributeCategory.findMany();
+    
+    if (categories.length === 0) {
+      console.log('⚠️  No categories found! Please run initialize-job-attributes.js first.');
+      return;
+    }
+
+    // Create a map of category name to category ID
+    const categoryMap = {};
+    categories.forEach(cat => {
+      categoryMap[cat.name] = cat.id;
     });
 
-    // Career Levels
-    await db.jobAttribute.createMany({
-      data: [
-        { name: 'High School / Secondary', category: 'CAREER_LEVEL', sortOrder: 1 },
-        { name: 'Diploma / Certification', category: 'CAREER_LEVEL', sortOrder: 2 },
-        { name: 'Bachelor\'s Degree', category: 'CAREER_LEVEL', sortOrder: 3 },
-        { name: 'Master\'s Degree', category: 'CAREER_LEVEL', sortOrder: 4 },
-      ],
-    });
+    console.log('📋 Found categories:', Object.keys(categoryMap));
 
-    // Functional Areas
-    await db.jobAttribute.createMany({
-      data: [
-        { name: 'Software Development', category: 'FUNCTIONAL_AREA', sortOrder: 1 },
-        { name: 'UI/UX & Design', category: 'FUNCTIONAL_AREA', sortOrder: 2 },
-        { name: 'Banking & Insurance', category: 'FUNCTIONAL_AREA', sortOrder: 3 },
-        { name: 'Education & Training', category: 'FUNCTIONAL_AREA', sortOrder: 4 },
+    // Define attributes for each category
+    const attributesData = {
+      LANGUAGE_LEVEL: [
+        'Beginner',
+        'Intermediate',
+        'Advanced',
+        'Native Speaker'
       ],
-    });
-
-    // Genders
-    await db.jobAttribute.createMany({
-      data: [
-        { name: 'Male', category: 'GENDER', sortOrder: 1 },
-        { name: 'Female', category: 'GENDER', sortOrder: 2 },
-        { name: 'Transgender', category: 'GENDER', sortOrder: 3 },
-        { name: 'Non-Binary', category: 'GENDER', sortOrder: 4 },
+      CAREER_LEVEL: [
+        'Entry Level',
+        'Mid Level',
+        'Senior Level',
+        'Executive Level'
       ],
-    });
-
-    // Industries
-    await db.jobAttribute.createMany({
-      data: [
-        { name: 'IT', category: 'INDUSTRY', sortOrder: 1 },
-        { name: 'Banking', category: 'INDUSTRY', sortOrder: 2 },
-        { name: 'Manufacturing', category: 'INDUSTRY', sortOrder: 3 },
-        { name: 'Healthcare', category: 'INDUSTRY', sortOrder: 4 },
+      FUNCTIONAL_AREA: [
+        'Software Development',
+        'UI/UX & Design',
+        'Banking & Insurance',
+        'Education & Training',
+        'Sales & Marketing',
+        'Human Resources'
       ],
-    });
-
-    // Job Experience
-    await db.jobAttribute.createMany({
-      data: [
-        { name: 'Fresher / Entry', category: 'JOB_EXPERIENCE', sortOrder: 1 },
-        { name: '0-1 Year', category: 'JOB_EXPERIENCE', sortOrder: 2 },
-        { name: '1-3 Years', category: 'JOB_EXPERIENCE', sortOrder: 3 },
-        { name: '3-5 Years', category: 'JOB_EXPERIENCE', sortOrder: 4 },
+      GENDER: [
+        'Male',
+        'Female',
+        'Transgender',
+        'Non-Binary',
+        'Prefer not to say'
       ],
-    });
-
-    // Job Skills
-    await db.jobAttribute.createMany({
-      data: [
-        { name: 'Project Management', category: 'JOB_SKILL', sortOrder: 1 },
-        { name: 'React.js', category: 'JOB_SKILL', sortOrder: 2 },
-        { name: 'UI/UX & Design', category: 'JOB_SKILL', sortOrder: 3 },
-        { name: 'Digital Marketing', category: 'JOB_SKILL', sortOrder: 4 },
+      INDUSTRY: [
+        'Information Technology',
+        'Banking & Finance',
+        'Manufacturing',
+        'Healthcare',
+        'Education',
+        'Retail'
       ],
-    });
-
-    // Job Types
-    await db.jobAttribute.createMany({
-      data: [
-        { name: 'Full-Time', category: 'JOB_TYPE', sortOrder: 1 },
-        { name: 'Part-Time', category: 'JOB_TYPE', sortOrder: 2 },
-        { name: 'Contract', category: 'JOB_TYPE', sortOrder: 3 },
-        { name: 'Internship', category: 'JOB_TYPE', sortOrder: 4 },
+      JOB_EXPERIENCE: [
+        'Fresher (0 years)',
+        '0-1 Year',
+        '1-3 Years',
+        '3-5 Years',
+        '5-10 Years',
+        '10+ Years'
       ],
-    });
-
-    // Job Shifts
-    await db.jobAttribute.createMany({
-      data: [
-        { name: 'Day Shift', category: 'JOB_SHIFT', sortOrder: 1 },
-        { name: 'Night Shift', category: 'JOB_SHIFT', sortOrder: 2 },
-        { name: 'Flexible', category: 'JOB_SHIFT', sortOrder: 3 },
-        { name: 'Rotating', category: 'JOB_SHIFT', sortOrder: 4 },
+      JOB_SKILL: [
+        'JavaScript',
+        'React.js',
+        'Node.js',
+        'Python',
+        'Java',
+        'UI/UX Design',
+        'Project Management',
+        'Digital Marketing',
+        'Data Analysis',
+        'Communication'
       ],
-    });
-
-    // Degree Levels
-    await db.jobAttribute.createMany({
-      data: [
-        { name: 'High School / Secondary', category: 'DEGREE_LEVEL', sortOrder: 1 },
-        { name: 'Diploma / Certification', category: 'DEGREE_LEVEL', sortOrder: 2 },
-        { name: 'Bachelor\'s Degree', category: 'DEGREE_LEVEL', sortOrder: 3 },
-        { name: 'Master\'s Degree', category: 'DEGREE_LEVEL', sortOrder: 4 },
+      JOB_TYPE: [
+        'Full-Time',
+        'Part-Time',
+        'Contract',
+        'Internship',
+        'Freelance'
       ],
-    });
-
-    // Degree Types
-    await db.jobAttribute.createMany({
-      data: [
-        { name: 'Arts & Science', category: 'DEGREE_TYPE', sortOrder: 1 },
-        { name: 'Engineering', category: 'DEGREE_TYPE', sortOrder: 2 },
-        { name: 'Medicine', category: 'DEGREE_TYPE', sortOrder: 3 },
-        { name: 'Agriculture', category: 'DEGREE_TYPE', sortOrder: 4 },
+      JOB_SHIFT: [
+        'Day Shift',
+        'Night Shift',
+        'Flexible',
+        'Rotating',
+        'Weekend'
       ],
-    });
-
-    // Major Subjects
-    await db.jobAttribute.createMany({
-      data: [
-        { name: 'Computer Science', category: 'MAJOR_SUBJECT', sortOrder: 1 },
-        { name: 'Electronics', category: 'MAJOR_SUBJECT', sortOrder: 2 },
-        { name: 'Mechanical Engineering', category: 'MAJOR_SUBJECT', sortOrder: 3 },
-        { name: 'Nursing', category: 'MAJOR_SUBJECT', sortOrder: 4 },
+      DEGREE_LEVEL: [
+        'High School',
+        'Diploma',
+        'Bachelor\'s Degree',
+        'Master\'s Degree',
+        'Doctorate (PhD)',
+        'Professional Degree'
       ],
-    });
+      DEGREE_TYPE: [
+        'Arts & Science',
+        'Engineering',
+        'Medicine',
+        'Agriculture',
+        'Business Administration',
+        'Law'
+      ],
+      MAJOR_SUBJECT: [
+        'Computer Science',
+        'Electronics',
+        'Mechanical Engineering',
+        'Civil Engineering',
+        'Nursing',
+        'Business Administration',
+        'Accounting',
+        'Marketing'
+      ]
+    };
 
-    console.log('✅ Job attributes populated successfully!');
+    let totalCreated = 0;
+
+    // Create attributes for each category
+    for (const [categoryName, attributes] of Object.entries(attributesData)) {
+      if (!categoryMap[categoryName]) {
+        console.log(`⚠️  Category ${categoryName} not found, skipping...`);
+        continue;
+      }
+
+      console.log(`\n➡️  Adding attributes for ${categoryName}...`);
+      
+      for (let i = 0; i < attributes.length; i++) {
+        try {
+          // Check if attribute already exists
+          const existing = await db.jobAttribute.findFirst({
+            where: {
+              name: attributes[i],
+              categoryId: categoryMap[categoryName]
+            }
+          });
+
+          if (!existing) {
+            await db.jobAttribute.create({
+              data: {
+                name: attributes[i],
+                categoryId: categoryMap[categoryName],
+                sortOrder: i + 1,
+                isActive: true
+              }
+            });
+            console.log(`   ✅ Created: ${attributes[i]}`);
+            totalCreated++;
+          } else {
+            console.log(`   ⚠️  Already exists: ${attributes[i]}`);
+          }
+        } catch (error) {
+          console.error(`   ❌ Failed to create ${attributes[i]}:`, error.message);
+        }
+      }
+    }
+
+    console.log('\n✅ Job attributes populated successfully!');
+    console.log(`📊 Total new attributes created: ${totalCreated}`);
     
     // Show summary
     const total = await db.jobAttribute.count();
-    console.log(`📊 Total attributes created: ${total}`);
+    console.log(`📊 Total attributes in database: ${total}`);
     
-    const byCategory = await db.jobAttribute.groupBy({
-      by: ['category'],
-      _count: { id: true }
-    });
-    
-    console.log('📋 Attributes by category:');
-    byCategory.forEach(cat => {
-      console.log(`  ${cat.category}: ${cat._count.id} attributes`);
-    });
+    console.log('\n📋 Attributes by category:');
+    for (const category of categories) {
+      const count = await db.jobAttribute.count({
+        where: { categoryId: category.id }
+      });
+      console.log(`   ${category.displayName}: ${count} attributes`);
+    }
 
   } catch (error) {
     console.error('❌ Error populating job attributes:', error);
