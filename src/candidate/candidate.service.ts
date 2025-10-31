@@ -3,7 +3,9 @@ import {
   NotFoundException,
   BadRequestException,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 import { DatabaseService } from '../database/database.service';
 import type { Express } from 'express';
 import {
@@ -1644,6 +1646,65 @@ export class CandidateService {
       return { message: 'Availability updated successfully' };
     } catch (error) {
       if (error instanceof NotFoundException) {
+        throw error;
+      }
+      this.handleException(error);
+      throw error;
+    }
+  }
+
+  async changePassword(
+    userId: string,
+    changePasswordDto: { currentPassword: string; newPassword: string },
+  ): Promise<{ message: string }> {
+    try {
+      // Get user to verify current password
+      const user = await this.db.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // Verify current password
+      const isCurrentPasswordValid = await bcrypt.compare(
+        changePasswordDto.currentPassword,
+        user.password,
+      );
+
+      if (!isCurrentPasswordValid) {
+        throw new UnauthorizedException('Current password is incorrect');
+      }
+
+      // Hash new password
+      const hashedNewPassword = await bcrypt.hash(
+        changePasswordDto.newPassword,
+        12,
+      );
+
+      // Update password
+      await this.db.user.update({
+        where: { id: userId },
+        data: { password: hashedNewPassword },
+      });
+
+      // Log the password change
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'User',
+        userId,
+        'Password changed',
+      );
+
+      return { message: 'Password changed successfully' };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof UnauthorizedException
+      ) {
         throw error;
       }
       this.handleException(error);
