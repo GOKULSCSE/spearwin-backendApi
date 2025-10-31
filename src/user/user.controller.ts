@@ -13,9 +13,12 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserWithProfileDto } from './dto/create-user-with-profile.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateUserWithProfileDto } from './dto/update-user-with-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 import { ActivityLogsQueryDto } from './dto/activity-logs-query.dto';
 import {
   UpdateNotificationPreferencesDto,
@@ -40,7 +43,7 @@ export class UserController {
 
   // Legacy endpoints (keeping for backward compatibility)
   @Post()
-  create(@Body(ValidationPipe) createUserDto: CreateUserDto) {
+  create(@Body(ValidationPipe) createUserDto: CreateUserWithProfileDto) {
     return this.userService.create(createUserDto);
   }
 
@@ -49,7 +52,11 @@ export class UserController {
     return this.userService.findAll();
   }
 
-  // Status-specific routes (must be before :id route)
+  // =================================================================
+  // SPECIFIC ROUTES (must be before :id route to avoid conflicts)
+  // =================================================================
+
+  // Status-specific routes
   @Get('active')
   @UseGuards(JwtAuthGuard)
   async getActiveUsers(
@@ -77,22 +84,7 @@ export class UserController {
     return this.userService.getInactiveUsers(sortBy, sortOrder);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
-  }
-
-  // New User Profile APIs
+  // User Profile APIs
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   async getCurrentUserProfile(
@@ -108,23 +100,6 @@ export class UserController {
     @Body(ValidationPipe) updateProfileDto: UpdateProfileDto,
   ): Promise<UserProfileResponseDto> {
     return this.userService.updateCurrentUserProfile(user.id, updateProfileDto);
-  }
-
-  @Delete('account')
-  @UseGuards(JwtAuthGuard)
-  async deleteUserAccount(
-    @GetCurrentUser() user: CurrentUser,
-  ): Promise<{ message: string }> {
-    return this.userService.deleteUserAccount(user.id);
-  }
-
-  @Put('change-password')
-  @UseGuards(JwtAuthGuard)
-  async changePassword(
-    @GetCurrentUser() user: CurrentUser,
-    @Body(ValidationPipe) changePasswordDto: ChangePasswordDto,
-  ): Promise<{ message: string }> {
-    return this.userService.changePassword(user.id, changePasswordDto);
   }
 
   @Get('activity-logs')
@@ -165,6 +140,23 @@ export class UserController {
     return this.userService.testNotificationSettings(user.id);
   }
 
+  @Delete('account')
+  @UseGuards(JwtAuthGuard)
+  async deleteUserAccount(
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<{ message: string }> {
+    return this.userService.deleteUserAccount(user.id);
+  }
+
+  @Put('change-password')
+  @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @GetCurrentUser() user: CurrentUser,
+    @Body(ValidationPipe) changePasswordDto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    return this.userService.changePassword(user.id, changePasswordDto);
+  }
+
   // =================================================================
   // USER PROFILES MANAGEMENT API (Admin Only)
   // =================================================================
@@ -198,5 +190,45 @@ export class UserController {
     @Query(ValidationPipe) query: RecentUsersStatsQueryDto,
   ): Promise<RecentUsersResponseDto> {
     return this.userService.getRecentUsersStats(query);
+  }
+
+  // =================================================================
+  // PARAMETERIZED ROUTES (must be LAST to avoid matching specific routes)
+  // =================================================================
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  async findOne(@Param('id') userId: string) {
+    return this.userService.findOne(userId);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.userService.update(+id, updateUserDto);
+  }
+
+  @Put(':id/profile')
+  @UseGuards(JwtAuthGuard)
+  async updateUserProfile(
+    @Param('id') userId: string,
+    @Body(ValidationPipe) updateDto: UpdateUserWithProfileDto,
+    @GetCurrentUser() currentUser: CurrentUser,
+  ) {
+    return this.userService.updateUserWithProfile(userId, updateDto);
+  }
+
+  @Patch(':id/status')
+  @UseGuards(JwtAuthGuard)
+  async updateUserStatus(
+    @Param('id') userId: string,
+    @Body(ValidationPipe) updateStatusDto: UpdateUserStatusDto,
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<UserProfileResponseDto> {
+    return this.userService.updateUserStatus(userId, updateStatusDto.status);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.userService.remove(+id);
   }
 }

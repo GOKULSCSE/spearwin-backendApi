@@ -34,11 +34,69 @@ import * as bcrypt from 'bcryptjs';
 @Injectable()
 export class UserService {
   constructor(private readonly db: DatabaseService) {}
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto & { candidateData?: any }): Promise<any> {
     try {
-      return await this.db.user.create({ data: createUserDto });
+      const { candidateData, password, ...userDataWithoutPassword } = createUserDto;
+      
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      const userData = {
+        ...userDataWithoutPassword,
+        password: hashedPassword,
+      };
+      
+      // If candidate data is provided, create user and candidate in a transaction
+      if (candidateData && userData.role === 'CANDIDATE') {
+        return await this.db.$transaction(async (tx) => {
+          // Create user
+          const user = await tx.user.create({
+            data: userData,
+          });
+
+          // Create candidate profile
+          if (candidateData) {
+            const candidateProfileData: any = {
+              userId: user.id,
+              firstName: candidateData.firstName || '',
+              lastName: candidateData.lastName || '',
+              ...(candidateData.fatherName && { fatherName: candidateData.fatherName }),
+              ...(candidateData.dateOfBirth && { dateOfBirth: new Date(candidateData.dateOfBirth) }),
+              ...(candidateData.gender && { gender: candidateData.gender }),
+              ...(candidateData.maritalStatus && { maritalStatus: candidateData.maritalStatus }),
+              ...(candidateData.bio && { bio: candidateData.bio }),
+              ...(candidateData.profileSummary && { bio: candidateData.profileSummary }),
+              ...(candidateData.currentTitle && { currentTitle: candidateData.currentTitle }),
+              ...(candidateData.currentCompany && { currentCompany: candidateData.currentCompany }),
+              ...(candidateData.currentLocation && { currentLocation: candidateData.currentLocation }),
+              ...(candidateData.preferredLocation && { preferredLocation: candidateData.preferredLocation }),
+              ...(candidateData.noticePeriod && { noticePeriod: candidateData.noticePeriod }),
+              ...(candidateData.currentSalary && { currentSalary: candidateData.currentSalary }),
+              ...(candidateData.expectedSalary && { expectedSalary: candidateData.expectedSalary }),
+              ...(candidateData.profileType && { profileType: candidateData.profileType }),
+              ...(candidateData.experienceYears && { experienceYears: candidateData.experienceYears }),
+              ...(candidateData.cityName && { cityName: candidateData.cityName }),
+              ...(candidateData.country && { country: candidateData.country }),
+              ...(candidateData.state && { state: candidateData.state }),
+              ...(candidateData.streetAddress && { address: candidateData.streetAddress, streetAddress: candidateData.streetAddress }),
+              ...(candidateData.mobileNumber && { mobileNumber: candidateData.mobileNumber }),
+              ...(candidateData.jobExperience && { jobExperience: candidateData.jobExperience }),
+            };
+
+            await tx.candidate.create({
+              data: candidateProfileData,
+            });
+          }
+
+          return user;
+        });
+      }
+
+      // Otherwise, just create the user (password already hashed)
+      return await this.db.user.create({ data: userData });
     } catch (error) {
       this.handleException(error);
+      throw error;
     }
   }
 
@@ -60,12 +118,205 @@ export class UserService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(userId: string) {
+    try {
+      const user = await this.db.user.findUnique({
+        where: { id: userId },
+        include: {
+          candidate: {
+            include: {
+              city: {
+                include: {
+                  state: {
+                    include: {
+                      country: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          admin: true,
+          superAdmin: true,
+          company: true,
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      return user;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      this.handleException(error);
+      throw error;
+    }
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
     return `This action updates a #${id} user`;
+  }
+
+  // Update user with candidate profile (for admin)
+  async updateUserWithProfile(
+    userId: string,
+    updateDto: any,
+  ): Promise<any> {
+    try {
+      const user = await this.db.user.findUnique({
+        where: { id: userId },
+        include: { candidate: true },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const { candidateData, ...userData } = updateDto;
+
+      // Update user and candidate in a transaction
+      return await this.db.$transaction(async (tx) => {
+        // Update user data
+        const userUpdateData: any = {};
+        if (userData.email) userUpdateData.email = userData.email;
+        if (userData.phone) userUpdateData.phone = userData.phone;
+        if (userData.emailVerified !== undefined) userUpdateData.emailVerified = userData.emailVerified;
+        if (userData.phoneVerified !== undefined) userUpdateData.phoneVerified = userData.phoneVerified;
+
+        // Check email uniqueness if changing
+        if (userData.email && userData.email !== user.email) {
+          const existingUser = await tx.user.findUnique({
+            where: { email: userData.email },
+          });
+          if (existingUser) {
+            throw new BadRequestException('Email is already in use');
+          }
+          userUpdateData.emailVerified = userData.emailVerified ?? false;
+        }
+
+        // Check phone uniqueness if changing
+        if (userData.phone && userData.phone !== user.phone) {
+          const existingUser = await tx.user.findUnique({
+            where: { phone: userData.phone },
+          });
+          if (existingUser) {
+            throw new BadRequestException('Phone number is already in use');
+          }
+          userUpdateData.phoneVerified = userData.phoneVerified ?? false;
+        }
+
+        if (Object.keys(userUpdateData).length > 0) {
+          await tx.user.update({
+            where: { id: userId },
+            data: userUpdateData,
+          });
+        }
+
+        // Update candidate profile if candidate data is provided
+        if (candidateData && user.candidate) {
+          const candidateUpdateData: any = {};
+          
+          if (candidateData.firstName !== undefined) candidateUpdateData.firstName = candidateData.firstName;
+          if (candidateData.lastName !== undefined) candidateUpdateData.lastName = candidateData.lastName;
+          if (candidateData.fatherName !== undefined) candidateUpdateData.fatherName = candidateData.fatherName;
+          if (candidateData.dateOfBirth !== undefined) candidateUpdateData.dateOfBirth = candidateData.dateOfBirth ? new Date(candidateData.dateOfBirth) : null;
+          if (candidateData.gender !== undefined) candidateUpdateData.gender = candidateData.gender;
+          if (candidateData.maritalStatus !== undefined) candidateUpdateData.maritalStatus = candidateData.maritalStatus;
+          if (candidateData.bio !== undefined) candidateUpdateData.bio = candidateData.bio;
+          if (candidateData.profileSummary !== undefined) candidateUpdateData.bio = candidateData.profileSummary;
+          if (candidateData.currentTitle !== undefined) candidateUpdateData.currentTitle = candidateData.currentTitle;
+          if (candidateData.currentCompany !== undefined) candidateUpdateData.currentCompany = candidateData.currentCompany;
+          if (candidateData.currentLocation !== undefined) candidateUpdateData.currentLocation = candidateData.currentLocation;
+          if (candidateData.preferredLocation !== undefined) candidateUpdateData.preferredLocation = candidateData.preferredLocation;
+          if (candidateData.noticePeriod !== undefined) candidateUpdateData.noticePeriod = candidateData.noticePeriod;
+          if (candidateData.currentSalary !== undefined) candidateUpdateData.currentSalary = candidateData.currentSalary;
+          if (candidateData.expectedSalary !== undefined) candidateUpdateData.expectedSalary = candidateData.expectedSalary;
+          if (candidateData.profileType !== undefined) candidateUpdateData.profileType = candidateData.profileType;
+          if (candidateData.experienceYears !== undefined) candidateUpdateData.experienceYears = candidateData.experienceYears;
+          if (candidateData.cityName !== undefined) candidateUpdateData.cityName = candidateData.cityName;
+          if (candidateData.country !== undefined) candidateUpdateData.country = candidateData.country;
+          if (candidateData.state !== undefined) candidateUpdateData.state = candidateData.state;
+          if (candidateData.streetAddress !== undefined) {
+            candidateUpdateData.address = candidateData.streetAddress;
+            candidateUpdateData.streetAddress = candidateData.streetAddress;
+          }
+          if (candidateData.mobileNumber !== undefined) candidateUpdateData.mobileNumber = candidateData.mobileNumber;
+          if (candidateData.jobExperience !== undefined) candidateUpdateData.jobExperience = candidateData.jobExperience;
+
+          await tx.candidate.update({
+            where: { id: user.candidate.id },
+            data: candidateUpdateData,
+          });
+        } else if (candidateData && !user.candidate && user.role === 'CANDIDATE') {
+          // Create candidate if it doesn't exist
+          const candidateCreateData: any = {
+            userId: user.id,
+            firstName: candidateData.firstName || '',
+            lastName: candidateData.lastName || '',
+            ...(candidateData.fatherName && { fatherName: candidateData.fatherName }),
+            ...(candidateData.dateOfBirth && { dateOfBirth: new Date(candidateData.dateOfBirth) }),
+            ...(candidateData.gender && { gender: candidateData.gender }),
+            ...(candidateData.maritalStatus && { maritalStatus: candidateData.maritalStatus }),
+            ...(candidateData.bio && { bio: candidateData.bio }),
+            ...(candidateData.profileSummary && { bio: candidateData.profileSummary }),
+            ...(candidateData.currentTitle && { currentTitle: candidateData.currentTitle }),
+            ...(candidateData.currentCompany && { currentCompany: candidateData.currentCompany }),
+            ...(candidateData.currentLocation && { currentLocation: candidateData.currentLocation }),
+            ...(candidateData.preferredLocation && { preferredLocation: candidateData.preferredLocation }),
+            ...(candidateData.noticePeriod && { noticePeriod: candidateData.noticePeriod }),
+            ...(candidateData.currentSalary && { currentSalary: candidateData.currentSalary }),
+            ...(candidateData.expectedSalary && { expectedSalary: candidateData.expectedSalary }),
+            ...(candidateData.profileType && { profileType: candidateData.profileType }),
+            ...(candidateData.experienceYears && { experienceYears: candidateData.experienceYears }),
+            ...(candidateData.cityName && { cityName: candidateData.cityName }),
+            ...(candidateData.country && { country: candidateData.country }),
+            ...(candidateData.state && { state: candidateData.state }),
+            ...(candidateData.streetAddress && { address: candidateData.streetAddress, streetAddress: candidateData.streetAddress }),
+            ...(candidateData.mobileNumber && { mobileNumber: candidateData.mobileNumber }),
+            ...(candidateData.jobExperience && { jobExperience: candidateData.jobExperience }),
+          };
+
+          await tx.candidate.create({
+            data: candidateCreateData,
+          });
+        }
+
+        // Return updated user with candidate
+        return await tx.user.findUnique({
+          where: { id: userId },
+          include: {
+            candidate: {
+              include: {
+                city: {
+                  include: {
+                    state: {
+                      include: {
+                        country: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            admin: true,
+            superAdmin: true,
+            company: true,
+          },
+        });
+      });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      this.handleException(error);
+      throw error;
+    }
   }
 
   remove(id: number) {
@@ -923,6 +1174,63 @@ export class UserService {
   // =================================================================
   // USER STATUS SPECIFIC ENDPOINTS
   // =================================================================
+
+  async updateUserStatus(
+    userId: string,
+    status: UserStatus,
+  ): Promise<UserProfileResponseDto> {
+    try {
+      const user = await this.db.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // Update user status
+      const updatedUser = await this.db.user.update({
+        where: { id: userId },
+        data: { status },
+        include: {
+          candidate: {
+            include: {
+              city: {
+                include: {
+                  state: {
+                    include: {
+                      country: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          admin: true,
+          superAdmin: true,
+          company: true,
+        },
+      });
+
+      // Log the status update
+      await this.logActivity(
+        userId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'User',
+        userId,
+        `User status updated to ${status}`,
+      );
+
+      return updatedUser as unknown as UserProfileResponseDto;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      this.handleException(error);
+      throw error;
+    }
+  }
 
   async getActiveUsers(sortBy: string = 'createdAt', sortOrder: 'asc' | 'desc' = 'desc'): Promise<{ users: any[] }> {
     try {

@@ -25,24 +25,12 @@ export class CreateUserDto {
   email: string;
 
   @IsOptional()
-  @IsPhoneNumber('IN', { message: 'Please provide a valid phone number' })
+  @IsString({ message: 'Phone must be a string' })
   phone?: string;
 
   @IsString({ message: 'Password must be a string' })
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   @MaxLength(128, { message: 'Password must not exceed 128 characters' })
-  @IsStrongPassword(
-    {
-      minLowercase: 1,
-      minUppercase: 1,
-      minNumbers: 1,
-      minSymbols: 1,
-    },
-    {
-      message:
-        'Password must contain at least 1 lowercase, 1 uppercase, 1 number and 1 symbol',
-    },
-  )
   password: string;
 
   @IsEnum(Object.values(UserRole), {
