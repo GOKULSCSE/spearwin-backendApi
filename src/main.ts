@@ -40,6 +40,7 @@ async function bootstrap() {
     optionsSuccessStatus: 204,
   });
 
+  
   // Security middleware with CORS-friendly settings
   app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }
