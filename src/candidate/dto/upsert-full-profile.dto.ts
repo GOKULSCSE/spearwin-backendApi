@@ -14,6 +14,37 @@ import {
 } from 'class-validator';
 import { UpdateCandidateProfileDto } from './candidate-profile.dto';
 
+export class ResumeUpsertItemDto {
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  // From file upload API
+  @IsOptional()
+  @IsString()
+  documentKey?: string; // maps to filePath
+
+  @IsOptional()
+  @IsString()
+  fileName?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  fileSize?: number;
+
+  @IsOptional()
+  @IsString()
+  mimeType?: string;
+
+  @IsOptional()
+  isDefault?: boolean;
+}
+
 export class SkillUpsertItemDto {
   @IsOptional()
   @IsString()
@@ -153,10 +184,28 @@ export class ExperienceUpsertBlockDto {
   delete?: string[];
 }
 
+export class ResumesUpsertBlockDto {
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ResumeUpsertItemDto)
+  upsert?: ResumeUpsertItemDto[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  delete?: string[];
+}
+
 export class UpsertFullProfileDto {
   @ValidateNested()
   @Type(() => UpdateCandidateProfileDto)
   profile!: UpdateCandidateProfileDto;
+
+  // Optional profile picture object key from separate upload step
+  @IsOptional()
+  @IsString()
+  profilePictureKey?: string;
 
   @IsOptional()
   @ValidateNested()
@@ -172,6 +221,11 @@ export class UpsertFullProfileDto {
   @ValidateNested()
   @Type(() => ExperienceUpsertBlockDto)
   experience?: ExperienceUpsertBlockDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ResumesUpsertBlockDto)
+  resumes?: ResumesUpsertBlockDto;
 }
 
 

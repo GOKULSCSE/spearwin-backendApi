@@ -134,12 +134,13 @@ export class FileUploadController {
       throw new BadRequestException('No document file provided');
     }
 
-    const documentKey = await this.fileUploadService.uploadDocument(file, folder);
+    const documentUrl = await this.fileUploadService.uploadDocument(file, folder);
     return {
       success: true,
       message: 'Document uploaded successfully',
       data: {
-        documentKey,
+        documentUrl,
+        documentKey: documentUrl, // Keep for backward compatibility
         originalName: file.originalname,
         size: file.size,
         mimeType: file.mimetype,
@@ -157,13 +158,14 @@ export class FileUploadController {
       throw new BadRequestException('No document files provided');
     }
 
-    const documentKeys = await this.fileUploadService.uploadMultipleDocuments(files, folder);
+    const documentUrls = await this.fileUploadService.uploadMultipleDocuments(files, folder);
     
     return {
       success: true,
       message: `${files.length} documents uploaded successfully`,
       data: {
-        documentKeys,
+        documentUrls,
+        documentKeys: documentUrls, // Keep for backward compatibility
         count: files.length,
         files: files.map(file => ({
           originalName: file.originalname,
