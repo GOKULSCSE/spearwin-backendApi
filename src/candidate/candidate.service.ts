@@ -3451,6 +3451,94 @@ export class CandidateService {
     }
   }
 
+  // =================================================================
+  // DASHBOARD STATISTICS
+  // =================================================================
+
+  async getDashboardStats(userId: string): Promise<any> {
+    try {
+      const candidate = await this.db.candidate.findFirst({
+        where: { userId },
+      });
+
+      if (!candidate) {
+        throw new NotFoundException('Candidate profile not found');
+      }
+
+      // Count profile views from ActivityLog
+      // Profile views are logged when someone views the candidate profile
+      const profileViews = await this.db.activityLog.count({
+        where: {
+          entity: 'Candidate',
+          entityId: candidate.id,
+          action: 'VIEW',
+        },
+      });
+
+      // Count previous day profile views for percentage calculation
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const yesterdayViews = await this.db.activityLog.count({
+        where: {
+          entity: 'Candidate',
+          entityId: candidate.id,
+          action: 'VIEW',
+          createdAt: {
+            gte: yesterday,
+            lt: today,
+          },
+        },
+      });
+
+      const todayViews = await this.db.activityLog.count({
+        where: {
+          entity: 'Candidate',
+          entityId: candidate.id,
+          action: 'VIEW',
+          createdAt: {
+            gte: today,
+          },
+        },
+      });
+
+      // Calculate percentage change
+      let viewsChange = 0;
+      let viewsPercentage = 0;
+      if (yesterdayViews > 0) {
+        viewsChange = todayViews - yesterdayViews;
+        viewsPercentage = ((todayViews - yesterdayViews) / yesterdayViews) * 100;
+      } else if (todayViews > 0) {
+        viewsChange = todayViews;
+        viewsPercentage = 100;
+      }
+
+      // Count total job applications
+      const totalApplications = await this.db.jobApplication.count({
+        where: { candidateId: candidate.id },
+      });
+
+      return {
+        profileViews,
+        totalApplications,
+        profileViewsChange: {
+          value: viewsChange,
+          percentage: Math.round(viewsPercentage * 10) / 10, // Round to 1 decimal place
+          period: 'day',
+        },
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      this.handleException(error);
+      throw error;
+    }
+  }
+
   private handleException(error: any): void {
     throw new InternalServerErrorException("Can't process candidate request");
   }

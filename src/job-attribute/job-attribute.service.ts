@@ -26,7 +26,7 @@ export class JobAttributeService {
         data: createCategoryDto,
         include: {
           attributes: {
-            where: { isActive: true },
+            // Show all attributes (both active and inactive) for admin management
             orderBy: { sortOrder: 'asc' }
           }
         }
@@ -61,7 +61,7 @@ export class JobAttributeService {
         where,
         include: {
           attributes: {
-            where: { isActive: true },
+            // Show all attributes (both active and inactive) for admin management
             orderBy: { sortOrder: 'asc' }
           },
           _count: {
@@ -122,7 +122,7 @@ export class JobAttributeService {
       data: updateCategoryDto,
       include: {
         attributes: {
-          where: { isActive: true },
+          // Show all attributes (both active and inactive) for admin management
           orderBy: { sortOrder: 'asc' }
         }
       }
@@ -315,7 +315,7 @@ export class JobAttributeService {
       where: { isActive: true },
       include: {
         attributes: {
-          where: { isActive: true },
+          // Show all attributes (both active and inactive) for admin management
           orderBy: { sortOrder: 'asc' }
         }
       },

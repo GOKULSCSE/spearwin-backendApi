@@ -56,6 +56,7 @@ import {
   ResumeOptimizationResponseDto,
 } from './dto/resume-analysis.dto';
 import { UpsertFullProfileDto } from './dto/upsert-full-profile.dto';
+import { DashboardStatsDto } from './dto/dashboard-stats.dto';
 import { ChangePasswordDto } from '../user/dto/change-password.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
@@ -78,6 +79,13 @@ export class CandidateController {
     @GetCurrentUser() user: CurrentUser,
   ): Promise<CandidateProfileResponseDto> {
     return this.candidateService.getCandidateProfile(user.id);
+  }
+
+  @Get('dashboard/stats')
+  async getDashboardStats(
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<DashboardStatsDto> {
+    return this.candidateService.getDashboardStats(user.id);
   }
 
   @Post('profile')
