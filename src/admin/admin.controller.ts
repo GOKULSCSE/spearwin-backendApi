@@ -257,6 +257,16 @@ export class AdminController {
     return this.adminService.archiveJob(jobId, user);
   }
 
+  @Put('jobs/:id/status')
+  @UseGuards(JwtAuthGuard)
+  async updateJobStatus(
+    @Param('id') jobId: string,
+    @Body() body: { status: string },
+    @GetCurrentUser() user: CurrentUser,
+  ) {
+    return this.adminService.updateJobStatus(jobId, body.status, user);
+  }
+
   @Get('jobs/:id/applications')
   @UseGuards(JwtAuthGuard)
   async getJobApplications(
