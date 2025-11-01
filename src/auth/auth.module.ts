@@ -5,10 +5,12 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { DatabaseModule } from '../database/database.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
     DatabaseModule,
+    EmailModule,
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-secret-key',
