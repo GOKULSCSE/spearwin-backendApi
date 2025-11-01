@@ -3216,6 +3216,8 @@ export class CandidateService {
             title: app.job.title,
             slug: app.job.slug,
             description: app.job.description,
+            jobType: app.job.jobType,
+            workMode: app.job.workMode,
             company: {
               id: app.job.company.id,
               name: app.job.company.name,
@@ -3415,6 +3417,8 @@ export class CandidateService {
             title: app.job.title,
             slug: app.job.slug,
             description: app.job.description,
+            jobType: app.job.jobType,
+            workMode: app.job.workMode,
             company: {
               id: app.job.company.id,
               name: app.job.company.name,
@@ -3576,6 +3580,8 @@ export class CandidateService {
           title: application.job.title,
           slug: application.job.slug,
           description: application.job.description,
+          jobType: application.job.jobType,
+          workMode: application.job.workMode,
           company: {
             id: application.job.company.id,
             name: application.job.company.name,
@@ -3759,6 +3765,8 @@ export class CandidateService {
           title: updatedApplication.job.title,
           slug: updatedApplication.job.slug,
           description: updatedApplication.job.description,
+          jobType: updatedApplication.job.jobType,
+          workMode: updatedApplication.job.workMode,
           company: {
             id: updatedApplication.job.company.id,
             name: updatedApplication.job.company.name,

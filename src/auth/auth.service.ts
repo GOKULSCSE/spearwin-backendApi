@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { DatabaseService } from '../database/database.service';
+import { EmailService } from '../email/email.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -41,6 +42,7 @@ export class AuthService {
   constructor(
     private prisma: DatabaseService,
     private jwtService: JwtService,
+    private emailService: EmailService,
   ) {}
 
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
@@ -305,9 +307,12 @@ export class AuthService {
       },
     });
 
-    // TODO: Send email with reset link
-    // For now, we'll just return success
-    // In production, you would send an email with the reset token
+    // Send password reset email
+    await this.emailService.sendPasswordResetEmail(
+      user.email,
+      resetToken,
+      expiresAt,
+    );
 
     return {
       success: true,

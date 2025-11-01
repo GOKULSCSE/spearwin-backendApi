@@ -101,6 +101,8 @@ export class ApplicationResponseDto {
     title: string;
     slug: string;
     description: string;
+    jobType?: string;
+    workMode?: string;
     company: {
       id: string;
       name: string;
