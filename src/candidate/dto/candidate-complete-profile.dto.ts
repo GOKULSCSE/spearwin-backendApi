@@ -214,4 +214,14 @@ export class CandidateCompleteProfileResponseDto {
     isDefault: boolean;
     uploadedAt: Date;
   }>;
+  profilePictures?: Array<{
+    id: string;
+    title: string;
+    fileName: string;
+    filePath: string;
+    fileSize: number;
+    mimeType: string;
+    isDefault: boolean;
+    uploadedAt: Date;
+  }>;
 }

@@ -45,6 +45,37 @@ export class ResumeUpsertItemDto {
   isDefault?: boolean;
 }
 
+export class ProfilePictureUpsertItemDto {
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  // From file upload API  
+  @IsOptional()
+  @IsString()
+  imageKey?: string; // maps to filePath
+
+  @IsOptional()
+  @IsString()
+  fileName?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  fileSize?: number;
+
+  @IsOptional()
+  @IsString()
+  mimeType?: string;
+
+  @IsOptional()
+  isDefault?: boolean;
+}
+
 export class SkillUpsertItemDto {
   @IsOptional()
   @IsString()
@@ -197,12 +228,25 @@ export class ResumesUpsertBlockDto {
   delete?: string[];
 }
 
+export class ProfilePicturesUpsertBlockDto {
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProfilePictureUpsertItemDto)
+  upsert?: ProfilePictureUpsertItemDto[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  delete?: string[];
+}
+
 export class UpsertFullProfileDto {
   @ValidateNested()
   @Type(() => UpdateCandidateProfileDto)
   profile!: UpdateCandidateProfileDto;
 
-  // Optional profile picture object key from separate upload step
+  // Optional profile picture object key from separate upload step (legacy)
   @IsOptional()
   @IsString()
   profilePictureKey?: string;
@@ -226,6 +270,11 @@ export class UpsertFullProfileDto {
   @ValidateNested()
   @Type(() => ResumesUpsertBlockDto)
   resumes?: ResumesUpsertBlockDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ProfilePicturesUpsertBlockDto)
+  profilePictures?: ProfilePicturesUpsertBlockDto;
 }
 
 
