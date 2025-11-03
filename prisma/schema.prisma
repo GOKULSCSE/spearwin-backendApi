@@ -131,7 +131,7 @@ model Candidate {
   lastName          String
   dateOfBirth       DateTime?
   gender            String?
-  profilePicture    String?
+  profilePicture    String?               // Legacy field - kept for backwards compatibility
   bio               String?
   currentTitle      String?
   experienceYears   Int?
@@ -168,6 +168,7 @@ model Candidate {
   jobAlerts         JobAlert[]
   applications      JobApplication[]
   resumes           Resume[]
+  profilePictures   ProfilePicture[]      // New relation for profile pictures
   favoriteJobs      FavoriteJob[]
 
   @@map("candidates")
@@ -247,6 +248,22 @@ model Resume {
   candidate    Candidate        @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 
   @@map("resumes")
+}
+
+model ProfilePicture {
+  id          String    @id @default(cuid())
+  candidateId String
+  title       String    @default("Profile Picture")
+  fileName    String
+  filePath    String    // Full URL to the image in DigitalOcean Spaces
+  fileSize    Int
+  mimeType    String
+  isDefault   Boolean   @default(false)
+  uploadedAt  DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@map("profile_pictures")
 }
 
 model CandidateSkill {
