@@ -168,6 +168,7 @@ model Candidate {
   jobAlerts         JobAlert[]
   applications      JobApplication[]
   resumes           Resume[]
+  favoriteJobs      FavoriteJob[]
 
   @@map("candidates")
 }
@@ -326,6 +327,7 @@ model Job {
   updatedAt        DateTime         @updatedAt
   cityId           Int?
   applications     JobApplication[]
+  favoriteBy       FavoriteJob[]
   city             City?            @relation(fields: [cityId], references: [id])
   company          Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
   postedBy         Admin?           @relation(fields: [postedById], references: [id])
@@ -369,6 +371,21 @@ model JobApplication {
   @@index([candidateId, status])
   @@index([jobId, status])
   @@map("job_applications")
+}
+
+model FavoriteJob {
+  id          String    @id @default(cuid())
+  candidateId String
+  jobId       String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, jobId])
+  @@index([candidateId])
+  @@index([jobId])
+  @@map("favorite_jobs")
 }
 
 model JobAlert {

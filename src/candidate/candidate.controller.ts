@@ -314,8 +314,52 @@ export class CandidateController {
   }
 
   // =================================================================
+  // FAVORITE JOBS MANAGEMENT
+  // =================================================================
+
+  @Get('favorite-jobs')
+  async getFavoriteJobs(
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<any> {
+    return this.candidateService.getFavoriteJobs(user.id);
+  }
+
+  @Get('favorite-jobs/:jobId/check')
+  async checkFavoriteJob(
+    @GetCurrentUser() user: CurrentUser,
+    @Param('jobId') jobId: string,
+  ): Promise<{ isFavorite: boolean }> {
+    return this.candidateService.checkFavoriteJob(user.id, jobId);
+  }
+
+  @Post('favorite-jobs/:jobId')
+  async addFavoriteJob(
+    @GetCurrentUser() user: CurrentUser,
+    @Param('jobId') jobId: string,
+  ): Promise<{ message: string; favoriteJob: any }> {
+    return this.candidateService.addFavoriteJob(user.id, jobId);
+  }
+
+  @Delete('favorite-jobs/:jobId')
+  async removeFavoriteJob(
+    @GetCurrentUser() user: CurrentUser,
+    @Param('jobId') jobId: string,
+  ): Promise<{ message: string }> {
+    return this.candidateService.removeFavoriteJob(user.id, jobId);
+  }
+
+  // =================================================================
   // JOB APPLICATIONS MANAGEMENT
   // =================================================================
+
+  @Post('applications/:jobId')
+  async applyForJob(
+    @GetCurrentUser() user: CurrentUser,
+    @Param('jobId') jobId: string,
+    @Body(ValidationPipe) applyDto: ApplyForJobDto,
+  ): Promise<ApplicationResponseDto> {
+    return this.candidateService.applyForJob(user.id, jobId, applyDto);
+  }
 
   @Get('applications')
   async getCandidateApplications(

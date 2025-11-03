@@ -3942,6 +3942,376 @@ export class CandidateService {
     }
   }
 
+  // =================================================================
+  // JOB APPLICATION - APPLY FOR JOB
+  // =================================================================
+
+  async applyForJob(
+    userId: string,
+    jobId: string,
+    applyDto: ApplyForJobDto,
+  ): Promise<ApplicationResponseDto> {
+    try {
+      const candidate = await this.getOrCreateCandidate(userId);
+
+      // Check if job exists
+      const job = await this.db.job.findUnique({
+        where: { id: jobId },
+        include: { company: true, city: true },
+      });
+
+      if (!job) {
+        throw new NotFoundException('Job not found');
+      }
+
+      // Check if already applied
+      const existingApplication = await this.db.jobApplication.findFirst({
+        where: {
+          jobId,
+          candidateId: candidate.id,
+        },
+      });
+
+      if (existingApplication) {
+        throw new BadRequestException('You have already applied for this job');
+      }
+
+      // Create application
+      const application = await this.db.jobApplication.create({
+        data: {
+          jobId,
+          candidateId: candidate.id,
+          resumeId: applyDto.resumeId,
+          resumeFilePath: applyDto.resumeFilePath,
+          coverLetter: applyDto.coverLetter,
+          fullName: applyDto.fullName,
+          email: applyDto.email,
+          phone: applyDto.phone,
+          location: applyDto.location,
+          experienceLevel: applyDto.experienceLevel,
+          noticePeriod: applyDto.noticePeriod,
+          currentCTC: applyDto.currentCTC,
+          expectedCTC: applyDto.expectedCTC,
+          javaExperience: applyDto.javaExperience,
+          locationPreference: applyDto.locationPreference,
+          status: 'APPLIED',
+        },
+        include: {
+          job: {
+            include: {
+              company: true,
+              city: {
+                include: {
+                  state: {
+                    include: {
+                      country: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          resume: true,
+        },
+      });
+
+      // Increment application count on job
+      await this.db.job.update({
+        where: { id: jobId },
+        data: {
+          applicationCount: {
+            increment: 1,
+          },
+        },
+      });
+
+      // Log activity
+      await this.logActivity(
+        userId,
+        LogAction.APPLY,
+        LogLevel.INFO,
+        'JobApplication',
+        application.id,
+        `Applied for job: ${job.title}`,
+      );
+
+      return {
+        id: application.id,
+        jobId: application.jobId,
+        candidateId: application.candidateId,
+        resumeId: application.resumeId || undefined,
+        resumeFilePath: application.resumeFilePath || undefined,
+        coverLetter: application.coverLetter || undefined,
+        status: application.status,
+        appliedAt: application.appliedAt,
+        reviewedAt: application.reviewedAt || undefined,
+        reviewedBy: application.reviewedBy || undefined,
+        feedback: application.feedback || undefined,
+        fullName: application.fullName || undefined,
+        email: application.email || undefined,
+        phone: application.phone || undefined,
+        location: application.location || undefined,
+        experienceLevel: application.experienceLevel || undefined,
+        noticePeriod: application.noticePeriod || undefined,
+        currentCTC: application.currentCTC || undefined,
+        expectedCTC: application.expectedCTC || undefined,
+        javaExperience: application.javaExperience || undefined,
+        locationPreference: application.locationPreference || undefined,
+        updatedAt: application.updatedAt,
+        job: {
+          id: application.job.id,
+          title: application.job.title,
+          slug: application.job.slug,
+          description: application.job.description,
+          jobType: application.job.jobType,
+          workMode: application.job.workMode,
+          company: {
+            id: application.job.company.id,
+            name: application.job.company.name,
+            logo: application.job.company.logo || undefined,
+          },
+          location: application.job.city && application.job.city.state ? {
+            city: {
+              id: application.job.city.id,
+              name: application.job.city.name,
+              state_id: application.job.city.state_id,
+              state_code: application.job.city.state_code ?? null,
+              state_name: application.job.city.state_name ?? null,
+              country_id: application.job.city.country_id ?? null,
+              country_code: application.job.city.country_code ?? null,
+              country_name: application.job.city.country_name ?? null,
+              latitude: application.job.city.latitude ?? null,
+              longitude: application.job.city.longitude ?? null,
+              wikiDataId: application.job.city.wikiDataId ?? null,
+              isActive: application.job.city.isActive,
+              createdAt: application.job.city.createdAt,
+              updatedAt: application.job.city.updatedAt,
+              state: {
+                id: application.job.city.state.id,
+                name: application.job.city.state.name,
+                country_id: application.job.city.state.country_id ?? null,
+                country_code: application.job.city.state.country_code ?? null,
+                country_name: application.job.city.state.country_name ?? null,
+                iso2: application.job.city.state.iso2 ?? null,
+                fips_code: application.job.city.state.fips_code ?? null,
+                type: application.job.city.state.type ?? null,
+                level: application.job.city.state.level ?? null,
+                parent_id: application.job.city.state.parent_id ?? null,
+                latitude: application.job.city.state.latitude ?? null,
+                longitude: application.job.city.state.longitude ?? null,
+                isActive: application.job.city.state.isActive,
+                createdAt: application.job.city.state.createdAt,
+                updatedAt: application.job.city.state.updatedAt,
+                country: application.job.city.state.country ? {
+                  id: application.job.city.state.country.id,
+                  name: application.job.city.state.country.name,
+                  iso3: application.job.city.state.country.iso3 ?? null,
+                  iso2: application.job.city.state.country.iso2 ?? null,
+                  numeric_code: application.job.city.state.country.numeric_code ?? null,
+                  phonecode: application.job.city.state.country.phonecode ?? null,
+                  capital: application.job.city.state.country.capital ?? null,
+                  currency: application.job.city.state.country.currency ?? null,
+                  currency_name: application.job.city.state.country.currency_name ?? null,
+                  currency_symbol: application.job.city.state.country.currency_symbol ?? null,
+                  tld: application.job.city.state.country.tld ?? null,
+                  native: application.job.city.state.country.native ?? null,
+                  region: application.job.city.state.country.region ?? null,
+                  region_id: application.job.city.state.country.region_id ?? null,
+                  subregion: application.job.city.state.country.subregion ?? null,
+                  subregion_id: application.job.city.state.country.subregion_id ?? null,
+                  nationality: application.job.city.state.country.nationality ?? null,
+                  latitude: application.job.city.state.country.latitude ?? null,
+                  longitude: application.job.city.state.country.longitude ?? null,
+                  isActive: application.job.city.state.country.isActive,
+                  createdAt: application.job.city.state.country.createdAt,
+                  updatedAt: application.job.city.state.country.updatedAt,
+                } : undefined,
+              },
+            },
+          } : undefined,
+        },
+        resume: application.resume ? {
+          id: application.resume.id,
+          title: application.resume.title,
+          fileName: application.resume.fileName,
+          uploadedAt: application.resume.uploadedAt,
+        } : undefined,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      this.handleException(error);
+      throw error;
+    }
+  }
+
+  // =================================================================
+  // FAVORITE JOBS MANAGEMENT
+  // =================================================================
+
+  async getFavoriteJobs(userId: string): Promise<any> {
+    try {
+      const candidate = await this.getOrCreateCandidate(userId);
+
+      const favoriteJobs = await this.db.favoriteJob.findMany({
+        where: { candidateId: candidate.id },
+        include: {
+          job: {
+            include: {
+              company: true,
+              city: {
+                include: {
+                  state: {
+                    include: {
+                      country: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return {
+        favoriteJobs: favoriteJobs.map((fav) => ({
+          id: fav.id,
+          jobId: fav.jobId,
+          createdAt: fav.createdAt,
+          job: fav.job,
+        })),
+        total: favoriteJobs.length,
+      };
+    } catch (error) {
+      this.handleException(error);
+      throw error;
+    }
+  }
+
+  async checkFavoriteJob(userId: string, jobId: string): Promise<{ isFavorite: boolean }> {
+    try {
+      const candidate = await this.getOrCreateCandidate(userId);
+
+      const favoriteJob = await this.db.favoriteJob.findFirst({
+        where: {
+          candidateId: candidate.id,
+          jobId,
+        },
+      });
+
+      return {
+        isFavorite: !!favoriteJob,
+      };
+    } catch (error) {
+      this.handleException(error);
+      throw error;
+    }
+  }
+
+  async addFavoriteJob(userId: string, jobId: string): Promise<{ message: string; favoriteJob: any }> {
+    try {
+      const candidate = await this.getOrCreateCandidate(userId);
+
+      // Check if job exists
+      const job = await this.db.job.findUnique({
+        where: { id: jobId },
+      });
+
+      if (!job) {
+        throw new NotFoundException('Job not found');
+      }
+
+      // Check if already favorited
+      const existing = await this.db.favoriteJob.findFirst({
+        where: {
+          candidateId: candidate.id,
+          jobId,
+        },
+      });
+
+      if (existing) {
+        throw new BadRequestException('Job is already in your favorites');
+      }
+
+      const favoriteJob = await this.db.favoriteJob.create({
+        data: {
+          candidateId: candidate.id,
+          jobId,
+        },
+        include: {
+          job: {
+            include: {
+              company: true,
+              city: true,
+            },
+          },
+        },
+      });
+
+      await this.logActivity(
+        userId,
+        LogAction.CREATE,
+        LogLevel.INFO,
+        'FavoriteJob',
+        favoriteJob.id,
+        `Added job to favorites: ${job.title}`,
+      );
+
+      return {
+        message: 'Job added to favorites successfully',
+        favoriteJob,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      this.handleException(error);
+      throw error;
+    }
+  }
+
+  async removeFavoriteJob(userId: string, jobId: string): Promise<{ message: string }> {
+    try {
+      const candidate = await this.getOrCreateCandidate(userId);
+
+      const favoriteJob = await this.db.favoriteJob.findFirst({
+        where: {
+          candidateId: candidate.id,
+          jobId,
+        },
+      });
+
+      if (!favoriteJob) {
+        throw new NotFoundException('Favorite job not found');
+      }
+
+      await this.db.favoriteJob.delete({
+        where: { id: favoriteJob.id },
+      });
+
+      await this.logActivity(
+        userId,
+        LogAction.DELETE,
+        LogLevel.INFO,
+        'FavoriteJob',
+        favoriteJob.id,
+        'Removed job from favorites',
+      );
+
+      return {
+        message: 'Job removed from favorites successfully',
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      this.handleException(error);
+      throw error;
+    }
+  }
+
   private handleException(error: any): void {
     throw new InternalServerErrorException("Can't process candidate request");
   }
