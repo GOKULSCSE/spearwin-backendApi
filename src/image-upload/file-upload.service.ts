@@ -65,6 +65,7 @@ export class FileUploadService {
       throw new BadRequestException('No file provided');
     }
 
+    
     // Validate file type
     const allowedMimeTypes = [
       'application/pdf',
