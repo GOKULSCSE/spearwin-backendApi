@@ -463,6 +463,49 @@ export class JobService {
     }
   }
 
+  async getJobById(jobId: string): Promise<JobResponseDto> {
+    try {
+      const job = await this.db.job.findUnique({
+        where: {
+          id: jobId,
+        },
+        include: {
+          company: {
+            select: {
+              id: true,
+              name: true,
+              logo: true,
+              industry: true,
+              employeeCount: true,
+              website: true,
+            },
+          },
+          city: {
+            include: {
+              state: {
+                include: {
+                  country: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!job) {
+        throw new NotFoundException('Job not found');
+      }
+
+      return this.mapJobToResponse(job);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      this.handleException(error);
+      throw error;
+    }
+  }
+
   async getJobBySlug(slug: string): Promise<JobResponseDto> {
     try {
       const job = await this.db.job.findFirst({
