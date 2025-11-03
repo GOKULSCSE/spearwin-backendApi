@@ -25,7 +25,6 @@ import { GetCurrentUser } from '../auth/decorators/current-user.decorator';
 import type { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('api/admin/faqs')
-@UseGuards(JwtAuthGuard)
 export class FaqController {
   constructor(private readonly faqService: FaqService) {}
 
@@ -33,7 +32,25 @@ export class FaqController {
   // FAQ MANAGEMENT
   // =================================================================
 
+  // Public: Get all FAQs (no authentication required)
+  @Get()
+  async getAllFaqs(
+    @Query(ValidationPipe) query: FaqListQueryDto,
+  ): Promise<FaqListResponseDto> {
+    return this.faqService.getAllFaqs(query);
+  }
+
+  // Public: Get FAQ by ID (no authentication required)
+  @Get(':id')
+  async getFaqById(
+    @Param('id') faqId: string,
+  ): Promise<FaqResponseDto> {
+    return this.faqService.getFaqById(faqId);
+  }
+
+  // Protected: Create FAQ (authentication required)
   @Post()
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async createFaq(
     @Body(ValidationPipe) createFaqDto: CreateFaqDto,
@@ -42,21 +59,9 @@ export class FaqController {
     return this.faqService.createFaq(createFaqDto, user.id);
   }
 
-  @Get()
-  async getAllFaqs(
-    @Query(ValidationPipe) query: FaqListQueryDto,
-  ): Promise<FaqListResponseDto> {
-    return this.faqService.getAllFaqs(query);
-  }
-
-  @Get(':id')
-  async getFaqById(
-    @Param('id') faqId: string,
-  ): Promise<FaqResponseDto> {
-    return this.faqService.getFaqById(faqId);
-  }
-
+  // Protected: Update FAQ (authentication required)
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   async updateFaq(
     @Param('id') faqId: string,
     @Body(ValidationPipe) updateFaqDto: UpdateFaqDto,
@@ -65,7 +70,9 @@ export class FaqController {
     return this.faqService.updateFaq(faqId, updateFaqDto, user.id);
   }
 
+  // Protected: Delete FAQ (authentication required)
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async deleteFaq(
     @Param('id') faqId: string,
