@@ -131,7 +131,7 @@ model Candidate {
   lastName          String
   dateOfBirth       DateTime?
   gender            String?
-  profilePicture    String?               // Legacy field - kept for backwards compatibility
+  profilePicture    String? // Legacy field - kept for backwards compatibility
   bio               String?
   currentTitle      String?
   experienceYears   Int?
@@ -140,6 +140,9 @@ model Candidate {
   linkedinUrl       String?
   githubUrl         String?
   portfolioUrl      String?
+  facebookUrl       String?
+  twitterUrl        String?
+  instagramUrl      String?
   isAvailable       Boolean               @default(true)
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
@@ -168,7 +171,7 @@ model Candidate {
   jobAlerts         JobAlert[]
   applications      JobApplication[]
   resumes           Resume[]
-  profilePictures   ProfilePicture[]      // New relation for profile pictures
+  profilePictures   ProfilePicture[] // New relation for profile pictures
   favoriteJobs      FavoriteJob[]
 
   @@map("candidates")
@@ -255,7 +258,7 @@ model ProfilePicture {
   candidateId String
   title       String    @default("Profile Picture")
   fileName    String
-  filePath    String    // Full URL to the image in DigitalOcean Spaces
+  filePath    String // Full URL to the image in DigitalOcean Spaces
   fileSize    Int
   mimeType    String
   isDefault   Boolean   @default(false)
@@ -356,33 +359,33 @@ model Job {
 }
 
 model JobApplication {
-  id                  String            @id @default(cuid())
-  jobId               String
-  candidateId         String
-  resumeId            String?
-  resumeFilePath      String?           // Path to uploaded resume file in storage
-  coverLetter         String?
-  status              ApplicationStatus @default(APPLIED)
-  appliedAt           DateTime          @default(now())
-  reviewedAt          DateTime?
-  reviewedBy          String?
-  feedback            String?
+  id                 String            @id @default(cuid())
+  jobId              String
+  candidateId        String
+  resumeId           String?
+  resumeFilePath     String? // Path to uploaded resume file in storage
+  coverLetter        String?
+  status             ApplicationStatus @default(APPLIED)
+  appliedAt          DateTime          @default(now())
+  reviewedAt         DateTime?
+  reviewedBy         String?
+  feedback           String?
   // Contact information from application form
-  fullName            String?
-  email               String?
-  phone               String?
-  location            String?
-  experienceLevel     String?
+  fullName           String?
+  email              String?
+  phone              String?
+  location           String?
+  experienceLevel    String?
   // Additional application details
-  noticePeriod        String?
-  currentCTC          String?
-  expectedCTC         String?
-  javaExperience      String?
-  locationPreference  String?
-  updatedAt           DateTime          @updatedAt
-  candidate           Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  job                 Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  resume              Resume?           @relation(fields: [resumeId], references: [id])
+  noticePeriod       String?
+  currentCTC         String?
+  expectedCTC        String?
+  javaExperience     String?
+  locationPreference String?
+  updatedAt          DateTime          @updatedAt
+  candidate          Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  job                Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resume             Resume?           @relation(fields: [resumeId], references: [id])
 
   @@unique([jobId, candidateId])
   @@index([candidateId, status])
@@ -566,16 +569,16 @@ model FAQ {
 }
 
 model Testimonial {
-  id         Int      @id @default(autoincrement())
-  name       String
-  title      String?         // e.g. "CEO", "Frontend Engineer"
-  company    String?         // optional company name
-  content    String
-  rating     Int?            // optional 1-5 rating
-  imageUrl   String?         // hosted image path / CDN url
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  name      String
+  title     String? // e.g. "CEO", "Frontend Engineer"
+  company   String? // optional company name
+  content   String
+  rating    Int? // optional 1-5 rating
+  imageUrl  String? // hosted image path / CDN url
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([isActive])
 }
@@ -588,9 +591,9 @@ model JobAttributeCategory {
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
-  attributes  JobAttribute[]
-  
+
+  attributes JobAttribute[]
+
   @@map("job_attribute_categories")
 }
 
@@ -602,9 +605,9 @@ model JobAttribute {
   sortOrder  Int      @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  
-  category   JobAttributeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
+
+  category JobAttributeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
   @@unique([name, categoryId])
   @@index([categoryId, isActive])
   @@map("job_attributes")
@@ -719,4 +722,3 @@ enum JobAttributeCategoryEnum {
   DEGREE_TYPE
   MAJOR_SUBJECT
 }
-

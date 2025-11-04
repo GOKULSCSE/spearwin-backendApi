@@ -18,6 +18,7 @@ import {
   UpdateAdminProfileDto,
   AdminProfileResponseDto,
 } from './dto/admin-profile.dto';
+import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 import { generateCompanyUuid } from '../company/utils/company-uuid.util';
 import { AdminListQueryDto, AdminListResponseDto } from './dto/admin-list.dto';
 import { UpdateAdminStatusDto } from './dto/update-admin-status.dto';
@@ -1163,6 +1164,206 @@ export class AdminService {
         throw error;
       }
       throw new BadRequestException('Failed to update admin status');
+    }
+  }
+
+  // =================================================================
+  // USER PROFILE MANAGEMENT
+  // =================================================================
+
+  /**
+   * Update user profile
+   * 
+   * Frontend payload structure (from UserProfileCard.tsx):
+   * 
+   * For Personal Info & Social Links (metaFormData):
+   * {
+   *   firstName?: string,
+   *   lastName?: string,
+   *   email?: string,
+   *   phone?: string,
+   *   bio?: string,
+   *   linkedinUrl?: string,
+   *   facebookUrl?: string,
+   *   twitterUrl?: string,
+   *   instagramUrl?: string
+   * }
+   * 
+   * For Address (addressFormData):
+   * {
+   *   country?: string,
+   *   state?: string,
+   *   cityName?: string,
+   *   address?: string,
+   *   streetAddress?: string,
+   *   cityId?: number
+   * }
+   */
+  async updateUserProfile(
+    userId: string,
+    updateDto: UpdateUserProfileDto,
+    currentUserId: string,
+  ): Promise<{ message: string; user: any }> {
+    try {
+      // Check if user exists
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          candidate: {
+            include: {
+              city: {
+                include: {
+                  state: {
+                    include: {
+                      country: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // Check if email is being changed and if it's already taken
+      if (updateDto.email && updateDto.email !== user.email) {
+        const existingUser = await this.prisma.user.findUnique({
+          where: { email: updateDto.email },
+        });
+
+        if (existingUser) {
+          throw new BadRequestException('Email is already in use');
+        }
+      }
+
+      // Check if phone is being changed and if it's already taken
+      if (updateDto.phone && updateDto.phone !== user.phone) {
+        const existingUser = await this.prisma.user.findUnique({
+          where: { phone: updateDto.phone },
+        });
+
+        if (existingUser) {
+          throw new BadRequestException('Phone number is already in use');
+        }
+      }
+
+      // Update user and candidate in a transaction
+      const result = await this.prisma.$transaction(async (prisma) => {
+        // Update user data (matching frontend metaFormData)
+        const userUpdateData: any = {};
+        if (updateDto.email !== undefined) userUpdateData.email = updateDto.email;
+        if (updateDto.phone !== undefined) userUpdateData.phone = updateDto.phone;
+
+        if (Object.keys(userUpdateData).length > 0) {
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              ...userUpdateData,
+              emailVerified:
+                updateDto.email && updateDto.email !== user.email
+                  ? false
+                  : user.emailVerified,
+              phoneVerified:
+                updateDto.phone && updateDto.phone !== user.phone
+                  ? false
+                  : user.phoneVerified,
+            },
+          });
+        }
+
+        // Update candidate data if candidate exists
+        if (user.candidate) {
+          const candidateUpdateData: any = {};
+          
+          // Personal information fields (matching frontend metaFormData payload)
+          // Frontend sends: firstName, lastName, email, phone, bio, linkedinUrl, facebookUrl, twitterUrl, instagramUrl
+          if (updateDto.firstName !== undefined && updateDto.firstName !== null)
+            candidateUpdateData.firstName = updateDto.firstName;
+          if (updateDto.lastName !== undefined && updateDto.lastName !== null)
+            candidateUpdateData.lastName = updateDto.lastName;
+          if (updateDto.bio !== undefined && updateDto.bio !== null)
+            candidateUpdateData.bio = updateDto.bio;
+          
+          // Social media links (matching frontend metaFormData payload)
+          if (updateDto.linkedinUrl !== undefined && updateDto.linkedinUrl !== null)
+            candidateUpdateData.linkedinUrl = updateDto.linkedinUrl || null;
+          if (updateDto.facebookUrl !== undefined && updateDto.facebookUrl !== null)
+            candidateUpdateData.facebookUrl = updateDto.facebookUrl || null;
+          if (updateDto.twitterUrl !== undefined && updateDto.twitterUrl !== null)
+            candidateUpdateData.twitterUrl = updateDto.twitterUrl || null;
+          if (updateDto.instagramUrl !== undefined && updateDto.instagramUrl !== null)
+            candidateUpdateData.instagramUrl = updateDto.instagramUrl || null;
+          
+          // Address fields (matching frontend addressFormData payload)
+          // Frontend sends: country, state, cityName, address, streetAddress
+          if (updateDto.country !== undefined && updateDto.country !== null)
+            candidateUpdateData.country = updateDto.country || null;
+          if (updateDto.state !== undefined && updateDto.state !== null)
+            candidateUpdateData.state = updateDto.state || null;
+          if (updateDto.cityName !== undefined && updateDto.cityName !== null)
+            candidateUpdateData.cityName = updateDto.cityName || null;
+          if (updateDto.address !== undefined && updateDto.address !== null)
+            candidateUpdateData.address = updateDto.address || null;
+          if (updateDto.streetAddress !== undefined && updateDto.streetAddress !== null)
+            candidateUpdateData.streetAddress = updateDto.streetAddress || null;
+          if (updateDto.cityId !== undefined && updateDto.cityId !== null)
+            candidateUpdateData.cityId = updateDto.cityId;
+
+          if (Object.keys(candidateUpdateData).length > 0) {
+            await prisma.candidate.update({
+              where: { id: user.candidate.id },
+              data: candidateUpdateData,
+            });
+          }
+        }
+
+        // Return updated user with candidate
+        return await prisma.user.findUnique({
+          where: { id: userId },
+          include: {
+            candidate: {
+              include: {
+                city: {
+                  include: {
+                    state: {
+                      include: {
+                        country: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+      });
+
+      // Log the profile update
+      await this.logActivity(
+        currentUserId,
+        LogAction.UPDATE,
+        LogLevel.INFO,
+        'User',
+        userId,
+        `User profile updated: ${user.email}`,
+      );
+
+      return {
+        message: 'User profile updated successfully',
+        user: result,
+      };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to update user profile');
     }
   }
 

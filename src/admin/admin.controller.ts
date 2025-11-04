@@ -26,6 +26,7 @@ import {
   type AdminListResponseDto,
 } from './dto/admin-list.dto';
 import { UpdateAdminStatusDto } from './dto/update-admin-status.dto';
+import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 import {
   CreateJobDto,
   UpdateJobDto,
@@ -185,6 +186,20 @@ export class AdminController {
     @Body(ValidationPipe) statusDto: UpdateAdminStatusDto,
   ): Promise<{ message: string }> {
     return this.adminService.updateAdminStatus(adminId, statusDto, user.id);
+  }
+
+  // =================================================================
+  // USER PROFILE MANAGEMENT
+  // =================================================================
+
+  @Put('users/:id/profile')
+  @UseGuards(JwtAuthGuard)
+  async updateUserProfile(
+    @Param('id') userId: string,
+    @GetCurrentUser() user: CurrentUser,
+    @Body(ValidationPipe) updateDto: UpdateUserProfileDto,
+  ): Promise<{ message: string; user: any }> {
+    return this.adminService.updateUserProfile(userId, updateDto, user.id);
   }
 
   // =================================================================
