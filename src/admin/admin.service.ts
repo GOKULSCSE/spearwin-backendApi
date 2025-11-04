@@ -2206,8 +2206,10 @@ export class AdminService {
               include: {
                 user: {
                   select: {
+                    id: true,
                     email: true,
                     phone: true,
+                    status: true,
                   },
                 },
                 city: {
@@ -2336,6 +2338,8 @@ export class AdminService {
             profilePicture: app.candidate.profilePicture || undefined,
             currentTitle: app.candidate.currentTitle || undefined,
             experienceYears: app.candidate.experienceYears || undefined,
+            userId: app.candidate.user.id,
+            status: app.candidate.user.status,
             city: app.candidate.city
               ? {
                   id: app.candidate.city.id,
