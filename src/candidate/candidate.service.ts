@@ -2792,52 +2792,71 @@ export class CandidateService {
           skills: true,
           education: true,
           experience: true,
-          favoriteJobs: {
-            select: { jobId: true },
-          },
         },
       });
 
       if (!candidate) {
-        // Return empty array if profile doesn't exist
-        return {
-          jobs: [],
-          total: 0,
-          page: 1,
-          limit: 10,
-          totalPages: 0,
-          hasNext: false,
-          hasPrev: false,
+        throw new NotFoundException('Candidate profile not found');
+      }
+
+      const page = parseInt(query.page) || 1;
+      const limit = parseInt(query.limit) || 10;
+      const skip = (page - 1) * limit;
+
+      // Build recommendation criteria based on candidate profile
+      const whereClause: any = {
+        status: 'PUBLISHED',
+      };
+
+      // Filter by skills if candidate has skills
+      if (candidate.skills && candidate.skills.length > 0) {
+        const candidateSkills = candidate.skills.map(
+          (skill) => skill.skillName,
+        );
+        whereClause.skillsRequired = {
+          hasSome: candidateSkills,
         };
       }
 
-      const limit = parseInt(query.limit) || 10;
+      // Filter by experience level
+      if (candidate.experience && candidate.experience.length > 0) {
+        // Determine experience level based on years of experience
+        const totalExperience = candidate.experience.reduce((total, exp) => {
+          const startDate = new Date(exp.startDate);
+          const endDate = exp.isCurrent
+            ? new Date()
+            : exp.endDate
+              ? new Date(exp.endDate)
+              : new Date();
+          const years =
+            (endDate.getTime() - startDate.getTime()) /
+            (1000 * 60 * 60 * 24 * 365);
+          return total + years;
+        }, 0);
 
-      // Extract candidate data for matching
-      const candidateSkills = candidate.skills.map(s => s.skillName.toLowerCase());
-      const candidateExperienceYears = candidate.experienceYears || 0;
-      const candidateCityId = candidate.cityId;
-      const candidateExpectedSalary = candidate.expectedSalary ? Number(candidate.expectedSalary) : null;
-      const candidatePreferredLocation = candidate.preferredLocation?.toLowerCase();
-      const favoriteJobIds = candidate.favoriteJobs.map(fav => fav.jobId);
+        if (totalExperience >= 5) {
+          whereClause.experienceLevel = { in: ['SENIOR_LEVEL', 'EXECUTIVE'] };
+        } else if (totalExperience >= 2) {
+          whereClause.experienceLevel = { in: ['MID_LEVEL', 'SENIOR_LEVEL'] };
+        } else {
+          whereClause.experienceLevel = { in: ['ENTRY_LEVEL', 'MID_LEVEL'] };
+        }
+      }
 
-      // Get all published jobs (excluding favorites and already applied)
-      const allJobs = await this.db.job.findMany({
-        where: {
-          status: 'PUBLISHED',
-          publishedAt: { not: null },
-          // Exclude already favorited jobs
-          ...(favoriteJobIds.length > 0 && {
-            id: { notIn: favoriteJobIds },
-          }),
-        },
+      // Filter by location if candidate has location preference
+      if (candidate.cityId) {
+        whereClause.cityId = candidate.cityId;
+      }
+
+      const [jobs, total] = await Promise.all([
+        this.db.job.findMany({
+          where: whereClause,
           include: {
             company: {
               select: {
                 id: true,
                 name: true,
                 logo: true,
-              slug: true,
                 industry: true,
                 employeeCount: true,
                 website: true,
@@ -2852,116 +2871,18 @@ export class CandidateService {
                 },
               },
             },
-          // Exclude jobs already applied to
-          applications: {
-            where: {
-              candidateId: candidate.id,
-            },
-            select: { id: true },
           },
-        },
-        take: 200, // Get more jobs to score and rank
-      });
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit,
+        }),
+        this.db.job.count({ where: whereClause }),
+      ]);
 
-      // Score and rank jobs based on relevance
-      const scoredJobs = allJobs
-        .filter(job => job.applications.length === 0) // Exclude already applied jobs
-        .map(job => {
-          let score = 0;
-          const matchReasons: string[] = [];
-
-          // 1. Skills Match (40 points max)
-          if (candidateSkills.length > 0 && job.skillsRequired && job.skillsRequired.length > 0) {
-            const jobSkills = job.skillsRequired.map(s => String(s).toLowerCase());
-            const matchingSkills = candidateSkills.filter(cs => 
-              jobSkills.some(js => js.includes(cs) || cs.includes(js))
-            );
-            if (matchingSkills.length > 0) {
-              const skillMatchRatio = matchingSkills.length / Math.max(job.skillsRequired.length, candidateSkills.length);
-              score += 40 * skillMatchRatio;
-              matchReasons.push(`${matchingSkills.length} skill${matchingSkills.length > 1 ? 's' : ''} match`);
-            }
-          }
-
-          // 2. Experience Level Match (20 points max)
-          if (job.experienceLevel && candidateExperienceYears > 0) {
-            const expMatchMap: { [key: string]: number[] } = {
-              'ENTRY_LEVEL': [0, 2],
-              'MID_LEVEL': [2, 5],
-              'SENIOR_LEVEL': [5, 10],
-              'EXECUTIVE': [10, 999],
-            };
-            
-            const expRange = expMatchMap[job.experienceLevel];
-            if (expRange) {
-              if (candidateExperienceYears >= expRange[0] && candidateExperienceYears <= expRange[1]) {
-                score += 20;
-                matchReasons.push('Experience level matches');
-              } else if (candidateExperienceYears >= expRange[0]) {
-                score += 10; // Partial match (overqualified)
-                matchReasons.push('Experience level partially matches');
-              }
-            }
-          }
-
-          // 3. Location Match (20 points max)
-          if (candidateCityId && job.cityId === candidateCityId) {
-            score += 20;
-            matchReasons.push('Location matches');
-          } else if (candidatePreferredLocation && job.city) {
-            const jobCity = job.city.name.toLowerCase();
-            const jobState = job.city.state?.name?.toLowerCase();
-            if (jobCity.includes(candidatePreferredLocation) || 
-                jobState?.includes(candidatePreferredLocation)) {
-              score += 10;
-              matchReasons.push('Preferred location match');
-            }
-          } else if (job.workMode === 'REMOTE' || job.workMode === 'HYBRID') {
-            score += 15; // Remote/hybrid jobs are flexible
-            matchReasons.push('Remote/Hybrid work available');
-          }
-
-          // 4. Salary Match (15 points max)
-          if (candidateExpectedSalary && job.maxSalary) {
-            const jobMaxSalary = Number(job.maxSalary);
-            if (jobMaxSalary >= candidateExpectedSalary * 0.9) {
-              score += 15;
-              matchReasons.push('Salary meets expectations');
-            } else if (jobMaxSalary >= candidateExpectedSalary * 0.7) {
-              score += 8;
-              matchReasons.push('Salary close to expectations');
-            }
-          }
-
-          // 5. Job Type Match (5 points max)
-          if (candidate.profileType) {
-            const profileTypeMap: { [key: string]: string[] } = {
-              'Fresher': ['FULL_TIME', 'INTERNSHIP'],
-              'Experienced': ['FULL_TIME', 'CONTRACT'],
-            };
-            const preferredTypes = profileTypeMap[candidate.profileType] || [];
-            if (preferredTypes.includes(job.jobType)) {
-              score += 5;
-              matchReasons.push('Job type preference match');
-            }
-          }
+      const totalPages = Math.ceil(total / limit);
 
       return {
-            job,
-            score,
-            matchReasons,
-          };
-        });
-
-      // Sort by score and take top N
-      const topJobs = scoredJobs
-        .filter(item => item.score > 0) // Only jobs with some match
-        .sort((a, b) => b.score - a.score)
-        .slice(0, limit)
-        .map(item => item.job);
-
-      // Format response
-      const formattedJobs = topJobs.map(job => ({
+        jobs: jobs.map((job) => ({
           id: job.id,
           title: job.title,
           slug: job.slug,
@@ -2977,8 +2898,8 @@ export class CandidateService {
           experienceLevel: job.experienceLevel,
           minExperience: job.minExperience,
           maxExperience: job.maxExperience,
-        minSalary: job.minSalary ? Number(job.minSalary) : null,
-        maxSalary: job.maxSalary ? Number(job.maxSalary) : null,
+          minSalary: job.minSalary,
+          maxSalary: job.maxSalary,
           salaryNegotiable: job.salaryNegotiable,
           skillsRequired: job.skillsRequired,
           educationLevel: job.educationLevel,
@@ -2997,27 +2918,28 @@ export class CandidateService {
                   state: {
                     id: job.city.state.id,
                     name: job.city.state.name,
+                    iso2: job.city.state.iso2,
                     country: job.city.state.country ? {
                       id: job.city.state.country.id,
                       name: job.city.state.country.name,
-                  } : null,
+                      iso2: job.city.state.country.iso2,
+                    } : undefined,
                   },
                 },
               }
             : null,
-      }));
-
-      return {
-        jobs: formattedJobs,
-        total: formattedJobs.length,
-        page: 1,
+        })),
+        total,
+        page,
         limit,
-        totalPages: 1,
-        hasNext: false,
-        hasPrev: false,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
       };
     } catch (error) {
-      console.error('Error in getRecommendedJobs:', error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
       this.handleException(error);
       throw error;
     }
@@ -4237,18 +4159,7 @@ export class CandidateService {
         include: {
           job: {
             include: {
-              company: {
-                select: {
-                  id: true,
-                  name: true,
-                  logo: true,
-                  slug: true,
-                  description: true,
-                  website: true,
-                  industry: true,
-                  headquarters: true,
-                },
-              },
+              company: true,
               city: {
                 include: {
                   state: {
@@ -4264,128 +4175,16 @@ export class CandidateService {
         orderBy: { createdAt: 'desc' },
       });
 
-      // Filter out favorite jobs where the job was deleted or is null
-      const validFavoriteJobs = favoriteJobs.filter((fav) => fav.job !== null && fav.job !== undefined);
-
       return {
-        success: true,
-        favoriteJobs: validFavoriteJobs.map((fav) => {
-          try {
-            // Safely extract job data with null checks
-            const job = fav.job || {};
-            
-            // Safely extract city data
-            let cityData: {
-              id: number;
-              name: string;
-              state: {
-                id: number;
-                name: string;
-                country: {
-                  id: number;
-                  name: string;
-                } | null;
-              } | null;
-            } | null = null;
-            if (job.city) {
-              try {
-                cityData = {
-                  id: job.city.id,
-                  name: job.city.name || '',
-                  state: job.city.state ? {
-                    id: job.city.state.id,
-                    name: job.city.state.name || '',
-                    country: job.city.state.country ? {
-                      id: job.city.state.country.id,
-                      name: job.city.state.country.name || '',
-                    } : null,
-                  } : null,
-                };
-              } catch (cityError) {
-                console.error('Error extracting city data:', cityError);
-                cityData = null;
-              }
-            }
-            
-            // Safely extract company data
-            let companyData: {
-              id: string | null;
-              name: string;
-              logo: string | null;
-              slug: string | null;
-              description: string | null;
-              website: string | null;
-              industry: string | null;
-              headquarters: string | null;
-            } | null = null;
-            if (job.company) {
-              try {
-                companyData = {
-                  id: job.company.id || null,
-                  name: job.company.name || '',
-                  logo: job.company.logo || null,
-                  slug: job.company.slug || null,
-                  description: job.company.description || null,
-                  website: job.company.website || null,
-                  industry: job.company.industry || null,
-                  headquarters: job.company.headquarters || null,
-                };
-              } catch (companyError) {
-                console.error('Error extracting company data:', companyError);
-                companyData = null;
-              }
-            }
-            
-            return {
-              id: fav.id,
-              jobId: fav.jobId,
-              createdAt: fav.createdAt,
-              job: {
-                id: job.id || null,
-                title: job.title || 'Job Unavailable',
-                slug: job.slug || null,
-                description: job.description || '',
-                jobType: job.jobType || null,
-                workMode: job.workMode || null,
-                experienceLevel: job.experienceLevel || null,
-                minSalary: job.minSalary ? Number(job.minSalary) : null,
-                maxSalary: job.maxSalary ? Number(job.maxSalary) : null,
-                status: job.status || null,
-                publishedAt: job.publishedAt || null,
-                company: companyData,
-                city: cityData,
-              },
-            };
-          } catch (mappingError) {
-            console.error('Error mapping favorite job:', mappingError, 'Favorite ID:', fav.id);
-            // Return a safe fallback
-            return {
-              id: fav.id,
-              jobId: fav.jobId,
-              createdAt: fav.createdAt,
-              job: {
-                id: null,
-                title: 'Job Unavailable',
-                slug: null,
-                description: '',
-                jobType: null,
-                workMode: null,
-                experienceLevel: null,
-                minSalary: null,
-                maxSalary: null,
-                status: null,
-                publishedAt: null,
-                company: null,
-                city: null,
-              },
-            };
-          }
-        }),
-        total: validFavoriteJobs.length,
+        favoriteJobs: favoriteJobs.map((fav) => ({
+          id: fav.id,
+          jobId: fav.jobId,
+          createdAt: fav.createdAt,
+          job: fav.job,
+        })),
+        total: favoriteJobs.length,
       };
     } catch (error) {
-      console.error('Error in getFavoriteJobs:', error);
-      console.error('Error stack:', error.stack);
       this.handleException(error);
       throw error;
     }
