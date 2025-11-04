@@ -56,11 +56,6 @@ export class JobController {
     return this.jobService.getFeaturedJobs();
   }
 
-  @Get('id/:id')
-  async getJobById(@Param('id') id: string): Promise<JobResponseDto> {
-    return this.jobService.getJobById(id);
-  }
-
   @Get(':slug')
   async getJobBySlug(@Param('slug') slug: string): Promise<JobResponseDto> {
     return this.jobService.getJobBySlug(slug);
