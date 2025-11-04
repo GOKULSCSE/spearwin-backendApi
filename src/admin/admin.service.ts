@@ -2226,6 +2226,7 @@ export class AdminService {
                 id: true,
                 title: true,
                 fileName: true,
+                filePath: true,
                 uploadedAt: true,
               },
             },
@@ -2400,6 +2401,7 @@ export class AdminService {
                 id: Number(app.resume.id),
                 title: app.resume.title,
                 fileName: app.resume.fileName,
+                filePath: app.resume.filePath || undefined,
                 uploadedAt: app.resume.uploadedAt,
               }
             : undefined,
