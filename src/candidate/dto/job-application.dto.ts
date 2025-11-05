@@ -51,14 +51,6 @@ export class ApplyForJobDto {
   @IsOptional()
   @IsString({ message: 'Expected CTC must be a string' })
   expectedCTC?: string;
-
-  @IsOptional()
-  @IsString({ message: 'Java experience must be a string' })
-  javaExperience?: string;
-
-  @IsOptional()
-  @IsString({ message: 'Location preference must be a string' })
-  locationPreference?: string;
 }
 
 export class UpdateApplicationDto {
@@ -93,8 +85,6 @@ export class ApplicationResponseDto {
   noticePeriod?: string;
   currentCTC?: string;
   expectedCTC?: string;
-  javaExperience?: string;
-  locationPreference?: string;
   updatedAt: Date;
   job?: {
     id: string;

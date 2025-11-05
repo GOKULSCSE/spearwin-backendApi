@@ -404,8 +404,6 @@ model JobApplication {
   noticePeriod       String?
   currentCTC         String?
   expectedCTC        String?
-  javaExperience     String?
-  locationPreference String?
   updatedAt          DateTime          @updatedAt
   candidate          Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   job                Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
