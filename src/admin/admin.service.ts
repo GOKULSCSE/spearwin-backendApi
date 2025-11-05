@@ -2571,10 +2571,10 @@ export class AdminService {
 
       return {
         applications: applications.map((app) => ({
-          id: Number(app.id),
-          jobId: Number(app.jobId),
-          candidateId: Number(app.candidateId),
-          resumeId: app.resumeId ? Number(app.resumeId) : undefined,
+          id: app.id, // Keep as string (cuid)
+          jobId: app.jobId, // Keep as string (cuid)
+          candidateId: app.candidateId, // Keep as string (cuid)
+          resumeId: app.resumeId || undefined,
           coverLetter: app.coverLetter || undefined,
           status: app.status,
           appliedAt: app.appliedAt,
@@ -2583,12 +2583,12 @@ export class AdminService {
           feedback: app.feedback || undefined,
           updatedAt: app.updatedAt,
           job: {
-            id: Number(app.job.id),
+            id: app.job.id, // Keep as string (cuid)
             title: app.job.title,
             slug: app.job.slug,
             description: app.job.description,
             company: {
-              id: Number(app.job.company.id),
+              id: app.job.company.id, // Keep as string (cuid)
               name: app.job.company.name,
               logo: app.job.company.logo || undefined,
             },
@@ -2729,7 +2729,7 @@ export class AdminService {
           },
           resume: app.resume
             ? {
-                id: Number(app.resume.id),
+                id: app.resume.id, // Keep as string (cuid)
                 title: app.resume.title,
                 fileName: app.resume.fileName,
                 filePath: app.resume.filePath || undefined,
@@ -2812,10 +2812,10 @@ export class AdminService {
       }
 
       return {
-        id: Number(application.id),
-        jobId: Number(application.jobId),
-        candidateId: Number(application.candidateId),
-        resumeId: application.resumeId ? Number(application.resumeId) : undefined,
+        id: application.id, // Keep as string (cuid)
+        jobId: application.jobId, // Keep as string (cuid)
+        candidateId: application.candidateId, // Keep as string (cuid)
+        resumeId: application.resumeId || undefined,
         coverLetter: application.coverLetter || undefined,
         status: application.status,
         appliedAt: application.appliedAt,
@@ -2824,12 +2824,12 @@ export class AdminService {
         feedback: application.feedback || undefined,
         updatedAt: application.updatedAt,
           job: {
-            id: Number(application.job.id),
+            id: application.job.id, // Keep as string (cuid)
           title: application.job.title,
           slug: application.job.slug,
           description: application.job.description,
           company: {
-            id: Number(application.job.company.id),
+            id: application.job.company.id, // Keep as string (cuid)
             name: application.job.company.name,
             logo: application.job.company.logo || undefined,
           },
@@ -2966,7 +2966,7 @@ export class AdminService {
         },
           resume: application.resume
             ? {
-                id: Number(application.resume.id),
+                id: application.resume.id, // Keep as string (cuid)
               title: application.resume.title,
               fileName: application.resume.fileName,
               uploadedAt: application.resume.uploadedAt,
@@ -3064,10 +3064,10 @@ export class AdminService {
       );
 
       return {
-        id: Number(updatedApplication.id),
-        jobId: Number(updatedApplication.jobId),
-        candidateId: Number(updatedApplication.candidateId),
-        resumeId: updatedApplication.resumeId ? Number(updatedApplication.resumeId) : undefined,
+        id: updatedApplication.id, // Keep as string (cuid)
+        jobId: updatedApplication.jobId, // Keep as string (cuid)
+        candidateId: updatedApplication.candidateId, // Keep as string (cuid)
+        resumeId: updatedApplication.resumeId || undefined,
         coverLetter: updatedApplication.coverLetter || undefined,
         status: updatedApplication.status,
         appliedAt: updatedApplication.appliedAt,
@@ -3076,12 +3076,12 @@ export class AdminService {
         feedback: updatedApplication.feedback || undefined,
         updatedAt: updatedApplication.updatedAt,
         job: {
-            id: Number(updatedApplication.job.id),
+            id: updatedApplication.job.id, // Keep as string (cuid)
           title: updatedApplication.job.title,
           slug: updatedApplication.job.slug,
           description: updatedApplication.job.description,
           company: {
-              id: Number(updatedApplication.job.company.id),
+              id: updatedApplication.job.company.id, // Keep as string (cuid)
             name: updatedApplication.job.company.name,
             logo: updatedApplication.job.company.logo || undefined,
           },
@@ -3220,7 +3220,7 @@ export class AdminService {
         },
         resume: updatedApplication.resume
           ? {
-                id: Number(updatedApplication.resume.id),
+                id: updatedApplication.resume.id, // Keep as string (cuid)
               title: updatedApplication.resume.title,
               fileName: updatedApplication.resume.fileName,
               uploadedAt: updatedApplication.resume.uploadedAt,
@@ -3318,10 +3318,10 @@ export class AdminService {
       );
 
       return {
-        id: Number(updatedApplication.id),
-        jobId: Number(updatedApplication.jobId),
-        candidateId: Number(updatedApplication.candidateId),
-        resumeId: updatedApplication.resumeId ? Number(updatedApplication.resumeId) : undefined,
+        id: updatedApplication.id, // Keep as string (cuid)
+        jobId: updatedApplication.jobId, // Keep as string (cuid)
+        candidateId: updatedApplication.candidateId, // Keep as string (cuid)
+        resumeId: updatedApplication.resumeId || undefined,
         coverLetter: updatedApplication.coverLetter || undefined,
         status: updatedApplication.status,
         appliedAt: updatedApplication.appliedAt,
@@ -3330,12 +3330,12 @@ export class AdminService {
         feedback: updatedApplication.feedback || undefined,
         updatedAt: updatedApplication.updatedAt,
         job: {
-            id: Number(updatedApplication.job.id),
+            id: updatedApplication.job.id, // Keep as string (cuid)
           title: updatedApplication.job.title,
           slug: updatedApplication.job.slug,
           description: updatedApplication.job.description,
           company: {
-              id: Number(updatedApplication.job.company.id),
+              id: updatedApplication.job.company.id, // Keep as string (cuid)
             name: updatedApplication.job.company.name,
             logo: updatedApplication.job.company.logo || undefined,
           },
@@ -3474,7 +3474,7 @@ export class AdminService {
         },
         resume: updatedApplication.resume
           ? {
-                id: Number(updatedApplication.resume.id),
+                id: updatedApplication.resume.id, // Keep as string (cuid)
               title: updatedApplication.resume.title,
               fileName: updatedApplication.resume.fileName,
               uploadedAt: updatedApplication.resume.uploadedAt,
