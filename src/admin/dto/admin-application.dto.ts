@@ -64,10 +64,10 @@ export class ApplicationQueryDto {
 }
 
 export class AdminApplicationResponseDto {
-  id: number;
-  jobId: number;
-  candidateId: number;
-  resumeId?: number;
+  id: string; // cuid string
+  jobId: string; // cuid string
+  candidateId: string; // cuid string
+  resumeId?: string; // cuid string
   coverLetter?: string;
   status: ApplicationStatus;
   appliedAt: Date;
@@ -76,12 +76,12 @@ export class AdminApplicationResponseDto {
   feedback?: string;
   updatedAt: Date;
     job: {
-      id: number;
+      id: string; // cuid string
       title: string;
       slug: string;
       description: string;
       company: {
-        id: number;
+        id: string; // cuid string
         name: string;
         logo?: string;
       };
@@ -214,7 +214,7 @@ export class AdminApplicationResponseDto {
     };
   };
     resume?: {
-      id: number;
+      id: string; // cuid string
       title: string;
       fileName: string;
       uploadedAt: Date;
