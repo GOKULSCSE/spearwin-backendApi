@@ -3,7 +3,7 @@ import {
   IsString,
   MinLength,
   IsOptional,
-  IsEnum,
+  IsIn,
 } from 'class-validator';
 import { UserRole } from '@prisma/client';
 
@@ -25,8 +25,10 @@ export class CreateAdminDto {
   @IsString()
   phone?: string;
 
-  @IsEnum(['ADMIN', 'SUPER_ADMIN'])
-  role: 'ADMIN' | 'SUPER_ADMIN';
+  @IsIn([UserRole.ADMIN, UserRole.SUPER_ADMIN], {
+    message: 'Role must be either ADMIN or SUPER_ADMIN',
+  })
+  role: UserRole;
 
   @IsOptional()
   @IsString()

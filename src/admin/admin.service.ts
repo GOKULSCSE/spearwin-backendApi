@@ -293,7 +293,10 @@ export class AdminService {
       ) {
         throw error;
       }
-      throw new BadRequestException('Failed to create admin');
+      console.error('Error creating admin:', error);
+      throw new BadRequestException(
+        error?.message || 'Failed to create admin. Please check all fields and try again.'
+      );
     }
   }
 
