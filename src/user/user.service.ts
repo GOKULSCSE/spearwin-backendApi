@@ -118,6 +118,11 @@ export class UserService {
     }
   }
 
+  /**
+   * Get user by ID with all related data
+   * Returns user with candidate, admin, superAdmin, or company profile data
+   * Includes all profile fields: email, phone, bio, profileImage, address fields, social links
+   */
   async findOne(userId: string) {
     try {
       const user = await this.db.user.findUnique({
@@ -136,7 +141,9 @@ export class UserService {
               },
             },
           },
+          // Include all admin fields (email, phone, bio, profileImage, country, state, city, streetAddress, social links)
           admin: true,
+          // Include all superAdmin fields (email, phone, bio, profileImage, country, state, city, streetAddress, social links)
           superAdmin: true,
           company: true,
         },
@@ -146,6 +153,9 @@ export class UserService {
         throw new NotFoundException('User not found');
       }
 
+      // Return user with all profile fields included
+      // Admin and SuperAdmin models now include: email, phone, bio, profileImage, 
+      // country, state, city, streetAddress, linkedinUrl, facebookUrl, twitterUrl, instagramUrl
       return user;
     } catch (error) {
       if (error instanceof NotFoundException) {

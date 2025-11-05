@@ -23,6 +23,10 @@ export class UpdateUserProfileDto {
 
   @IsOptional()
   @IsString()
+  profileImage?: string;
+
+  @IsOptional()
+  @IsString()
   linkedinUrl?: string;
 
   @IsOptional()

@@ -231,16 +231,36 @@ export class AdminService {
           },
         });
 
-        // Create admin profile
+        // Create admin profile with all fields
+        const adminData: any = {
+          userId: user.id,
+          permissions: [], // Default empty permissions
+        };
+
+        // Add profile fields if provided
+        if (createAdminDto.firstName !== undefined) adminData.firstName = createAdminDto.firstName;
+        if (createAdminDto.lastName !== undefined) adminData.lastName = createAdminDto.lastName;
+        if (createAdminDto.department !== undefined) adminData.department = createAdminDto.department;
+        if (createAdminDto.designation !== undefined) adminData.designation = createAdminDto.designation;
+        if (createAdminDto.bio !== undefined) adminData.bio = createAdminDto.bio;
+        if (createAdminDto.profileImage !== undefined) adminData.profileImage = createAdminDto.profileImage;
+        if (createAdminDto.email !== undefined) adminData.email = createAdminDto.email;
+        if (createAdminDto.phone !== undefined) adminData.phone = createAdminDto.phone;
+        
+        // Address fields
+        if (createAdminDto.country !== undefined) adminData.country = createAdminDto.country;
+        if (createAdminDto.state !== undefined) adminData.state = createAdminDto.state;
+        if (createAdminDto.city !== undefined) adminData.city = createAdminDto.city;
+        if (createAdminDto.streetAddress !== undefined) adminData.streetAddress = createAdminDto.streetAddress;
+        
+        // Social media fields
+        if (createAdminDto.linkedinUrl !== undefined) adminData.linkedinUrl = createAdminDto.linkedinUrl;
+        if (createAdminDto.facebookUrl !== undefined) adminData.facebookUrl = createAdminDto.facebookUrl;
+        if (createAdminDto.twitterUrl !== undefined) adminData.twitterUrl = createAdminDto.twitterUrl;
+        if (createAdminDto.instagramUrl !== undefined) adminData.instagramUrl = createAdminDto.instagramUrl;
+
         const admin = await prisma.admin.create({
-          data: {
-            userId: user.id,
-            firstName: createAdminDto.firstName,
-            lastName: createAdminDto.lastName,
-            department: createAdminDto.department,
-            designation: createAdminDto.position, // Map position to designation
-            permissions: [], // Default empty permissions
-          },
+          data: adminData,
         });
 
         return { user, admin };
@@ -278,8 +298,8 @@ export class AdminService {
           },
           admin: {
             id: result.admin.id,
-            firstName: result.admin.firstName,
-            lastName: result.admin.lastName,
+            firstName: result.admin.firstName || '',
+            lastName: result.admin.lastName || '',
             department: result.admin.department || undefined,
             position: result.admin.designation || undefined,
             createdAt: result.admin.createdAt,
@@ -531,10 +551,22 @@ export class AdminService {
       return {
         id: admin.id,
         userId: admin.userId,
-        firstName: admin.firstName,
-        lastName: admin.lastName,
-        department: admin.department,
-        designation: admin.designation,
+        firstName: admin.firstName || undefined,
+        lastName: admin.lastName || undefined,
+        email: admin.email || admin.user.email,
+        phone: admin.phone || admin.user.phone || undefined,
+        bio: admin.bio || undefined,
+        profileImage: admin.profileImage || undefined,
+        department: admin.department || undefined,
+        designation: admin.designation || undefined,
+        country: admin.country || undefined,
+        state: admin.state || undefined,
+        city: admin.city || undefined,
+        streetAddress: admin.streetAddress || undefined,
+        linkedinUrl: admin.linkedinUrl || undefined,
+        facebookUrl: admin.facebookUrl || undefined,
+        twitterUrl: admin.twitterUrl || undefined,
+        instagramUrl: admin.instagramUrl || undefined,
         permissions: admin.permissions,
         createdAt: admin.createdAt,
         updatedAt: admin.updatedAt,
@@ -621,15 +653,24 @@ export class AdminService {
           });
         }
 
-        // Update admin data
+        // Update admin data with all profile fields
         const adminUpdateData: any = {};
-        if (updateDto.firstName)
-          adminUpdateData.firstName = updateDto.firstName;
-        if (updateDto.lastName) adminUpdateData.lastName = updateDto.lastName;
-        if (updateDto.department)
-          adminUpdateData.department = updateDto.department;
-        if (updateDto.designation)
-          adminUpdateData.designation = updateDto.designation;
+        if (updateDto.firstName !== undefined) adminUpdateData.firstName = updateDto.firstName;
+        if (updateDto.lastName !== undefined) adminUpdateData.lastName = updateDto.lastName;
+        if (updateDto.bio !== undefined) adminUpdateData.bio = updateDto.bio;
+        if (updateDto.profileImage !== undefined) adminUpdateData.profileImage = updateDto.profileImage;
+        if (updateDto.email !== undefined) adminUpdateData.email = updateDto.email;
+        if (updateDto.phone !== undefined) adminUpdateData.phone = updateDto.phone;
+        if (updateDto.department !== undefined) adminUpdateData.department = updateDto.department;
+        if (updateDto.designation !== undefined) adminUpdateData.designation = updateDto.designation;
+        if (updateDto.country !== undefined) adminUpdateData.country = updateDto.country;
+        if (updateDto.state !== undefined) adminUpdateData.state = updateDto.state;
+        if (updateDto.city !== undefined) adminUpdateData.city = updateDto.city;
+        if (updateDto.streetAddress !== undefined) adminUpdateData.streetAddress = updateDto.streetAddress;
+        if (updateDto.linkedinUrl !== undefined) adminUpdateData.linkedinUrl = updateDto.linkedinUrl;
+        if (updateDto.facebookUrl !== undefined) adminUpdateData.facebookUrl = updateDto.facebookUrl;
+        if (updateDto.twitterUrl !== undefined) adminUpdateData.twitterUrl = updateDto.twitterUrl;
+        if (updateDto.instagramUrl !== undefined) adminUpdateData.instagramUrl = updateDto.instagramUrl;
 
         if (Object.keys(adminUpdateData).length > 0) {
           await prisma.admin.update({
@@ -683,10 +724,10 @@ export class AdminService {
       return {
         id: result.id,
         userId: result.userId,
-        firstName: result.firstName,
-        lastName: result.lastName,
-        department: result.department,
-        designation: result.designation,
+        firstName: result.firstName ?? undefined,
+        lastName: result.lastName ?? undefined,
+        department: result.department ?? undefined,
+        designation: result.designation ?? undefined,
         permissions: result.permissions,
         createdAt: result.createdAt,
         updatedAt: result.updatedAt,
@@ -828,10 +869,10 @@ export class AdminService {
       return {
         id: result.id,
         userId: result.userId,
-        firstName: result.firstName,
-        lastName: result.lastName,
-        department: result.department,
-        designation: result.designation,
+        firstName: result.firstName ?? undefined,
+        lastName: result.lastName ?? undefined,
+        department: result.department ?? undefined,
+        designation: result.designation ?? undefined,
         permissions: result.permissions,
         createdAt: result.createdAt,
         updatedAt: result.updatedAt,
@@ -1079,10 +1120,22 @@ export class AdminService {
       return {
         id: admin.id,
         userId: admin.userId,
-        firstName: admin.firstName,
-        lastName: admin.lastName,
-        department: admin.department,
-        designation: admin.designation,
+        firstName: admin.firstName || undefined,
+        lastName: admin.lastName || undefined,
+        email: admin.email || admin.user.email,
+        phone: admin.phone || admin.user.phone || undefined,
+        bio: admin.bio || undefined,
+        profileImage: admin.profileImage || undefined,
+        department: admin.department || undefined,
+        designation: admin.designation || undefined,
+        country: admin.country || undefined,
+        state: admin.state || undefined,
+        city: admin.city || undefined,
+        streetAddress: admin.streetAddress || undefined,
+        linkedinUrl: admin.linkedinUrl || undefined,
+        facebookUrl: admin.facebookUrl || undefined,
+        twitterUrl: admin.twitterUrl || undefined,
+        instagramUrl: admin.instagramUrl || undefined,
         permissions: admin.permissions,
         createdAt: admin.createdAt,
         updatedAt: admin.updatedAt,
@@ -1225,6 +1278,8 @@ export class AdminService {
               },
             },
           },
+          admin: true,
+          superAdmin: true,
         },
       });
 
@@ -1283,13 +1338,15 @@ export class AdminService {
           const candidateUpdateData: any = {};
           
           // Personal information fields (matching frontend metaFormData payload)
-          // Frontend sends: firstName, lastName, email, phone, bio, linkedinUrl, facebookUrl, twitterUrl, instagramUrl
+          // Frontend sends: firstName, lastName, email, phone, bio, profileImage, linkedinUrl, facebookUrl, twitterUrl, instagramUrl
           if (updateDto.firstName !== undefined && updateDto.firstName !== null)
             candidateUpdateData.firstName = updateDto.firstName;
           if (updateDto.lastName !== undefined && updateDto.lastName !== null)
             candidateUpdateData.lastName = updateDto.lastName;
           if (updateDto.bio !== undefined && updateDto.bio !== null)
             candidateUpdateData.bio = updateDto.bio;
+          if (updateDto.profileImage !== undefined && updateDto.profileImage !== null)
+            candidateUpdateData.profilePicture = updateDto.profileImage;
           
           // Social media links (matching frontend metaFormData payload)
           if (updateDto.linkedinUrl !== undefined && updateDto.linkedinUrl !== null)
@@ -1324,7 +1381,71 @@ export class AdminService {
           }
         }
 
-        // Return updated user with candidate
+        // Update admin data if admin exists
+        if (user.admin) {
+          const adminUpdateData: any = {};
+          
+          // Personal information fields
+          if (updateDto.firstName !== undefined) adminUpdateData.firstName = updateDto.firstName;
+          if (updateDto.lastName !== undefined) adminUpdateData.lastName = updateDto.lastName;
+          if (updateDto.bio !== undefined) adminUpdateData.bio = updateDto.bio;
+          if (updateDto.profileImage !== undefined) adminUpdateData.profileImage = updateDto.profileImage;
+          if (updateDto.email !== undefined) adminUpdateData.email = updateDto.email;
+          if (updateDto.phone !== undefined) adminUpdateData.phone = updateDto.phone;
+          
+          // Social media links
+          if (updateDto.linkedinUrl !== undefined) adminUpdateData.linkedinUrl = updateDto.linkedinUrl || null;
+          if (updateDto.facebookUrl !== undefined) adminUpdateData.facebookUrl = updateDto.facebookUrl || null;
+          if (updateDto.twitterUrl !== undefined) adminUpdateData.twitterUrl = updateDto.twitterUrl || null;
+          if (updateDto.instagramUrl !== undefined) adminUpdateData.instagramUrl = updateDto.instagramUrl || null;
+          
+          // Address fields (note: admin uses 'city' not 'cityName')
+          if (updateDto.country !== undefined) adminUpdateData.country = updateDto.country || null;
+          if (updateDto.state !== undefined) adminUpdateData.state = updateDto.state || null;
+          if (updateDto.cityName !== undefined) adminUpdateData.city = updateDto.cityName || null; // Map cityName to city
+          if (updateDto.streetAddress !== undefined) adminUpdateData.streetAddress = updateDto.streetAddress || null;
+
+          if (Object.keys(adminUpdateData).length > 0) {
+            await prisma.admin.update({
+              where: { id: user.admin.id },
+              data: adminUpdateData,
+            });
+          }
+        }
+
+        // Update superAdmin data if superAdmin exists
+        if (user.superAdmin) {
+          const superAdminUpdateData: any = {};
+          
+          // Personal information fields
+          if (updateDto.firstName !== undefined) superAdminUpdateData.firstName = updateDto.firstName;
+          if (updateDto.lastName !== undefined) superAdminUpdateData.lastName = updateDto.lastName;
+          if (updateDto.bio !== undefined) superAdminUpdateData.bio = updateDto.bio;
+          if (updateDto.profileImage !== undefined) superAdminUpdateData.profileImage = updateDto.profileImage;
+          if (updateDto.email !== undefined) superAdminUpdateData.email = updateDto.email;
+          if (updateDto.phone !== undefined) superAdminUpdateData.phone = updateDto.phone;
+          
+          // Social media links
+          if (updateDto.linkedinUrl !== undefined) superAdminUpdateData.linkedinUrl = updateDto.linkedinUrl || null;
+          if (updateDto.facebookUrl !== undefined) superAdminUpdateData.facebookUrl = updateDto.facebookUrl || null;
+          if (updateDto.twitterUrl !== undefined) superAdminUpdateData.twitterUrl = updateDto.twitterUrl || null;
+          if (updateDto.instagramUrl !== undefined) superAdminUpdateData.instagramUrl = updateDto.instagramUrl || null;
+          
+          // Address fields (note: superAdmin uses 'city' not 'cityName')
+          if (updateDto.country !== undefined) superAdminUpdateData.country = updateDto.country || null;
+          if (updateDto.state !== undefined) superAdminUpdateData.state = updateDto.state || null;
+          if (updateDto.cityName !== undefined) superAdminUpdateData.city = updateDto.cityName || null; // Map cityName to city
+          if (updateDto.streetAddress !== undefined) superAdminUpdateData.streetAddress = updateDto.streetAddress || null;
+
+          if (Object.keys(superAdminUpdateData).length > 0) {
+            await prisma.superAdmin.update({
+              where: { id: user.superAdmin.id },
+              data: superAdminUpdateData,
+            });
+          }
+        }
+
+        // Return updated user with all relations
         return await prisma.user.findUnique({
           where: { id: userId },
           include: {
@@ -1341,6 +1462,8 @@ export class AdminService {
                 },
               },
             },
+            admin: true,
+            superAdmin: true,
           },
         });
       });

@@ -10,6 +10,7 @@ import {
   Query,
   UseGuards,
   ValidationPipe,
+  Header,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -198,6 +199,9 @@ export class UserController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
+  @Header('Cache-Control', 'no-cache, no-store, must-revalidate')
+  @Header('Pragma', 'no-cache')
+  @Header('Expires', '0')
   async findOne(@Param('id') userId: string) {
     return this.userService.findOne(userId);
   }
