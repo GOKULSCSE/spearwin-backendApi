@@ -948,8 +948,6 @@ export class JobService {
           noticePeriod: applyDto.noticePeriod,
           currentCTC: applyDto.currentCTC,
           expectedCTC: applyDto.expectedCTC,
-          javaExperience: applyDto.javaExperience,
-          locationPreference: applyDto.locationPreference,
         },
         include: {
           job: {
@@ -1025,8 +1023,6 @@ export class JobService {
         noticePeriod: application.noticePeriod || undefined,
         currentCTC: application.currentCTC || undefined,
         expectedCTC: application.expectedCTC || undefined,
-        javaExperience: application.javaExperience || undefined,
-        locationPreference: application.locationPreference || undefined,
         updatedAt: application.updatedAt,
         job: {
           id: application.job.id,
