@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { DatabaseService } from '../database/database.service';
@@ -14,8 +15,10 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CandidateRegisterDto } from './dto/candidate-register.dto';
 import { CandidateSimpleRegisterDto } from './dto/candidate-simple-register.dto';
 import { CompanyRegisterDto } from './dto/company-register.dto';
+import { GoogleAuthDto } from './dto/google-auth.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { VerifyPhoneDto } from './dto/verify-phone.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 import { Enable2FaDto } from './dto/2fa-enable.dto';
 import { Disable2FaDto } from './dto/2fa-disable.dto';
@@ -39,6 +42,8 @@ import * as QRCode from 'qrcode';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: DatabaseService,
     private jwtService: JwtService,
@@ -47,8 +52,11 @@ export class AuthService {
 
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
 
-    console.log('loginDto ascgaskcja.cjgacha', loginDto);
+    this.logger.log(`🔑 Login attempt for email: ${loginDto.email}`);
     
+    // Trim password to avoid whitespace issues
+    const trimmedLoginPassword = loginDto.password?.trim() || '';
+    this.logger.log(`🔑 Password length: ${trimmedLoginPassword.length}`);
 
     const user = await this.prisma.user.findUnique({
       where: { email: loginDto.email },
@@ -61,15 +69,45 @@ export class AuthService {
     });
 
     if (!user) {
+      this.logger.warn(`❌ User not found: ${loginDto.email}`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(
-      loginDto.password,
+    this.logger.log(`🔑 User found: ${user.email}`);
+    this.logger.log(`🔑 Stored password hash length: ${user.password?.length || 0}`);
+    this.logger.log(`🔑 Stored password hash exists: ${!!user.password}`);
+    
+    if (!user.password) {
+      this.logger.error(`❌ User has no password set: ${user.email}`);
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    
+    this.logger.log(`🔑 Hash starts with: ${user.password.substring(0, 10)}...`);
+    this.logger.log(`🔑 Input password (first 3 chars): ${trimmedLoginPassword.substring(0, Math.min(3, trimmedLoginPassword.length))}***`);
+    this.logger.log(`🔑 Input password length: ${trimmedLoginPassword.length}`);
+
+    let isPasswordValid = await bcrypt.compare(
+      trimmedLoginPassword,
       user.password,
     );
+    
+    this.logger.log(`🔑 Password comparison result (trimmed): ${isPasswordValid ? '✅ VALID' : '❌ INVALID'}`);
+    
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      this.logger.warn(`❌ Invalid password for user: ${user.email}`);
+      this.logger.warn(`   Input: ${trimmedLoginPassword.length} chars, Hash: ${user.password.length} chars`);
+      // Try one more time with the original password (without trim) in case frontend sends it differently
+      const isPasswordValidOriginal = await bcrypt.compare(
+        loginDto.password,
+        user.password,
+      );
+      this.logger.warn(`   Retry with original (untrimmed): ${isPasswordValidOriginal ? '✅ VALID' : '❌ INVALID'}`);
+      if (isPasswordValidOriginal) {
+        isPasswordValid = true; // Use the original password if it works
+        this.logger.log(`✅ Password validated with original (untrimmed) version`);
+      } else {
+        throw new UnauthorizedException('Invalid credentials');
+      }
     }
 
     if (user.status === UserStatus.SUSPENDED) {
@@ -276,20 +314,20 @@ export class AuthService {
       return {
         success: true,
         message:
-          'If an account with that email exists, a password reset link has been sent.',
+          'If an account with that email exists, a password reset OTP has been sent.',
       };
     }
 
-    // Generate reset token
-    const resetToken = uuidv4();
+    // Generate 6-digit OTP code for password reset
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString(); // Generates 6-digit code
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour expiry
+    expiresAt.setMinutes(expiresAt.getMinutes() + 5); // 5 minutes expiry
 
     // Create OTP for password reset
     await this.prisma.oTP.create({
       data: {
         userId: user.id,
-        code: resetToken,
+        code: otpCode,
         type: OTPType.PASSWORD_RESET,
         expiresAt,
       },
@@ -307,12 +345,25 @@ export class AuthService {
       },
     });
 
-    // Send password reset email
-    await this.emailService.sendPasswordResetEmail(
+    // Send password reset email with OTP code
+    const emailSent = await this.emailService.sendPasswordResetEmail(
       user.email,
-      resetToken,
+      otpCode,
       expiresAt,
     );
+
+    // Log email sending result
+    if (!emailSent) {
+      this.logger.error(
+        `Failed to send password reset email to ${user.email}. Email transporter may not be configured.`,
+      );
+      // Still return success to user for security (don't reveal if email was sent)
+      // But log the error for debugging
+    } else {
+      this.logger.log(
+        `Password reset email sent successfully to ${user.email}`,
+      );
+    }
 
     return {
       success: true,
@@ -320,7 +371,7 @@ export class AuthService {
         'If an account with that email exists, a password reset link has been sent.',
       data: {
         email: forgotPasswordDto.email,
-        resetToken: resetToken,
+        otpCode: otpCode,
         expiresAt: expiresAt,
       },
     };
@@ -365,17 +416,56 @@ export class AuthService {
     });
 
     if (!otp) {
-      throw new BadRequestException('Invalid or expired reset token');
+      throw new BadRequestException('Invalid or expired OTP code');
     }
 
+    this.logger.log(`🔐 Resetting password for user: ${otp.user.email}`);
+    
+    // Trim password to avoid whitespace issues
+    const trimmedPassword = resetPasswordDto.newPassword.trim();
+    this.logger.log(`🔐 New password length: ${trimmedPassword.length}`);
+
     // Hash new password
-    const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, 10);
+    const hashedPassword = await bcrypt.hash(trimmedPassword, 10);
+    this.logger.log(`🔐 Password hashed successfully. Hash length: ${hashedPassword.length}`);
 
     // Update user password
     await this.prisma.user.update({
       where: { id: otp.userId },
       data: { password: hashedPassword },
     });
+    
+    this.logger.log(`🔐 Password updated for user: ${otp.user.email}`);
+    this.logger.log(`🔐 Verifying password was saved correctly...`);
+    
+    // Fetch user fresh from database to verify password was saved
+    const updatedUser = await this.prisma.user.findUnique({
+      where: { id: otp.userId },
+      select: { id: true, email: true, password: true },
+    });
+    
+    if (!updatedUser || !updatedUser.password) {
+      this.logger.error(`❌ CRITICAL: User or password not found after update!`);
+      throw new BadRequestException('Failed to update password');
+    }
+    
+    this.logger.log(`🔐 Fetched user after update: ${updatedUser.email}`);
+    this.logger.log(`🔐 Stored hash length: ${updatedUser.password.length}`);
+    this.logger.log(`🔐 Hash starts with: ${updatedUser.password.substring(0, 10)}...`);
+    
+    // Verify the password was saved correctly by comparing
+    const verifyPassword = await bcrypt.compare(trimmedPassword, updatedUser.password);
+    this.logger.log(`🔐 Password verification after save: ${verifyPassword ? '✅ SUCCESS' : '❌ FAILED'}`);
+    
+    if (!verifyPassword) {
+      this.logger.error(`❌ CRITICAL: Password verification failed immediately after saving!`);
+      this.logger.error(`   Input password length: ${trimmedPassword.length}`);
+      this.logger.error(`   Stored hash length: ${updatedUser.password.length}`);
+      this.logger.error(`   This indicates a serious issue with password storage.`);
+      throw new BadRequestException('Password was not saved correctly');
+    }
+    
+    this.logger.log(`✅ Password reset successful for user: ${updatedUser.email}`);
 
     // Mark OTP as used
     await this.prisma.oTP.update({
@@ -902,6 +992,53 @@ export class AuthService {
     }
   }
 
+  async verifyOtp(
+    verifyOtpDto: VerifyOtpDto,
+  ): Promise<{ success: boolean; message: string; verified: boolean }> {
+    try {
+      // Find user by email
+      const user = await this.prisma.user.findUnique({
+        where: { email: verifyOtpDto.email },
+      });
+
+      if (!user) {
+        throw new BadRequestException('Invalid email address');
+      }
+
+      // Find valid OTP for password reset
+      const otp = await this.prisma.oTP.findFirst({
+        where: {
+          userId: user.id,
+          code: verifyOtpDto.otp,
+          type: OTPType.PASSWORD_RESET,
+          used: false,
+          expiresAt: {
+            gt: new Date(),
+          },
+        },
+      });
+
+      if (!otp) {
+        throw new BadRequestException('Invalid or expired OTP code');
+      }
+
+      // OTP is valid - return success
+      // We don't mark it as used here because the user still needs to reset the password
+      // The OTP will be marked as used in resetPassword method
+
+      return {
+        success: true,
+        verified: true,
+        message: 'OTP verified successfully. You can now reset your password.',
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to verify OTP');
+    }
+  }
+
   async verifyPhone(
     verifyPhoneDto: VerifyPhoneDto,
   ): Promise<{ success: boolean; message: string }> {
@@ -999,26 +1136,31 @@ export class AuthService {
         },
       });
 
-      // Generate new OTP
-      const newOtpCode = uuidv4();
+      // Generate OTP code based on type
       const expiresAt = new Date();
-
-      // Set expiry based on OTP type
-      if (resendOtpDto.type === OTPType.EMAIL_VERIFICATION) {
-        expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours for email
-      } else if (resendOtpDto.type === OTPType.PHONE_VERIFICATION) {
-        expiresAt.setMinutes(expiresAt.getMinutes() + 10); // 10 minutes for phone
-      } else if (resendOtpDto.type === OTPType.PASSWORD_RESET) {
-        expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour for password reset
+      let otpCode: string;
+      
+      if (resendOtpDto.type === OTPType.PASSWORD_RESET) {
+        // Generate 6-digit OTP for password reset
+        otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        expiresAt.setMinutes(expiresAt.getMinutes() + 5); // 5 minutes for password reset
       } else {
-        expiresAt.setMinutes(expiresAt.getMinutes() + 5); // 5 minutes for 2FA
+        // Use UUID for other types (EMAIL_VERIFICATION, PHONE_VERIFICATION, etc.)
+        otpCode = uuidv4();
+        if (resendOtpDto.type === OTPType.EMAIL_VERIFICATION) {
+          expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours for email
+        } else if (resendOtpDto.type === OTPType.PHONE_VERIFICATION) {
+          expiresAt.setMinutes(expiresAt.getMinutes() + 10); // 10 minutes for phone
+        } else {
+          expiresAt.setMinutes(expiresAt.getMinutes() + 5); // 5 minutes for 2FA
+        }
       }
 
-      // Create new OTP
+      // Create new OTP with the appropriate code type
       await this.prisma.oTP.create({
         data: {
           userId: user.id,
-          code: newOtpCode,
+          code: otpCode, // Use the generated code (6-digit for PASSWORD_RESET, UUID for others)
           type: resendOtpDto.type,
           expiresAt,
         },
@@ -1036,8 +1178,23 @@ export class AuthService {
         },
       });
 
-      // TODO: Send OTP via email/SMS based on type
-      // In production, you would send the OTP via the appropriate channel
+      // Send OTP via email/SMS based on type
+      if (resendOtpDto.type === OTPType.PASSWORD_RESET) {
+        // Send password reset OTP email
+        await this.emailService.sendPasswordResetEmail(
+          user.email,
+          otpCode,
+          expiresAt,
+        );
+      } else if (resendOtpDto.type === OTPType.EMAIL_VERIFICATION) {
+        // Send email verification OTP
+        await this.emailService.sendVerificationEmail(
+          user.email,
+          otpCode,
+          expiresAt,
+        );
+      }
+      // TODO: Add SMS sending for PHONE_VERIFICATION
 
       return {
         success: true,
@@ -1408,6 +1565,227 @@ export class AuthService {
         throw error;
       }
       throw new BadRequestException('Failed to generate backup codes');
+    }
+  }
+
+  async googleAuth(googleAuthDto: GoogleAuthDto): Promise<LoginResponseDto> {
+    try {
+      this.logger.log(`🔐 Google OAuth attempt for email: ${googleAuthDto.email}`);
+
+      // Check if user already exists
+      let user = await this.prisma.user.findUnique({
+        where: { email: googleAuthDto.email },
+        include: {
+          candidate: true,
+          admin: true,
+          superAdmin: true,
+          company: true,
+        },
+      });
+
+      // Split name into first and last name
+      const nameParts = googleAuthDto.name.trim().split(' ');
+      const firstName = nameParts[0] || googleAuthDto.name;
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      if (!user) {
+        // User doesn't exist - create new user and candidate profile
+        this.logger.log(`📝 Creating new user for Google OAuth: ${googleAuthDto.email}`);
+
+        // Generate a random password (won't be used for Google OAuth users, but required by schema)
+        const randomPassword = await bcrypt.hash(uuidv4(), 10);
+
+        const result = await this.prisma.$transaction(async (prisma) => {
+          // Create user
+          const newUser = await prisma.user.create({
+            data: {
+              email: googleAuthDto.email,
+              password: randomPassword, // Random password since Google OAuth users don't need it
+              role: UserRole.CANDIDATE,
+              status: UserStatus.ACTIVE, // Auto-activate Google OAuth users
+              emailVerified: true, // Google emails are verified
+              phoneVerified: false,
+              profileCompleted: false,
+              twoFactorEnabled: false,
+            },
+          });
+
+          // Create candidate profile
+          const candidate = await prisma.candidate.create({
+            data: {
+              userId: newUser.id,
+              firstName: firstName,
+              lastName: lastName,
+              profilePicture: googleAuthDto.picture || null,
+              isAvailable: true,
+            },
+          });
+
+          // Store Google ID in user settings for future reference
+          await prisma.userSetting.create({
+            data: {
+              userId: newUser.id,
+              key: 'googleId',
+              value: googleAuthDto.googleId,
+              category: 'oauth',
+            },
+          });
+
+          return { user: newUser, candidate };
+        });
+
+        user = await this.prisma.user.findUnique({
+          where: { id: result.user.id },
+          include: {
+            candidate: true,
+            admin: true,
+            superAdmin: true,
+            company: true,
+          },
+        });
+
+        if (!user) {
+          throw new BadRequestException('Failed to create user');
+        }
+
+        // Log activity
+        await this.prisma.activityLog.create({
+          data: {
+            userId: user.id,
+            action: 'CREATE',
+            level: 'INFO',
+            description: 'User registered via Google OAuth',
+            entity: 'User',
+            entityId: user.id,
+          },
+        });
+      } else {
+        // User exists - update Google ID if not already set
+        this.logger.log(`✅ User exists, logging in via Google OAuth: ${googleAuthDto.email}`);
+
+        // Check if Google ID is already stored
+        const existingGoogleId = await this.prisma.userSetting.findUnique({
+          where: {
+            userId_key: {
+              userId: user.id,
+              key: 'googleId',
+            },
+          },
+        });
+
+        if (!existingGoogleId) {
+          // Store Google ID
+          await this.prisma.userSetting.create({
+            data: {
+              userId: user.id,
+              key: 'googleId',
+              value: googleAuthDto.googleId,
+              category: 'oauth',
+            },
+          });
+        }
+
+        // Update profile picture if provided and candidate exists
+        if (googleAuthDto.picture && user.candidate) {
+          await this.prisma.candidate.update({
+            where: { id: user.candidate.id },
+            data: { profilePicture: googleAuthDto.picture },
+          });
+        }
+
+        // Check account status
+        if (user.status === UserStatus.SUSPENDED) {
+          throw new UnauthorizedException('Account is suspended');
+        }
+
+        if (user.status === UserStatus.INACTIVE) {
+          // Auto-activate inactive accounts on Google OAuth login
+          await this.prisma.user.update({
+            where: { id: user.id },
+            data: { status: UserStatus.ACTIVE },
+          });
+          user.status = UserStatus.ACTIVE;
+        }
+      }
+
+      // Ensure user is set before proceeding
+      if (!user) {
+        throw new BadRequestException('User not found after authentication');
+      }
+
+      // Update last login time
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      });
+
+      // Create login session
+      const sessionToken = uuidv4();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
+
+      await this.prisma.loginSession.create({
+        data: {
+          userId: user.id,
+          sessionToken,
+          expiresAt,
+          isActive: true,
+        },
+      });
+
+      // Generate tokens
+      const payload = {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+      };
+
+      const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+      const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+      // Log activity
+      await this.prisma.activityLog.create({
+        data: {
+          userId: user.id,
+          action: 'LOGIN',
+          level: 'INFO',
+          description: 'User logged in via Google OAuth',
+          entity: 'User',
+          entityId: user.id,
+        },
+      });
+
+      const authResponse: AuthResponseDto = {
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          status: user.status,
+          emailVerified: user.emailVerified,
+          phoneVerified: user.phoneVerified,
+          profileCompleted: user.profileCompleted,
+          twoFactorEnabled: user.twoFactorEnabled,
+          lastLoginAt: user.lastLoginAt,
+          createdAt: user.createdAt,
+        },
+      };
+
+      return {
+        success: true,
+        message: 'Google authentication successful',
+        data: authResponse,
+      };
+    } catch (error) {
+      this.logger.error(`❌ Google OAuth error: ${error.message}`, error.stack);
+      
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      
+      throw new BadRequestException('Failed to authenticate with Google');
     }
   }
 }

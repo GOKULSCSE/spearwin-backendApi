@@ -45,7 +45,7 @@ export class ForgotPasswordResponseDto {
   message: string;
   data?: {
     email: string;
-    resetToken: string;
+    otpCode: string;
     expiresAt: Date;
   };
 }

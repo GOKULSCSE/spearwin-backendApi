@@ -17,11 +17,13 @@ import { CandidateRegisterSimpleDto } from './dto/candidate-register-simple.dto'
 import { CompanyRegisterDto } from './dto/company-register.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { VerifyPhoneDto } from './dto/verify-phone.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 import { Enable2FaDto } from './dto/2fa-enable.dto';
 import { Disable2FaDto } from './dto/2fa-disable.dto';
 import { Verify2FaDto } from './dto/2fa-verify.dto';
 import { GenerateBackupCodesDto } from './dto/backup-codes.dto';
+import { GoogleAuthDto } from './dto/google-auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GetCurrentUser } from './decorators/current-user.decorator';
 import type { CurrentUser } from './decorators/current-user.decorator';
@@ -91,6 +93,12 @@ export class AuthController {
     return this.authService.verifyPhone(verifyPhoneDto);
   }
 
+  @Post('verify-otp')
+  @HttpCode(HttpStatus.OK)
+  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
+    return this.authService.verifyOtp(verifyOtpDto);
+  }
+
   @Post('resend-otp')
   @HttpCode(HttpStatus.OK)
   async resendOtp(@Body() resendOtpDto: ResendOtpDto) {
@@ -131,5 +139,11 @@ export class AuthController {
     @Body() generateBackupCodesDto: GenerateBackupCodesDto,
   ) {
     return this.authService.generateBackupCodes(generateBackupCodesDto);
+  }
+
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  async googleAuth(@Body() googleAuthDto: GoogleAuthDto) {
+    return this.authService.googleAuth(googleAuthDto);
   }
 }

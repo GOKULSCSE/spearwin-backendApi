@@ -81,6 +81,7 @@ export class UserService {
               ...(candidateData.streetAddress && { address: candidateData.streetAddress, streetAddress: candidateData.streetAddress }),
               ...(candidateData.mobileNumber && { mobileNumber: candidateData.mobileNumber }),
               ...(candidateData.jobExperience && { jobExperience: candidateData.jobExperience }),
+              ...(candidateData.profilePicture && { profilePicture: candidateData.profilePicture }),
             };
 
             await tx.candidate.create({

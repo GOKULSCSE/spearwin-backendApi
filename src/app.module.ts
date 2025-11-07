@@ -17,6 +17,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { JobAttributeModule } from './job-attribute/job-attribute.module';
 import { TestimonialModule } from './testimonial/testimonial.module';
 import { FileUploadModule } from './image-upload/file-upload.module';
+import { EmailModule } from './email/email.module';
 import { CorsFriendlyThrottlerGuard } from './common/guards/cors-friendly-throttler.guard';
 import { ConfigModule } from '@nestjs/config';
 
@@ -36,6 +37,7 @@ import { ConfigModule } from '@nestjs/config';
     JobAttributeModule,
     TestimonialModule,
     FileUploadModule,
+    EmailModule,
     ThrottlerModule.forRoot([
       {
         name: 'short',
