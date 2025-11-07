@@ -13,71 +13,104 @@ export class EmailService {
 
   private initializeTransporter() {
     try {
+      // Support SMTP_*, MAIL_*, and EMAIL_* environment variables for maximum compatibility
+      const mailHost = process.env.SMTP_HOST || process.env.MAIL_HOST || process.env.EMAIL_HOST;
+      const mailUser = process.env.SMTP_USER || process.env.MAIL_USER || process.env.EMAIL_USER;
+      // Remove spaces from password (Gmail App Passwords are 16 chars without spaces)
+      const mailPass = (process.env.SMTP_PASS || process.env.MAIL_PASS || process.env.EMAIL_PASSWORD)?.replace(/\s/g, '');
+      const mailPort = process.env.SMTP_PORT || process.env.MAIL_PORT || process.env.EMAIL_PORT || '587';
+      const mailFrom = process.env.SMTP_FROM || process.env.MAIL_FROM || process.env.EMAIL_USER || mailUser;
+      const mailSecure = process.env.SMTP_SECURE || process.env.MAIL_SECURE || process.env.EMAIL_SECURE || 'false';
+
       // Check if email environment variables are set
-      if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      if (!mailHost || !mailUser || !mailPass) {
         this.logger.warn(
-          'Email environment variables not set. Email features will be disabled. ' +
-          'Set EMAIL_HOST, EMAIL_USER, and EMAIL_PASSWORD in your .env file.'
+          '⚠️ Email environment variables not set. Email features will be disabled. ' +
+          'Set SMTP_HOST, SMTP_USER, and SMTP_PASS (or MAIL_HOST, MAIL_USER, MAIL_PASS, or EMAIL_HOST, EMAIL_USER, EMAIL_PASSWORD) in your .env file.'
         );
+        this.logger.warn('Current env values:');
+        this.logger.warn(`  SMTP_HOST/MAIL_HOST: ${mailHost || 'NOT SET'}`);
+        this.logger.warn(`  SMTP_USER/MAIL_USER: ${mailUser || 'NOT SET'}`);
+        this.logger.warn(`  SMTP_PASS/MAIL_PASS: ${mailPass ? '***SET***' : 'NOT SET'}`);
         return;
       }
 
+      this.logger.log('📧 Initializing email transporter...');
+      this.logger.log(`  Host: ${mailHost}`);
+      this.logger.log(`  Port: ${mailPort}`);
+      this.logger.log(`  User: ${mailUser}`);
+      this.logger.log(`  Secure: ${mailSecure}`);
+
       this.transporter = nodemailer.createTransport({
-        host: process.env.EMAIL_HOST,
-        port: parseInt(process.env.EMAIL_PORT || '587'),
-        secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
+        host: mailHost,
+        port: parseInt(mailPort),
+        secure: mailSecure === 'true', // true for 465, false for other ports
         auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASSWORD,
+          user: mailUser,
+          pass: mailPass,
         },
       });
 
       // Verify connection configuration
       this.transporter.verify((error, success) => {
         if (error) {
-          this.logger.error('Email transporter verification failed:', error);
+          this.logger.error('❌ Email transporter verification failed:', error);
+          this.logger.error('Error details:', JSON.stringify(error, null, 2));
         } else {
-          this.logger.log('Email transporter is ready to send emails');
+          this.logger.log('✅ Email transporter is ready to send emails');
         }
       });
     } catch (error) {
-      this.logger.error('Failed to initialize email transporter:', error);
+      this.logger.error('❌ Failed to initialize email transporter:', error);
+      this.logger.error('Error details:', JSON.stringify(error, null, 2));
     }
   }
 
   async sendPasswordResetEmail(
     email: string,
-    resetToken: string,
+    otpCode: string,
     expiresAt: Date,
   ): Promise<boolean> {
     if (!this.transporter) {
-      this.logger.warn('Email transporter not initialized. Cannot send email.');
+      this.logger.error('❌ Email transporter not initialized. Cannot send email.');
+      this.logger.error('Please check your email configuration in .env file.');
       return false;
     }
 
     try {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
-      
       // Calculate expiry time in minutes
       const now = new Date();
       const expiryMinutes = Math.round((expiresAt.getTime() - now.getTime()) / 60000);
 
+      const mailFrom = process.env.SMTP_FROM || process.env.MAIL_FROM || process.env.EMAIL_USER || process.env.MAIL_USER;
+      const mailFromName = process.env.SMTP_FROM_NAME || process.env.MAIL_FROM_NAME || process.env.EMAIL_FROM_NAME || 'Spearwin';
+      
+      this.logger.log(`📧 Attempting to send password reset OTP to: ${email}`);
+      this.logger.log(`📧 OTP Code: ${otpCode}`);
+      this.logger.log(`📧 OTP Code Length: ${otpCode.length} (should be 6 for password reset)`);
+      this.logger.log(`📧 From: ${mailFromName} <${mailFrom}>`);
+      
+      // Generate HTML template with OTP code (not link)
+      const htmlTemplate = this.getPasswordResetOTPTemplate(otpCode, expiryMinutes);
+      this.logger.log(`📧 Using OTP template (not link template)`);
+      
       const mailOptions = {
-        from: `"${process.env.EMAIL_FROM_NAME || 'Spearwin'}" <${process.env.EMAIL_USER}>`,
+        from: `"${mailFromName}" <${mailFrom}>`,
         to: email,
-        subject: 'Reset Your Password - Spearwin',
-        html: this.getPasswordResetTemplate(resetLink, expiryMinutes),
+        subject: 'Password Reset OTP - Spearwin',
+        html: htmlTemplate,
         text: `
 Reset Your Password
 
 Hello,
 
-You requested to reset your password. Click the link below to reset it:
+You requested to reset your password. Use the OTP code below to verify your identity:
 
-${resetLink}
+Your OTP Code: ${otpCode}
 
-This link will expire in ${expiryMinutes} minutes.
+This code will expire in ${expiryMinutes} minutes.
+
+Please enter this code in the OTP verification form to reset your password.
 
 If you didn't request this, please ignore this email.
 
@@ -87,10 +120,21 @@ Spearwin Team
       };
 
       const info = await this.transporter.sendMail(mailOptions);
-      this.logger.log(`Password reset email sent successfully to ${email}. Message ID: ${info.messageId}`);
+      this.logger.log(`✅ Password reset OTP email sent successfully to ${email}`);
+      this.logger.log(`   Message ID: ${info.messageId}`);
+      this.logger.log(`   Response: ${info.response || 'N/A'}`);
       return true;
-    } catch (error) {
-      this.logger.error(`Failed to send password reset email to ${email}:`, error);
+    } catch (error: any) {
+      this.logger.error(`❌ Failed to send password reset OTP email to ${email}`);
+      this.logger.error(`   Error: ${error.message || error}`);
+      this.logger.error(`   Error code: ${error.code || 'N/A'}`);
+      this.logger.error(`   Error response: ${error.response || 'N/A'}`);
+      if (error.responseCode) {
+        this.logger.error(`   Response code: ${error.responseCode}`);
+      }
+      if (error.command) {
+        this.logger.error(`   Command: ${error.command}`);
+      }
       return false;
     }
   }
@@ -110,8 +154,11 @@ Spearwin Team
       const now = new Date();
       const expiryHours = Math.round((expiresAt.getTime() - now.getTime()) / 3600000);
 
+      const mailFrom = process.env.SMTP_FROM || process.env.MAIL_FROM || process.env.EMAIL_USER || process.env.MAIL_USER;
+      const mailFromName = process.env.SMTP_FROM_NAME || process.env.MAIL_FROM_NAME || process.env.EMAIL_FROM_NAME || 'Spearwin';
+      
       const mailOptions = {
-        from: `"${process.env.EMAIL_FROM_NAME || 'Spearwin'}" <${process.env.EMAIL_USER}>`,
+        from: `"${mailFromName}" <${mailFrom}>`,
         to: email,
         subject: 'Verify Your Email - Spearwin',
         html: this.getEmailVerificationTemplate(verificationCode, expiryHours),
@@ -149,8 +196,11 @@ Spearwin Team
     }
 
     try {
+      const mailFrom = process.env.SMTP_FROM || process.env.MAIL_FROM || process.env.EMAIL_USER || process.env.MAIL_USER;
+      const mailFromName = process.env.SMTP_FROM_NAME || process.env.MAIL_FROM_NAME || process.env.EMAIL_FROM_NAME || 'Spearwin';
+      
       const mailOptions = {
-        from: `"${process.env.EMAIL_FROM_NAME || 'Spearwin'}" <${process.env.EMAIL_USER}>`,
+        from: `"${mailFromName}" <${mailFrom}>`,
         to: email,
         subject: 'Welcome to Spearwin!',
         html: this.getWelcomeEmailTemplate(firstName),
@@ -175,6 +225,84 @@ Spearwin Team
       this.logger.error(`Failed to send welcome email to ${email}:`, error);
       return false;
     }
+  }
+
+  private getPasswordResetOTPTemplate(otpCode: string, expiryMinutes: number): string {
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Reset OTP</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #0A4CA6 0%, #013C7E 100%); padding: 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px;">Spearwin</h1>
+              <p style="color: #ffffff; margin: 10px 0 0 0; font-size: 14px;">Excellence Through People</p>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">Reset Your Password</h2>
+              <p style="color: #666666; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">
+                Hello,
+              </p>
+              <p style="color: #666666; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">
+                You requested to reset your password. Use the OTP code below to verify your identity:
+              </p>
+              
+              <!-- OTP Code -->
+              <div style="background-color: #f8f9fa; border: 2px dashed #0A4CA6; border-radius: 8px; padding: 30px; margin: 30px 0; text-align: center;">
+                <p style="color: #666666; margin: 0 0 10px 0; font-size: 14px; font-weight: bold;">Your OTP Code:</p>
+                <p style="color: #0A4CA6; font-size: 42px; font-weight: bold; letter-spacing: 12px; margin: 0; font-family: 'Courier New', monospace;">
+                  ${otpCode}
+                </p>
+              </div>
+              
+              <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
+                <p style="color: #856404; margin: 0; font-size: 14px;">
+                  <strong>⏰ This code will expire in ${expiryMinutes} minutes.</strong>
+                </p>
+              </div>
+              
+              <p style="color: #666666; line-height: 1.6; margin: 20px 0 0 0; font-size: 14px;">
+                Please enter this code in the OTP verification form to reset your password.
+              </p>
+              
+              <p style="color: #666666; line-height: 1.6; margin: 20px 0 0 0; font-size: 14px;">
+                If you didn't request a password reset, please ignore this email or contact our support team if you have concerns.
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e9ecef;">
+              <p style="color: #6c757d; margin: 0 0 10px 0; font-size: 14px;">
+                Best regards,<br>
+                <strong>Spearwin Team</strong>
+              </p>
+              <p style="color: #6c757d; margin: 0; font-size: 12px;">
+                This is an automated email, please do not reply.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim();
   }
 
   private getPasswordResetTemplate(resetLink: string, expiryMinutes: number): string {
@@ -413,6 +541,62 @@ Spearwin Team
 </body>
 </html>
     `.trim();
+  }
+
+  /**
+   * Generic method to send an email
+   * @param to - Recipient email address
+   * @param subject - Email subject
+   * @param text - Plain text content (optional)
+   * @param html - HTML content (optional)
+   * @returns Promise with success status and message ID
+   */
+  async sendMail(
+    to: string,
+    subject: string,
+    text?: string,
+    html?: string,
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    if (!this.transporter) {
+      const errorMsg = 'Email transporter not initialized. Cannot send email.';
+      this.logger.warn(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+
+    // Validate that at least text or html is provided
+    if (!text && !html) {
+      const errorMsg = 'Either text or html content must be provided';
+      this.logger.error(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+
+    try {
+      const mailFrom = process.env.SMTP_FROM || process.env.MAIL_FROM || process.env.EMAIL_USER || process.env.MAIL_USER;
+      const mailFromName = process.env.SMTP_FROM_NAME || process.env.MAIL_FROM_NAME || process.env.EMAIL_FROM_NAME || 'Spearwin';
+
+      const mailOptions = {
+        from: `"${mailFromName}" <${mailFrom}>`,
+        to,
+        subject,
+        ...(text && { text }),
+        ...(html && { html }),
+      };
+
+      const info = await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Email sent successfully to ${to}. Message ID: ${info.messageId}`);
+      
+      return {
+        success: true,
+        messageId: info.messageId,
+      };
+    } catch (error: any) {
+      const errorMsg = `Failed to send email to ${to}: ${error.message}`;
+      this.logger.error(errorMsg, error);
+      return {
+        success: false,
+        error: errorMsg,
+      };
+    }
   }
 }
 

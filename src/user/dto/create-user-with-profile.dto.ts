@@ -101,6 +101,10 @@ export class CandidateDataDto {
   @IsOptional()
   @IsString({ message: 'Job experience must be a string' })
   jobExperience?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Profile picture must be a string (URL)' })
+  profilePicture?: string;
 }
 
 export class CreateUserWithProfileDto extends CreateUserDto {

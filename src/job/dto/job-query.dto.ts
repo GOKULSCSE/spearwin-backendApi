@@ -65,7 +65,7 @@ export class JobQueryDto {
   @IsNumber()
   @Min(1)
   @Max(100)
-  limit?: number = 10;
+  limit?: number = 9;
 }
 
 export class JobSearchDto {
@@ -116,5 +116,5 @@ export class JobSearchDto {
   @IsNumber()
   @Min(1)
   @Max(100)
-  limit?: number = 10;
+  limit?: number = 9;
 }

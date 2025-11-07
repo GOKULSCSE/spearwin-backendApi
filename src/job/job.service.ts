@@ -40,26 +40,42 @@ export class JobService {
         skills,
         remote,
         page = 1,
-        limit = 20,
+        limit = 9,
         sortBy = 'createdAt',
         sortOrder = 'desc',
       } = query;
 
       const skip = (page - 1) * limit;
 
-      // Build where clause
+      // Build where clause - Include all active jobs (PUBLISHED status)
+      // Include all PUBLISHED jobs, exclude expired and closed/archived jobs
+      const baseConditions: Prisma.JobWhereInput[] = [
+        { status: 'PUBLISHED' },
+        // Exclude expired jobs if expiresAt is set and in the past
+        {
+          OR: [
+            { expiresAt: null },
+            { expiresAt: { gt: new Date() } },
+          ],
+        },
+      ];
+
       const where: Prisma.JobWhereInput = {
-        status: 'PUBLISHED',
-        publishedAt: { not: null },
+        AND: baseConditions,
       };
 
       // Add search filter
       if (search) {
-        where.OR = [
-          { title: { contains: search, mode: 'insensitive' } },
-          { description: { contains: search, mode: 'insensitive' } },
-          { requirements: { contains: search, mode: 'insensitive' } },
-          { responsibilities: { contains: search, mode: 'insensitive' } },
+        where.AND = [
+          ...baseConditions,
+          {
+            OR: [
+              { title: { contains: search, mode: 'insensitive' } },
+              { description: { contains: search, mode: 'insensitive' } },
+              { requirements: { contains: search, mode: 'insensitive' } },
+              { responsibilities: { contains: search, mode: 'insensitive' } },
+            ],
+          },
         ];
       }
 
@@ -85,19 +101,24 @@ export class JobService {
 
       // Add salary filters
       if (salary_min !== undefined || salary_max !== undefined) {
-        where.OR = [
-          ...(where.OR || []),
-          {
-            AND: [
-              salary_min !== undefined
-                ? { minSalary: { gte: salary_min } }
-                : {},
-              salary_max !== undefined
-                ? { maxSalary: { lte: salary_max } }
-                : {},
-            ],
-          },
-        ];
+        const salaryConditions: Prisma.JobWhereInput[] = [];
+        if (salary_min !== undefined) {
+          salaryConditions.push({ minSalary: { gte: salary_min } });
+        }
+        if (salary_max !== undefined) {
+          salaryConditions.push({ maxSalary: { lte: salary_max } });
+        }
+        if (salaryConditions.length > 0) {
+          // Ensure where.AND is always an array
+          const existingAnd = Array.isArray(where.AND) ? where.AND : (where.AND ? [where.AND] : []);
+          where.AND = [
+            ...baseConditions,
+            ...existingAnd,
+            {
+              AND: salaryConditions,
+            },
+          ];
+        }
       }
 
       // Add skills filter
@@ -125,6 +146,9 @@ export class JobService {
         orderBy.createdAt = sortOrderEnum;
       }
 
+      // Debug: Log the where clause
+      console.log('🔍 getPublishedJobs - Where clause:', JSON.stringify(where, null, 2));
+      
       // Get jobs with pagination
       const [jobs, total] = await Promise.all([
         this.db.job.findMany({
@@ -156,6 +180,11 @@ export class JobService {
         }),
         this.db.job.count({ where }),
       ]);
+
+      // Debug: Log results
+      console.log('📊 getPublishedJobs - Found jobs:', jobs.length);
+      console.log('📊 getPublishedJobs - Total count:', total);
+      console.log('📊 getPublishedJobs - Jobs:', jobs.map(j => ({ id: j.id, title: j.title, status: j.status, publishedAt: j.publishedAt })));
 
       const totalPages = Math.ceil(total / limit);
 
@@ -301,7 +330,7 @@ export class JobService {
         skills,
         remote,
         page = 1,
-        limit = 20,
+        limit = 9,
       } = searchQuery;
 
       const skip = (page - 1) * limit;

@@ -1,0 +1,7 @@
+{
+  "to": "recipient@example.com",
+  "subject": "Test Email from NestJS",
+  "text": "This is a plain text email sent from NestJS using Nodemailer.",
+  "html": "<!DOCTYPE html><html><head><title>Test Email</title></head><body><h1>Hello!</h1><p>This is an <strong>HTML email</strong> sent from <em>NestJS</em> using <code>Nodemailer</code>.</p><p>You can include:</p><ul><li>Rich formatting</li><li>Links: <a href='https://example.com'>Example</a></li><li>Images and more!</li></ul></body></html>"
+}
+
