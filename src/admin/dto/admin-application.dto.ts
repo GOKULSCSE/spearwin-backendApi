@@ -68,6 +68,7 @@ export class AdminApplicationResponseDto {
   jobId: string; // cuid string
   candidateId: string; // cuid string
   resumeId?: string; // cuid string
+  resumeFilePath?: string; // Direct file path from application
   coverLetter?: string;
   status: ApplicationStatus;
   appliedAt: Date;
@@ -214,9 +215,10 @@ export class AdminApplicationResponseDto {
     };
   };
     resume?: {
-      id: string; // cuid string
+      id: string | null; // cuid string (can be null if only resumeFilePath exists)
       title: string;
       fileName: string;
+      filePath?: string; // File path for accessing the resume
       uploadedAt: Date;
     };
 }

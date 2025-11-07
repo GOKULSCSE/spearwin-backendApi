@@ -5,13 +5,14 @@ import { Transporter } from 'nodemailer';
 @Injectable()
 export class EmailService {
   private transporter: Transporter;
+  private transporterReady: boolean = false;
   private readonly logger = new Logger(EmailService.name);
 
   constructor() {
     this.initializeTransporter();
   }
 
-  private initializeTransporter() {
+  private async initializeTransporter() {
     try {
       // Support SMTP_*, MAIL_*, and EMAIL_* environment variables for maximum compatibility
       const mailHost = process.env.SMTP_HOST || process.env.MAIL_HOST || process.env.EMAIL_HOST;
@@ -24,14 +25,15 @@ export class EmailService {
 
       // Check if email environment variables are set
       if (!mailHost || !mailUser || !mailPass) {
-        this.logger.warn(
+        this.logger.error(
           '⚠️ Email environment variables not set. Email features will be disabled. ' +
           'Set SMTP_HOST, SMTP_USER, and SMTP_PASS (or MAIL_HOST, MAIL_USER, MAIL_PASS, or EMAIL_HOST, EMAIL_USER, EMAIL_PASSWORD) in your .env file.'
         );
-        this.logger.warn('Current env values:');
-        this.logger.warn(`  SMTP_HOST/MAIL_HOST: ${mailHost || 'NOT SET'}`);
-        this.logger.warn(`  SMTP_USER/MAIL_USER: ${mailUser || 'NOT SET'}`);
-        this.logger.warn(`  SMTP_PASS/MAIL_PASS: ${mailPass ? '***SET***' : 'NOT SET'}`);
+        this.logger.error('Current env values:');
+        this.logger.error(`  SMTP_HOST/MAIL_HOST: ${mailHost || 'NOT SET'}`);
+        this.logger.error(`  SMTP_USER/MAIL_USER: ${mailUser || 'NOT SET'}`);
+        this.logger.error(`  SMTP_PASS/MAIL_PASS: ${mailPass ? '***SET***' : 'NOT SET'}`);
+        this.transporterReady = false;
         return;
       }
 
@@ -51,19 +53,36 @@ export class EmailService {
         },
       });
 
-      // Verify connection configuration
-      this.transporter.verify((error, success) => {
-        if (error) {
-          this.logger.error('❌ Email transporter verification failed:', error);
-          this.logger.error('Error details:', JSON.stringify(error, null, 2));
-        } else {
-          this.logger.log('✅ Email transporter is ready to send emails');
+      // Verify connection configuration (await the promise)
+      try {
+        await this.transporter.verify();
+        this.logger.log('✅ Email transporter is ready to send emails');
+        this.transporterReady = true;
+      } catch (verifyError: any) {
+        this.logger.error('❌ Email transporter verification failed:');
+        this.logger.error(`   Error: ${verifyError.message || verifyError}`);
+        this.logger.error(`   Code: ${verifyError.code || 'N/A'}`);
+        this.logger.error(`   Command: ${verifyError.command || 'N/A'}`);
+        if (verifyError.response) {
+          this.logger.error(`   Response: ${verifyError.response}`);
         }
-      });
-    } catch (error) {
-      this.logger.error('❌ Failed to initialize email transporter:', error);
-      this.logger.error('Error details:', JSON.stringify(error, null, 2));
+        this.transporterReady = false;
+        // Don't set transporter to null, but mark as not ready
+        // This way we can still attempt to send and get better error messages
+      }
+    } catch (error: any) {
+      this.logger.error('❌ Failed to initialize email transporter:');
+      this.logger.error(`   Error: ${error.message || error}`);
+      this.logger.error(`   Stack: ${error.stack || 'N/A'}`);
+      this.transporterReady = false;
     }
+  }
+
+  /**
+   * Check if email transporter is ready to send emails
+   */
+  isTransporterReady(): boolean {
+    return this.transporterReady && !!this.transporter;
   }
 
   async sendPasswordResetEmail(
@@ -71,10 +90,18 @@ export class EmailService {
     otpCode: string,
     expiresAt: Date,
   ): Promise<boolean> {
+    // Check if transporter exists
     if (!this.transporter) {
       this.logger.error('❌ Email transporter not initialized. Cannot send email.');
       this.logger.error('Please check your email configuration in .env file.');
+      this.logger.error('Required variables: SMTP_HOST (or MAIL_HOST), SMTP_USER (or MAIL_USER), SMTP_PASS (or MAIL_PASS)');
       return false;
+    }
+
+    // Check if transporter is ready (verified)
+    if (!this.transporterReady) {
+      this.logger.warn('⚠️ Email transporter not verified. Attempting to send anyway...');
+      this.logger.warn('This may fail if SMTP credentials are incorrect.');
     }
 
     try {
@@ -89,10 +116,10 @@ export class EmailService {
       this.logger.log(`📧 OTP Code: ${otpCode}`);
       this.logger.log(`📧 OTP Code Length: ${otpCode.length} (should be 6 for password reset)`);
       this.logger.log(`📧 From: ${mailFromName} <${mailFrom}>`);
+      this.logger.log(`📧 Expires in: ${expiryMinutes} minutes`);
       
       // Generate HTML template with OTP code (not link)
       const htmlTemplate = this.getPasswordResetOTPTemplate(otpCode, expiryMinutes);
-      this.logger.log(`📧 Using OTP template (not link template)`);
       
       const mailOptions = {
         from: `"${mailFromName}" <${mailFrom}>`,
@@ -119,22 +146,43 @@ Spearwin Team
         `.trim(),
       };
 
+      this.logger.log(`📧 Sending email via SMTP...`);
       const info = await this.transporter.sendMail(mailOptions);
       this.logger.log(`✅ Password reset OTP email sent successfully to ${email}`);
       this.logger.log(`   Message ID: ${info.messageId}`);
       this.logger.log(`   Response: ${info.response || 'N/A'}`);
+      this.logger.log(`   Accepted: ${info.accepted?.join(', ') || 'N/A'}`);
+      if (info.rejected && info.rejected.length > 0) {
+        this.logger.warn(`   Rejected: ${info.rejected.join(', ')}`);
+      }
       return true;
     } catch (error: any) {
       this.logger.error(`❌ Failed to send password reset OTP email to ${email}`);
-      this.logger.error(`   Error: ${error.message || error}`);
-      this.logger.error(`   Error code: ${error.code || 'N/A'}`);
-      this.logger.error(`   Error response: ${error.response || 'N/A'}`);
+      this.logger.error(`   Error Type: ${error.constructor?.name || 'Unknown'}`);
+      this.logger.error(`   Error Message: ${error.message || error}`);
+      this.logger.error(`   Error Code: ${error.code || 'N/A'}`);
+      if (error.response) {
+        this.logger.error(`   SMTP Response: ${error.response}`);
+      }
       if (error.responseCode) {
-        this.logger.error(`   Response code: ${error.responseCode}`);
+        this.logger.error(`   Response Code: ${error.responseCode}`);
       }
       if (error.command) {
         this.logger.error(`   Command: ${error.command}`);
       }
+      if (error.stack) {
+        this.logger.error(`   Stack: ${error.stack}`);
+      }
+      
+      // Common error messages with solutions
+      if (error.code === 'EAUTH') {
+        this.logger.error('   💡 Solution: Check your SMTP_USER and SMTP_PASS credentials');
+      } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
+        this.logger.error('   💡 Solution: Check your SMTP_HOST and SMTP_PORT settings, and network connectivity');
+      } else if (error.code === 'EENVELOPE') {
+        this.logger.error('   💡 Solution: Check the recipient email address format');
+      }
+      
       return false;
     }
   }

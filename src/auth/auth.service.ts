@@ -345,6 +345,17 @@ export class AuthService {
       },
     });
 
+    // Check if email transporter is ready before attempting to send
+    const isTransporterReady = this.emailService.isTransporterReady();
+    if (!isTransporterReady) {
+      this.logger.warn(
+        `⚠️ Email transporter is not ready. Attempting to send password reset email anyway...`,
+      );
+      this.logger.warn(
+        `   Check backend logs for SMTP configuration errors.`,
+      );
+    }
+
     // Send password reset email with OTP code
     const emailSent = await this.emailService.sendPasswordResetEmail(
       user.email,
@@ -352,23 +363,44 @@ export class AuthService {
       expiresAt,
     );
 
-    // Log email sending result
+    // Log email sending result with detailed information
     if (!emailSent) {
       this.logger.error(
-        `Failed to send password reset email to ${user.email}. Email transporter may not be configured.`,
+        `❌ Failed to send password reset email to ${user.email}`,
+      );
+      this.logger.error(
+        `   Possible causes:`,
+      );
+      this.logger.error(
+        `   1. SMTP configuration missing or incorrect (check .env file)`,
+      );
+      this.logger.error(
+        `   2. SMTP credentials invalid (wrong username/password)`,
+      );
+      this.logger.error(
+        `   3. Network connectivity issues`,
+      );
+      this.logger.error(
+        `   4. SMTP server blocking the connection`,
+      );
+      this.logger.error(
+        `   Check the email service logs above for detailed error information.`,
       );
       // Still return success to user for security (don't reveal if email was sent)
       // But log the error for debugging
     } else {
       this.logger.log(
-        `Password reset email sent successfully to ${user.email}`,
+        `✅ Password reset email sent successfully to ${user.email}`,
+      );
+      this.logger.log(
+        `   OTP Code: ${otpCode} (expires in 5 minutes)`,
       );
     }
 
     return {
       success: true,
       message:
-        'If an account with that email exists, a password reset link has been sent.',
+        'If an account with that email exists, a password reset OTP has been sent.',
       data: {
         email: forgotPasswordDto.email,
         otpCode: otpCode,
