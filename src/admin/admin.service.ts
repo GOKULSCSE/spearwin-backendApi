@@ -2575,6 +2575,7 @@ export class AdminService {
           jobId: app.jobId, // Keep as string (cuid)
           candidateId: app.candidateId, // Keep as string (cuid)
           resumeId: app.resumeId || undefined,
+          resumeFilePath: app.resumeFilePath || undefined,
           coverLetter: app.coverLetter || undefined,
           status: app.status,
           appliedAt: app.appliedAt,
@@ -2735,7 +2736,16 @@ export class AdminService {
                 filePath: app.resume.filePath || undefined,
                 uploadedAt: app.resume.uploadedAt,
               }
-            : undefined,
+            : app.resumeFilePath
+              ? {
+                  // If resume object doesn't exist but resumeFilePath does, create a minimal resume object
+                  id: null,
+                  title: 'Resume',
+                  fileName: app.resumeFilePath.split('/').pop() || 'resume.pdf',
+                  filePath: app.resumeFilePath,
+                  uploadedAt: app.appliedAt,
+                }
+              : undefined,
         })),
         total,
         page,
