@@ -1620,14 +1620,29 @@ export class AdminService {
 
       console.log('createJobDto', createJobDto);
 
-      // Get admin record for the current user
-      const admin = await this.prisma.admin.findUnique({
+      // Get or create admin record for the current user
+      let admin = await this.prisma.admin.findUnique({
         where: { userId: currentUser.id },
         select: { id: true, firstName: true, lastName: true }
       });
 
+      // If admin profile doesn't exist, create it automatically
       if (!admin) {
-        throw new BadRequestException('Admin profile not found for current user');
+        // Get user details to populate admin profile
+        const user = await this.prisma.user.findUnique({
+          where: { id: currentUser.id },
+          select: { email: true, phone: true }
+        });
+
+        admin = await this.prisma.admin.create({
+          data: {
+            userId: currentUser.id,
+            email: user?.email,
+            phone: user?.phone,
+            permissions: [],
+          },
+          select: { id: true, firstName: true, lastName: true }
+        });
       }
 
       // Validate company exists by ID
