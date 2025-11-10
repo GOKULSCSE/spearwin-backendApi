@@ -84,6 +84,7 @@ export class AdminApplicationResponseDto {
       company: {
         id: string; // cuid string
         name: string;
+        companyId: string; // Format: spear-{code}
         logo?: string;
       };
     location?: {

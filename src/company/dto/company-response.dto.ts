@@ -4,6 +4,7 @@ export class CompanyResponseDto {
   name: string;
   slug: string;
   uuid: string;
+  companyId: string; // Format: spear-{code}
   description?: string | null;
   website?: string | null;
   logo?: string | null;

@@ -21,12 +21,30 @@ export class JobResponseDto {
   createdAt: Date;
   updatedAt: Date;
   company: {
-    id: number;
+    id: string;
+    userId?: string | null;
     name: string;
+    slug: string;
+    uuid: string;
+    companyId: string; // Format: spear-{code}
+    description?: string | null;
+    website?: string | null;
     logo?: string | null;
     industry?: string | null;
-    size?: string | null;
-    website?: string | null;
+    foundedYear?: number | null;
+    employeeCount?: string | null;
+    headquarters?: string | null;
+    address?: string | null;
+    linkedinUrl?: string | null;
+    twitterUrl?: string | null;
+    facebookUrl?: string | null;
+    isVerified: boolean;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+    country?: string | null;
+    state?: string | null;
+    city?: string | null;
   };
   location?: {
     city: {

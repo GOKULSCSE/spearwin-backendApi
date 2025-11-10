@@ -17,11 +17,12 @@ export class CreateCompanyDto {
   @Transform(({ value }) => value?.trim())
   name: string;
 
+  @IsOptional()
   @IsString({ message: 'Slug must be a string' })
   @MinLength(2, { message: 'Slug must be at least 2 characters long' })
   @MaxLength(50, { message: 'Slug must not exceed 50 characters' })
   @Transform(({ value }) => value?.trim().toLowerCase().replace(/\s+/g, '-'))
-  slug: string;
+  slug?: string;
 
   @IsOptional()
   @IsString({ message: 'UUID must be a string' })

@@ -55,6 +55,10 @@ import {
   BulkDownloadResponseDto,
 } from './dto/admin-resume.dto';
 import {
+  AdvancedCVSearchQueryDto,
+  AdvancedCVSearchResponseDto,
+} from './dto/advanced-cv-search.dto';
+import {
   SendNotificationDto,
   BroadcastNotificationDto,
   CreateNotificationTemplateDto,
@@ -473,6 +477,34 @@ export class AdminController {
     return this.adminService.getAllResumes(query, user);
   }
 
+  // IMPORTANT: Specific routes must come BEFORE parameterized routes
+  // Using a more specific route pattern to avoid conflicts
+  @Get('resumes/search/advanced')
+  @UseGuards(JwtAuthGuard)
+  async advancedCVSearch(
+    @Query(ValidationPipe) query: AdvancedCVSearchQueryDto,
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<AdvancedCVSearchResponseDto> {
+    return this.adminService.advancedCVSearch(query, user);
+  }
+
+  @Get('resumes/stats')
+  @UseGuards(JwtAuthGuard)
+  async getResumeStats(
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<ResumeStatsResponseDto> {
+    return this.adminService.getResumeStats(user);
+  }
+
+  @Post('resumes/bulk-download')
+  @UseGuards(JwtAuthGuard)
+  async bulkDownloadResumes(
+    @Body(ValidationPipe) bulkDownloadDto: BulkDownloadDto,
+    @GetCurrentUser() user: CurrentUser,
+  ): Promise<BulkDownloadResponseDto> {
+    return this.adminService.bulkDownloadResumes(bulkDownloadDto, user);
+  }
+
   @Get('resumes/:id')
   @UseGuards(JwtAuthGuard)
   async getResumeById(
@@ -489,23 +521,6 @@ export class AdminController {
     @GetCurrentUser() user: CurrentUser,
   ) {
     return this.adminService.downloadResume(resumeId, user);
-  }
-
-  @Post('resumes/bulk-download')
-  @UseGuards(JwtAuthGuard)
-  async bulkDownloadResumes(
-    @Body(ValidationPipe) bulkDownloadDto: BulkDownloadDto,
-    @GetCurrentUser() user: CurrentUser,
-  ): Promise<BulkDownloadResponseDto> {
-    return this.adminService.bulkDownloadResumes(bulkDownloadDto, user);
-  }
-
-  @Get('resumes/stats')
-  @UseGuards(JwtAuthGuard)
-  async getResumeStats(
-    @GetCurrentUser() user: CurrentUser,
-  ): Promise<ResumeStatsResponseDto> {
-    return this.adminService.getResumeStats(user);
   }
 
   // =================================================================
