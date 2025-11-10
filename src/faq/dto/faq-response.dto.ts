@@ -6,7 +6,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export class FaqResponseDto {
   id: number;
@@ -23,6 +23,26 @@ export class FaqListQueryDto {
   search?: string;
 
   @IsOptional()
+  @Transform(({ value }) => {
+    console.log('[FAQ DTO Transform] Raw active value:', value, 'Type:', typeof value);
+    // Handle all possible string representations
+    if (value === 'true' || value === true || value === 1 || value === '1') {
+      console.log('[FAQ DTO Transform] Converting to boolean true');
+      return true;
+    }
+    if (value === 'false' || value === false || value === 0 || value === '0') {
+      console.log('[FAQ DTO Transform] Converting to boolean false');
+      return false;
+    }
+    // If value is already a boolean, return it
+    if (typeof value === 'boolean') {
+      console.log('[FAQ DTO Transform] Already boolean:', value);
+      return value;
+    }
+    // Return undefined if value is not provided
+    console.log('[FAQ DTO Transform] Returning undefined for:', value);
+    return undefined;
+  })
   @IsBoolean({ message: 'Active filter must be a boolean' })
   active?: boolean;
 

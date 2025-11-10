@@ -35,8 +35,10 @@ export class FaqController {
   // Public: Get all FAQs (no authentication required)
   @Get()
   async getAllFaqs(
-    @Query(ValidationPipe) query: FaqListQueryDto,
+    @Query(new ValidationPipe({ transform: true, transformOptions: { enableImplicitConversion: true } })) query: FaqListQueryDto,
   ): Promise<FaqListResponseDto> {
+    console.log('[FAQ Controller] Received query params:', JSON.stringify(query, null, 2));
+    console.log('[FAQ Controller] active value:', query.active, 'Type:', typeof query.active);
     return this.faqService.getAllFaqs(query);
   }
 
@@ -53,7 +55,7 @@ export class FaqController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async createFaq(
-    @Body(ValidationPipe) createFaqDto: CreateFaqDto,
+    @Body(new ValidationPipe({ transform: true })) createFaqDto: CreateFaqDto,
     @GetCurrentUser() user: CurrentUser,
   ): Promise<FaqResponseDto> {
     return this.faqService.createFaq(createFaqDto, user.id);
@@ -64,7 +66,7 @@ export class FaqController {
   @UseGuards(JwtAuthGuard)
   async updateFaq(
     @Param('id') faqId: string,
-    @Body(ValidationPipe) updateFaqDto: UpdateFaqDto,
+    @Body(new ValidationPipe({ transform: true })) updateFaqDto: UpdateFaqDto,
     @GetCurrentUser() user: CurrentUser,
   ): Promise<FaqResponseDto> {
     return this.faqService.updateFaq(faqId, updateFaqDto, user.id);

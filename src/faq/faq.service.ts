@@ -72,8 +72,15 @@ export class FaqService {
       }
 
       // Add active filter
-      if (query.active !== undefined) {
+      if (query.active !== undefined && query.active !== null) {
+        console.log('[FAQ Service] active filter value:', query.active, 'Type:', typeof query.active);
+        console.log('[FAQ Service] active === false (strict):', query.active === false);
+        console.log('[FAQ Service] active === true (strict):', query.active === true);
         where.active = query.active;
+        console.log('[FAQ Service] Final where.active value:', where.active);
+        console.log('[FAQ Service] Complete where clause:', JSON.stringify(where, null, 2));
+      } else {
+        console.log('[FAQ Service] active is undefined/null, not filtering by status');
       }
 
       // Build orderBy clause

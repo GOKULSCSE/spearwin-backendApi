@@ -14,12 +14,35 @@ export class TestimonialQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsBoolean({ message: 'Is active must be a boolean value' })
   @Transform(({ value }) => {
-    if (value === 'true') return true;
-    if (value === 'false') return false;
-    return value;
+    // If value is undefined or null, return undefined
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+    
+    // If value is already a boolean, return it
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    
+    // Handle string representations - be explicit about false
+    // Convert to string, lowercase, and trim to handle edge cases
+    const stringValue = String(value).toLowerCase().trim();
+    
+    // Explicitly check for false values first
+    if (stringValue === 'false' || stringValue === '0') {
+      return false;
+    }
+    
+    // Explicitly check for true values
+    if (stringValue === 'true' || stringValue === '1') {
+      return true;
+    }
+    
+    // If we can't parse it, return undefined
+    return undefined;
   })
+  @IsBoolean({ message: 'Is active must be a boolean value' })
   isActive?: boolean;
 
   @IsOptional()

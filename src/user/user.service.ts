@@ -65,7 +65,7 @@ export class UserService {
               ...(candidateData.gender && { gender: candidateData.gender }),
               ...(candidateData.maritalStatus && { maritalStatus: candidateData.maritalStatus }),
               ...(candidateData.bio && { bio: candidateData.bio }),
-              ...(candidateData.profileSummary && { bio: candidateData.profileSummary }),
+              ...(candidateData.profileSummary && { profileSummary: candidateData.profileSummary }),
               ...(candidateData.currentTitle && { currentTitle: candidateData.currentTitle }),
               ...(candidateData.currentCompany && { currentCompany: candidateData.currentCompany }),
               ...(candidateData.currentLocation && { currentLocation: candidateData.currentLocation }),
@@ -89,15 +89,55 @@ export class UserService {
             });
           }
 
-          return user;
+          // Return user with candidate data
+          return await tx.user.findUnique({
+            where: { id: user.id },
+            include: {
+              candidate: true,
+            },
+          });
         });
       }
 
       // Otherwise, just create the user (password already hashed)
       return await this.db.user.create({ data: userData });
     } catch (error) {
-      this.handleException(error);
-      throw error;
+      // Handle Prisma-specific errors
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          // Unique constraint violation
+          const field = error.meta?.target as string[];
+          const fieldName = field?.[0] || 'field';
+          throw new BadRequestException(
+            `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is already in use`,
+          );
+        }
+        if (error.code === 'P2003') {
+          // Foreign key constraint violation
+          throw new BadRequestException('Invalid reference: related record does not exist');
+        }
+        if (error.code === 'P2011') {
+          // Null constraint violation
+          throw new BadRequestException('Required field is missing');
+        }
+      }
+      
+      // Log the actual error for debugging
+      console.error('User creation error:', error);
+      
+      // Re-throw known exceptions
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException ||
+        error instanceof UnauthorizedException
+      ) {
+        throw error;
+      }
+      
+      // For unknown errors, provide a more helpful message
+      throw new InternalServerErrorException(
+        error?.message || 'Failed to create user. Please check your input data.',
+      );
     }
   }
 
@@ -956,7 +996,42 @@ export class UserService {
   }
 
   handleException(error) {
-    throw new InternalServerErrorException("Can't fetch user Details");
+    // Handle Prisma-specific errors
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        // Unique constraint violation
+        const field = error.meta?.target as string[];
+        const fieldName = field?.[0] || 'field';
+        throw new BadRequestException(
+          `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is already in use`,
+        );
+      }
+      if (error.code === 'P2003') {
+        // Foreign key constraint violation
+        throw new BadRequestException('Invalid reference: related record does not exist');
+      }
+      if (error.code === 'P2011') {
+        // Null constraint violation
+        throw new BadRequestException('Required field is missing');
+      }
+    }
+    
+    // Log the actual error for debugging
+    console.error('User service error:', error);
+    
+    // Re-throw known exceptions
+    if (
+      error instanceof BadRequestException ||
+      error instanceof NotFoundException ||
+      error instanceof UnauthorizedException
+    ) {
+      throw error;
+    }
+    
+    // For unknown errors, provide a more helpful message
+    throw new InternalServerErrorException(
+      error?.message || "Can't fetch user Details",
+    );
   }
 
   // =================================================================
