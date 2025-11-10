@@ -134,6 +134,7 @@ export class JobService {
               select: {
                 id: true,
                 name: true,
+                companyId: true,
                 logo: true,
                 industry: true,
                 employeeCount: true,
@@ -267,6 +268,7 @@ export class JobService {
               select: {
                 id: true,
                 name: true,
+                companyId: true,
                 logo: true,
                 industry: true,
                 employeeCount: true,
@@ -788,6 +790,7 @@ export class JobService {
                 select: {
                   id: true,
                   name: true,
+                  companyId: true,
                   logo: true,
                 },
               },
@@ -853,6 +856,7 @@ export class JobService {
           company: {
             id: application.job.company.id,
             name: application.job.company.name,
+            companyId: application.job.company.companyId || '',
             logo: application.job.company.logo || undefined,
           },
           location: application.job.city

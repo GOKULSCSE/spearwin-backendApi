@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
+import { PdfExtractorService } from './services/pdf-extractor.service';
 import { DatabaseModule } from '../database/database.module';
 import { FaqModule } from '../faq/faq.module';
 
@@ -15,7 +16,7 @@ import { FaqModule } from '../faq/faq.module';
     }),
   ],
   controllers: [AdminController],
-  providers: [AdminService],
-  exports: [AdminService],
+  providers: [AdminService, PdfExtractorService],
+  exports: [AdminService, PdfExtractorService],
 })
 export class AdminModule {}

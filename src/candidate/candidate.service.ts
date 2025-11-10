@@ -4,6 +4,7 @@ import {
   BadRequestException,
   InternalServerErrorException,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { DatabaseService } from '../database/database.service';
@@ -51,10 +52,16 @@ import {
 import { UpsertFullProfileDto } from './dto/upsert-full-profile.dto';
 import { CandidateCompleteProfileResponseDto } from './dto/candidate-complete-profile.dto';
 import { LogAction, LogLevel } from '@prisma/client';
+import { PdfExtractorService } from '../admin/services/pdf-extractor.service';
 
 @Injectable()
 export class CandidateService {
-  constructor(private readonly db: DatabaseService) {}
+  private readonly logger = new Logger(CandidateService.name);
+
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly pdfExtractor: PdfExtractorService,
+  ) {}
 
   // =================================================================
   // CANDIDATE PROFILE MANAGEMENT
@@ -1328,6 +1335,9 @@ export class CandidateService {
     body: UpsertFullProfileDto,
   ): Promise<CandidateProfileResponseDto> {
     try {
+      // Track resume IDs for PDF text extraction
+      let resumeIdsToExtract: string[] = [];
+      
       const resultCandidate = await this.db.$transaction(
         async (tx) => {
         console.log('Transaction started for user:', userId);
@@ -1718,6 +1728,12 @@ export class CandidateService {
                 });
 
                 resumeId = newResume.id;
+                
+                // Store resume ID for PDF extraction (after transaction)
+                if (!resumeIdsToExtract) {
+                  resumeIdsToExtract = [];
+                }
+                resumeIdsToExtract.push(resumeId);
               }
 
               // If set as default, unset all other resumes for this candidate
@@ -1813,6 +1829,16 @@ export class CandidateService {
         city: updatedCandidate.city as any,
       };
       console.log('Response ready');
+      
+      // Extract PDF text from newly created resumes (async, don't wait)
+      if (resumeIdsToExtract.length > 0) {
+        this.logger.log(`Extracting PDF text from ${resumeIdsToExtract.length} resume(s)`);
+        // Run extraction in background
+        this.extractResumeTextInBackground(resumeIdsToExtract).catch((error) => {
+          this.logger.error('Failed to extract PDF text:', error);
+        });
+      }
+      
       return response;
     } catch (error) {
       console.error('Error in upsertFullProfile:', error);
@@ -1829,6 +1855,69 @@ export class CandidateService {
       throw new InternalServerErrorException(
         `Failed to update candidate profile: ${error.message || 'Unknown error'}`
       );
+    }
+  }
+
+  /**
+   * Extract PDF text from resumes in the background
+   * @param resumeIds Array of resume IDs to extract text from
+   */
+  private async extractResumeTextInBackground(resumeIds: string[]): Promise<void> {
+    for (const resumeId of resumeIds) {
+      try {
+        // Get resume details
+        const resume = await this.db.resume.findUnique({
+          where: { id: resumeId },
+          select: {
+            id: true,
+            filePath: true,
+            fileName: true,
+            mimeType: true,
+          },
+        });
+
+        if (!resume) {
+          this.logger.warn(`Resume ${resumeId} not found for text extraction`);
+          continue;
+        }
+
+        // Only extract from PDF files
+        if (!resume.mimeType || !resume.mimeType.includes('pdf')) {
+          this.logger.log(`Skipping non-PDF file: ${resume.fileName} (${resume.mimeType})`);
+          continue;
+        }
+
+        this.logger.log(`Extracting text from PDF: ${resume.fileName}`);
+
+        // Build full URL for the PDF file
+        // Assuming DigitalOcean Spaces or similar
+        const fileUrl = resume.filePath.startsWith('http')
+          ? resume.filePath
+          : `https://spearwin.sfo3.digitaloceanspaces.com/${resume.filePath}`;
+
+        // Extract text from PDF
+        const extractedText = await this.pdfExtractor.extractTextFromPDF(fileUrl);
+
+        if (extractedText && extractedText.length > 0) {
+          // Clean the extracted text
+          const cleanedText = this.pdfExtractor.cleanExtractedText(extractedText);
+
+          // Update the resume with extracted text
+          await this.db.resume.update({
+            where: { id: resume.id },
+            data: { extractedText: cleanedText },
+          });
+
+          this.logger.log(
+            `Successfully extracted ${cleanedText.length} characters from ${resume.fileName}`,
+          );
+        } else {
+          this.logger.warn(`No text extracted from ${resume.fileName}`);
+        }
+      } catch (error) {
+        this.logger.error(`Failed to extract text from resume ${resumeId}:`, error);
+        // Continue with other resumes even if one fails
+      }
     }
   }
 
@@ -2856,6 +2945,7 @@ export class CandidateService {
               select: {
                 id: true,
                 name: true,
+                companyId: true,
                 logo: true,
                 industry: true,
                 employeeCount: true,
@@ -3166,6 +3256,7 @@ export class CandidateService {
                   select: {
                     id: true,
                     name: true,
+                    companyId: true,
                     logo: true,
                   },
                 },
@@ -3221,6 +3312,7 @@ export class CandidateService {
             company: {
               id: app.job.company.id,
               name: app.job.company.name,
+              companyId: app.job.company.companyId || '',
               logo: app.job.company.logo || undefined,
             },
             location: app.job.city
@@ -3367,6 +3459,7 @@ export class CandidateService {
                   select: {
                     id: true,
                     name: true,
+                    companyId: true,
                     logo: true,
                   },
                 },
@@ -3422,6 +3515,7 @@ export class CandidateService {
             company: {
               id: app.job.company.id,
               name: app.job.company.name,
+              companyId: app.job.company.companyId || '',
               logo: app.job.company.logo || undefined,
             },
             location: app.job.city
@@ -3534,6 +3628,7 @@ export class CandidateService {
                 select: {
                   id: true,
                   name: true,
+                  companyId: true,
                   logo: true,
                 },
               },
@@ -3585,6 +3680,7 @@ export class CandidateService {
           company: {
             id: application.job.company.id,
             name: application.job.company.name,
+            companyId: application.job.company.companyId || '',
             logo: application.job.company.logo || undefined,
           },
           location: application.job.city
@@ -3713,6 +3809,7 @@ export class CandidateService {
                 select: {
                   id: true,
                   name: true,
+                  companyId: true,
                   logo: true,
                 },
               },
@@ -3770,6 +3867,7 @@ export class CandidateService {
           company: {
             id: updatedApplication.job.company.id,
             name: updatedApplication.job.company.name,
+            companyId: updatedApplication.job.company.companyId || '',
             logo: updatedApplication.job.company.logo || undefined,
           },
           location: updatedApplication.job.city
@@ -4064,6 +4162,7 @@ export class CandidateService {
           company: {
             id: application.job.company.id,
             name: application.job.company.name,
+            companyId: application.job.company.companyId || '',
             logo: application.job.company.logo || undefined,
           },
           location: application.job.city && application.job.city.state ? {

@@ -43,7 +43,8 @@ export class EmailService {
       this.logger.log(`  User: ${mailUser}`);
       this.logger.log(`  Secure: ${mailSecure}`);
 
-      this.transporter = nodemailer.createTransport({
+      // Build transporter configuration
+      const transporterConfig: any = {
         host: mailHost,
         port: parseInt(mailPort),
         secure: mailSecure === 'true', // true for 465, false for other ports
@@ -51,7 +52,16 @@ export class EmailService {
           user: mailUser,
           pass: mailPass,
         },
-      });
+      };
+
+      // Add TLS configuration for Outlook/Office365
+      if (mailHost && (mailHost.includes('office365.com') || mailHost.includes('outlook.com'))) {
+        transporterConfig.tls = {
+          ciphers: 'SSLv3',
+        };
+      }
+
+      this.transporter = nodemailer.createTransport(transporterConfig);
 
       // Verify connection configuration (await the promise)
       try {

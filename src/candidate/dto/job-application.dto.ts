@@ -96,6 +96,7 @@ export class ApplicationResponseDto {
     company: {
       id: string;
       name: string;
+      companyId: string;
       logo?: string;
     };
     location?: {

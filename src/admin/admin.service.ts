@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   NotFoundException,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { DatabaseService } from '../database/database.service';
@@ -19,7 +20,7 @@ import {
   AdminProfileResponseDto,
 } from './dto/admin-profile.dto';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
-import { generateCompanyUuid } from '../company/utils/company-uuid.util';
+import { generateCompanyUuid, generateCompanyId } from '../company/utils/company-uuid.util';
 import { AdminListQueryDto, AdminListResponseDto } from './dto/admin-list.dto';
 import { UpdateAdminStatusDto } from './dto/update-admin-status.dto';
 import {
@@ -50,6 +51,10 @@ import {
   BulkDownloadResponseDto,
 } from './dto/admin-resume.dto';
 import {
+  AdvancedCVSearchQueryDto,
+  AdvancedCVSearchResponseDto,
+} from './dto/advanced-cv-search.dto';
+import {
   SendNotificationDto,
   BroadcastNotificationDto,
   CreateNotificationTemplateDto,
@@ -72,6 +77,8 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
+
   constructor(
     private prisma: DatabaseService,
     private readonly jwtService: JwtService,
@@ -345,10 +352,14 @@ export class AdminService {
 
       // Generate UUID for company
       const existingCompanies = await this.prisma.company.findMany({
-        select: { uuid: true },
+        select: { uuid: true, companyId: true },
       });
       const existingUuids = existingCompanies.map(c => c.uuid).filter((uuid): uuid is string => uuid !== null);
       const companyUuid = generateCompanyUuid(createCompanyDto.name, existingUuids);
+      
+      // Generate companyId
+      const existingCompanyIds = existingCompanies.map(c => c.companyId).filter((id): id is string => id !== null);
+      const companyId = generateCompanyId(createCompanyDto.name, existingCompanyIds);
 
       // Create user and company in a transaction
       const result = await this.prisma.$transaction(async (prisma) => {
@@ -373,6 +384,7 @@ export class AdminService {
             name: createCompanyDto.name,
             slug: slug,
             uuid: companyUuid,
+            companyId: companyId,
             description: createCompanyDto.description,
             website: createCompanyDto.website,
             industry: createCompanyDto.industry,
@@ -1560,6 +1572,9 @@ export class AdminService {
               select: {
                 id: true,
                 name: true,
+                slug: true,
+                uuid: true,
+                companyId: true,
                 logo: true,
                 industry: true,
                 employeeCount: true,
@@ -1716,6 +1731,7 @@ export class AdminService {
             select: {
               id: true,
               name: true,
+              companyId: true,
               logo: true,
               industry: true,
               employeeCount: true,
@@ -2417,7 +2433,7 @@ export class AdminService {
       requirements: job.requirements,
       responsibilities: job.responsibilities,
       benefits: job.benefits,
-      companyId: job.companyId,
+      companyId: job.company?.companyId || job.companyId,
       postedById: job.postedById,
       cityId: job.cityId,
       address: job.address,
@@ -2530,6 +2546,7 @@ export class AdminService {
                   select: {
                     id: true,
                     name: true,
+                    companyId: true,
                     logo: true,
                   },
                 },
@@ -2606,6 +2623,7 @@ export class AdminService {
             company: {
               id: app.job.company.id, // Keep as string (cuid)
               name: app.job.company.name,
+              companyId: app.job.company.companyId,
               logo: app.job.company.logo || undefined,
             },
             location: app.job.city
@@ -2788,6 +2806,7 @@ export class AdminService {
                 select: {
                   id: true,
                   name: true,
+                  companyId: true,
                   logo: true,
                 },
               },
@@ -2856,6 +2875,7 @@ export class AdminService {
           company: {
             id: application.job.company.id, // Keep as string (cuid)
             name: application.job.company.name,
+            companyId: application.job.company.companyId,
             logo: application.job.company.logo || undefined,
           },
           location: application.job.city
@@ -3034,6 +3054,7 @@ export class AdminService {
                 select: {
                   id: true,
                   name: true,
+                  companyId: true,
                   logo: true,
                 },
               },
@@ -3108,6 +3129,7 @@ export class AdminService {
           company: {
               id: updatedApplication.job.company.id, // Keep as string (cuid)
             name: updatedApplication.job.company.name,
+            companyId: updatedApplication.job.company.companyId,
             logo: updatedApplication.job.company.logo || undefined,
           },
           location: updatedApplication.job.city
@@ -3288,6 +3310,7 @@ export class AdminService {
                 select: {
                   id: true,
                   name: true,
+                  companyId: true,
                   logo: true,
                 },
               },
@@ -3362,6 +3385,7 @@ export class AdminService {
           company: {
               id: updatedApplication.job.company.id, // Keep as string (cuid)
             name: updatedApplication.job.company.name,
+            companyId: updatedApplication.job.company.companyId,
             logo: updatedApplication.job.company.logo || undefined,
           },
           location: updatedApplication.job.city
@@ -3813,6 +3837,7 @@ export class AdminService {
                 select: {
                   id: true,
                   name: true,
+                  companyId: true,
                 },
               },
               city: {
@@ -3853,7 +3878,7 @@ export class AdminService {
       const exportData = applications.map((app) => ({
         'Application ID': app.id,
         'Job Title': app.job.title,
-        Company: app.job.company.name,
+        Company: app.job.company.companyId || app.job.company.name,
         'Candidate Name': `${app.candidate.firstName} ${app.candidate.lastName}`,
         'Candidate Email': app.candidate.user.email,
         'Candidate Phone': app.candidate.user.phone || '',
@@ -4668,6 +4693,263 @@ export class AdminService {
         throw error;
       }
       throw new BadRequestException('Failed to create notification template');
+    }
+  }
+
+  // =================================================================
+  // ADVANCED CV SEARCH - Search within extracted resume text
+  // =================================================================
+
+  async advancedCVSearch(
+    query: AdvancedCVSearchQueryDto,
+    currentUser: any,
+  ): Promise<AdvancedCVSearchResponseDto> {
+    try {
+      // Verify admin permissions
+      if (
+        currentUser.role !== UserRole.ADMIN &&
+        currentUser.role !== UserRole.SUPER_ADMIN
+      ) {
+        throw new ForbiddenException('Only admins can perform advanced searches');
+      }
+
+      const page = parseInt(query.page || '1');
+      const limit = parseInt(query.limit || '10');
+      const skip = (page - 1) * limit;
+
+      // Build where clause for resume search
+      const resumeWhere: any = {
+        extractedText: { not: null }, // Only search resumes with extracted text
+      };
+
+      // Build where clause for candidate
+      const candidateWhere: any = {};
+      const orConditions: any[] = [];
+
+      // Search in extracted text if keywords provided
+      if (query.keywords) {
+        const keywords = query.keywords.trim();
+        resumeWhere.extractedText = {
+          contains: keywords,
+          mode: 'insensitive',
+        };
+      }
+
+      // Filter by candidate name
+      if (query.candidateName) {
+        orConditions.push(
+          { firstName: { contains: query.candidateName, mode: 'insensitive' } },
+          { lastName: { contains: query.candidateName, mode: 'insensitive' } },
+        );
+      }
+
+      // Filter by email
+      if (query.email) {
+        candidateWhere.email = {
+          contains: query.email,
+          mode: 'insensitive',
+        };
+      }
+
+      // Filter by skills
+      if (query.skills) {
+        candidateWhere.skills = {
+          some: {
+            skillName: {
+              contains: query.skills,
+              mode: 'insensitive',
+            },
+          },
+        };
+      }
+
+      // Filter by location
+      if (query.location) {
+        orConditions.push(
+          { currentLocation: { contains: query.location, mode: 'insensitive' } },
+          {
+            city: {
+              name: { contains: query.location, mode: 'insensitive' },
+            },
+          },
+        );
+      }
+
+      // Combine OR conditions if any
+      if (orConditions.length > 0) {
+        candidateWhere.OR = orConditions;
+      }
+
+      // Filter by company
+      if (query.company) {
+        candidateWhere.currentCompany = {
+          contains: query.company,
+          mode: 'insensitive',
+        };
+      }
+
+      // Filter by experience range
+      if (query.minExperience !== undefined || query.maxExperience !== undefined) {
+        candidateWhere.experienceYears = {};
+        if (query.minExperience !== undefined) {
+          candidateWhere.experienceYears.gte = query.minExperience;
+        }
+        if (query.maxExperience !== undefined) {
+          candidateWhere.experienceYears.lte = query.maxExperience;
+        }
+      }
+
+      // Combine resume and candidate filters
+      if (Object.keys(candidateWhere).length > 0) {
+        resumeWhere.candidate = candidateWhere;
+      }
+
+      // Build order by
+      const orderBy: any = {};
+      if (query.sortBy) {
+        // When using select, we can only sort by direct resume fields
+        // For candidate fields, we'll sort by uploadedAt and filter in memory if needed
+        if (query.sortBy.startsWith('candidate.')) {
+          // For candidate fields, default to uploadedAt
+          orderBy.uploadedAt = query.sortOrder || 'desc';
+        } else {
+          orderBy[query.sortBy] = query.sortOrder || 'desc';
+        }
+      } else {
+        orderBy.uploadedAt = 'desc';
+      }
+
+      // Execute search
+      const [resumes, total] = await Promise.all([
+        this.prisma.resume.findMany({
+          where: resumeWhere,
+          orderBy,
+          skip,
+          take: limit,
+          select: {
+            id: true,
+            candidateId: true,
+            fileName: true,
+            uploadedAt: true,
+            extractedText: true,
+            candidate: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                mobileNumber: true,
+                currentTitle: true,
+                experienceYears: true,
+                currentCompany: true,
+                currentLocation: true,
+                expectedSalary: true,
+                skills: {
+                  select: {
+                    skillName: true,
+                  },
+                },
+                city: {
+                  select: {
+                    id: true,
+                    name: true,
+                    state_name: true,
+                    country_name: true,
+                  },
+                },
+              },
+            },
+          },
+        }),
+        this.prisma.resume.count({ where: resumeWhere }),
+      ]);
+
+      // Transform results
+      const results = resumes.map((resume) => {
+        const candidate = resume.candidate;
+        const skills = candidate.skills.map((s) => s.skillName);
+
+        // Find matching snippets if keywords provided
+        let matchedSnippets: string[] = [];
+        if (query.keywords && resume.extractedText) {
+          const snippetLength = 150;
+          const keywords = query.keywords.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
+          
+          keywords.forEach((keyword: string) => {
+            const textLower = resume.extractedText!.toLowerCase();
+            let startIndex = 0;
+            while (startIndex < textLower.length && matchedSnippets.length < 5) {
+              const index = textLower.indexOf(keyword, startIndex);
+              if (index === -1) break;
+
+              const snippetStart = Math.max(0, index - snippetLength / 2);
+              const snippetEnd = Math.min(resume.extractedText!.length, index + keyword.length + snippetLength / 2);
+              let snippet = resume.extractedText!.substring(snippetStart, snippetEnd);
+
+              if (snippetStart > 0) snippet = '...' + snippet;
+              if (snippetEnd < resume.extractedText!.length) snippet = snippet + '...';
+
+              matchedSnippets.push(snippet);
+              startIndex = index + keyword.length;
+
+              if (matchedSnippets.filter((s) => s.toLowerCase().includes(keyword)).length >= 2) {
+                break;
+              }
+            }
+          });
+        }
+
+        return {
+          candidateId: candidate.id,
+          firstName: candidate.firstName,
+          lastName: candidate.lastName,
+          email: candidate.email || 'N/A',
+          phone: candidate.mobileNumber || undefined,
+          currentTitle: candidate.currentTitle || undefined,
+          experienceYears: candidate.experienceYears || undefined,
+          currentCompany: candidate.currentCompany || undefined,
+          currentLocation: candidate.currentLocation || candidate.city?.name || undefined,
+          expectedSalary: candidate.expectedSalary ? Number(candidate.expectedSalary) : undefined,
+          skills,
+          resumeId: resume.id,
+          resumeFileName: resume.fileName,
+          resumeUploadedAt: resume.uploadedAt,
+          matchedSnippets: matchedSnippets.length > 0 ? matchedSnippets : undefined,
+        };
+      });
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        results,
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+        searchQuery: {
+          keywords: query.keywords,
+          skills: query.skills,
+          location: query.location,
+          company: query.company,
+          minExperience: query.minExperience,
+          maxExperience: query.maxExperience,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      this.logger.error('Advanced CV search failed:', error);
+      this.logger.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        query,
+      });
+      throw new BadRequestException(
+        `Failed to perform advanced CV search: ${error.message || 'Unknown error'}`,
+      );
     }
   }
 }

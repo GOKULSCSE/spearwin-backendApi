@@ -18,7 +18,7 @@ import {
 } from './dto/company-response.dto';
 import { LogAction, LogLevel, UserRole } from '@prisma/client';
 import { Prisma } from '@prisma/client';
-import { generateCompanyUuid } from './utils/company-uuid.util';
+import { generateCompanyUuid, generateCompanyId } from './utils/company-uuid.util';
 
 @Injectable()
 export class CompanyService {
@@ -118,6 +118,7 @@ export class CompanyService {
           name: company.name,
           slug: company.slug,
           uuid: company.uuid,
+          companyId: company.companyId,
           description: company.description,
           website: company.website,
           logo: company.logo,
@@ -352,6 +353,7 @@ export class CompanyService {
         name: company.name,
         slug: company.slug,
         uuid: company.uuid,
+        companyId: company.companyId,
         description: company.description,
         website: company.website,
         logo: company.logo,
@@ -393,31 +395,109 @@ export class CompanyService {
     adminUserId: string,
   ): Promise<CompanyResponseDto> {
     try {
-      // Check if slug already exists
-      const existingCompany = await this.db.company.findUnique({
-        where: { slug: createDto.slug },
+      // Get all existing companies once to generate both UUID and companyId
+      // IMPORTANT: Order by createdAt desc to get the most recent companies first
+      const existingCompanies = await this.db.company.findMany({
+        select: { uuid: true, companyId: true },
+        orderBy: { createdAt: 'desc' },
       });
-
-      if (existingCompany) {
-        throw new BadRequestException('Company with this slug already exists');
-      }
-
+      
+      console.log('Total existing companies found:', existingCompanies.length);
+      console.log('Existing companies with IDs:', existingCompanies.filter(c => c.companyId).map(c => c.companyId));
+      
       // Generate UUID if not provided
       let uuid = createDto.uuid;
       if (!uuid) {
-        // Get all existing UUIDs to ensure uniqueness
-        const existingCompanies = await this.db.company.findMany({
-          select: { uuid: true },
-        });
         const existingUuids = existingCompanies.map(c => c.uuid).filter((uuid): uuid is string => uuid !== null);
         uuid = generateCompanyUuid(createDto.name, existingUuids);
       }
 
+      // Generate companyId (spear-{code})
+      // Filter out null/undefined and ensure we have valid IDs
+      const existingCompanyIds = existingCompanies
+        .map(c => c.companyId)
+        .filter((id): id is string => id !== null && id !== undefined && id.trim() !== '');
+      
+      console.log('Existing company IDs for generation:', existingCompanyIds);
+      
+      let companyId = generateCompanyId(createDto.name, existingCompanyIds);
+      
+      // Double-check that the generated companyId doesn't already exist (handles race conditions)
+      let attempts = 0;
+      while (attempts < 10) {
+        const existingCompanyWithId = await this.db.company.findUnique({
+          where: { companyId },
+        });
+        
+        if (!existingCompanyWithId) {
+          console.log(`Company ID ${companyId} is unique, proceeding with creation`);
+          break; // ID is unique, proceed
+        }
+        
+        // ID already exists, generate a new one
+        console.log(`Company ID ${companyId} already exists, regenerating... (attempt ${attempts + 1})`);
+        attempts++;
+        
+        // Fetch ALL companies again to get the latest state
+        const allCompanies = await this.db.company.findMany({
+          select: { companyId: true },
+          orderBy: { createdAt: 'desc' },
+        });
+        const allIds = allCompanies
+          .map(c => c.companyId)
+          .filter((id): id is string => id !== null && id !== undefined && id.trim() !== '');
+        
+        console.log(`All company IDs found:`, allIds);
+        companyId = generateCompanyId(createDto.name, allIds);
+        console.log(`Regenerated company ID: ${companyId}`);
+      }
+      
+      if (attempts >= 10) {
+        console.error('Failed to generate unique company ID after 10 attempts');
+        throw new InternalServerErrorException('Failed to generate unique company ID after multiple attempts');
+      }
+
+      // Auto-generate slug from UUID if not provided
+      let slug = createDto.slug;
+      if (!slug) {
+        slug = uuid; // Use UUID as slug
+      } else {
+        // Check if slug already exists
+        const existingCompany = await this.db.company.findUnique({
+          where: { slug },
+        });
+
+        if (existingCompany) {
+          throw new BadRequestException('Company with this slug already exists');
+        }
+      }
+
+      // Prepare company data, ensuring required fields are set
+      const companyData: any = {
+        name: createDto.name,
+        slug,
+        uuid,
+        companyId,
+        description: createDto.description,
+        website: createDto.website,
+        logo: createDto.logo,
+        industry: createDto.industry,
+        foundedYear: createDto.foundedYear,
+        employeeCount: createDto.employeeCount,
+        headquarters: createDto.headquarters,
+        address: createDto.address,
+        country: createDto.country,
+        state: createDto.state,
+        city: createDto.city,
+        linkedinUrl: createDto.linkedinUrl,
+        twitterUrl: createDto.twitterUrl,
+        facebookUrl: createDto.facebookUrl,
+        isVerified: createDto.isVerified ?? false,
+        isActive: createDto.isActive ?? true,
+      };
+
       const company = await this.db.company.create({
-        data: {
-          ...createDto,
-          uuid,
-        },
+        data: companyData,
         include: {
           user: {
             select: {
@@ -446,6 +526,7 @@ export class CompanyService {
         name: company.name,
         slug: company.slug,
         uuid: company.uuid,
+        companyId: company.companyId,
         description: company.description,
         website: company.website,
         logo: company.logo,
@@ -542,6 +623,7 @@ export class CompanyService {
         name: updatedCompany.name,
         slug: updatedCompany.slug,
         uuid: updatedCompany.uuid,
+        companyId: updatedCompany.companyId,
         description: updatedCompany.description,
         website: updatedCompany.website,
         logo: updatedCompany.logo,
@@ -961,6 +1043,14 @@ export class CompanyService {
   }
 
   private handleException(error: any): void {
-    throw new InternalServerErrorException("Can't process company request");
+    console.error('Company Service Error:', error);
+    console.error('Error message:', error?.message);
+    console.error('Error stack:', error?.stack);
+    if (error?.code) {
+      console.error('Error code:', error.code);
+    }
+    throw new InternalServerErrorException(
+      error?.message || "Can't process company request"
+    );
   }
 }

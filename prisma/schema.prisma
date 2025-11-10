@@ -236,6 +236,7 @@ model Company {
   name          String
   slug          String   @unique
   uuid          String   @unique
+  companyId     String   @unique // Format: spear-{code} (e.g., spear-msft-001)
   description   String?
   website       String?
   logo          String?
@@ -261,18 +262,19 @@ model Company {
 }
 
 model Resume {
-  id           String           @id @default(cuid())
-  candidateId  String
-  title        String
-  fileName     String
-  filePath     String
-  fileSize     Int
-  mimeType     String
-  isDefault    Boolean          @default(false)
-  uploadedAt   DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  applications JobApplication[]
-  candidate    Candidate        @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  id            String           @id @default(cuid())
+  candidateId   String
+  title         String
+  fileName      String
+  filePath      String
+  fileSize      Int
+  mimeType      String
+  isDefault     Boolean          @default(false)
+  extractedText String?          @db.Text // Stores extracted text content from PDF for search
+  uploadedAt    DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  applications  JobApplication[]
+  candidate     Candidate        @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 
   @@map("resumes")
 }
