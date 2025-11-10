@@ -43,6 +43,7 @@ export class TestimonialService {
         sortOrder = 'desc',
       } = query;
 
+      console.info('[Backend Service] isActive::::', isActive);
       const skip = (page - 1) * limit;
 
       // Build where clause
@@ -58,20 +59,42 @@ export class TestimonialService {
       }
 
       // Handle isActive filter - DTO should have already converted to boolean
+      console.log('[Backend Service] isActive filter - received value:', isActive, 'Type:', typeof isActive);
       if (isActive !== undefined && isActive !== null) {
+        let isActiveValue: boolean;
+        
         // Ensure it's a boolean (DTO Transform should handle this, but add safety check)
         if (typeof isActive === 'boolean') {
-          where.isActive = isActive;
+          isActiveValue = isActive;
+          console.log('[Backend Service] isActive is boolean:', isActiveValue);
         } else {
           // Fallback conversion if DTO didn't transform properly
           const stringValue = String(isActive).toLowerCase().trim();
-          if (stringValue === 'false' || stringValue === '0') {
-            where.isActive = false;
-          } else if (stringValue === 'true' || stringValue === '1') {
-            where.isActive = true;
+          console.log('[Backend Service] isActive is not boolean, converting from:', stringValue);
+          // Explicitly check for false FIRST (critical!)
+          if (stringValue === 'false' || stringValue === '0' || stringValue === 'no' || stringValue === 'off') {
+            isActiveValue = false;
+            console.log('[Backend Service] Converted to boolean false');
+          } else if (stringValue === 'true' || stringValue === '1' || stringValue === 'yes' || stringValue === 'on') {
+            isActiveValue = true;
+            console.log('[Backend Service] Converted to boolean true');
+          } else {
+            // If we can't parse it, skip the filter
+            console.log('[Backend Service] Cannot parse isActive value, skipping filter');
+            isActiveValue = undefined as any;
           }
         }
+        
+        // Only apply filter if we have a valid boolean value
+        if (typeof isActiveValue === 'boolean') {
+          where.isActive = isActiveValue;
+          console.log('[Backend Service] Applied isActive filter:', where.isActive);
+        }
+      } else {
+        console.log('[Backend Service] isActive is undefined/null, not applying filter');
       }
+      
+      console.log('[Backend Service] Final where clause:', JSON.stringify(where, null, 2));
 
       if (minRating !== undefined || maxRating !== undefined) {
         where.rating = {};

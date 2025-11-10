@@ -11,7 +11,9 @@ import {
   HttpStatus,
   UseGuards,
   ValidationPipe,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { FaqService } from './faq.service';
 import { CreateFaqDto } from './dto/create-faq.dto';
 import { UpdateFaqDto } from './dto/update-faq.dto';
@@ -35,8 +37,21 @@ export class FaqController {
   // Public: Get all FAQs (no authentication required)
   @Get()
   async getAllFaqs(
-    @Query(new ValidationPipe({ transform: true, transformOptions: { enableImplicitConversion: true } })) query: FaqListQueryDto,
+    @Req() req: Request,
+    @Query(new ValidationPipe({ transform: true, transformOptions: { enableImplicitConversion: false } })) query: FaqListQueryDto,
   ): Promise<FaqListResponseDto> {
+    // Fix: Get raw query parameter to handle "false" string correctly
+    const rawActive = req.query.active as string | undefined;
+    if (rawActive !== undefined) {
+      // Override the query.active with correct boolean conversion
+      if (rawActive === 'false' || rawActive === '0') {
+        query.active = false;
+      } else if (rawActive === 'true' || rawActive === '1') {
+        query.active = true;
+      }
+    }
+    
+    console.log('[FAQ Controller] Raw query active:', rawActive);
     console.log('[FAQ Controller] Received query params:', JSON.stringify(query, null, 2));
     console.log('[FAQ Controller] active value:', query.active, 'Type:', typeof query.active);
     return this.faqService.getAllFaqs(query);

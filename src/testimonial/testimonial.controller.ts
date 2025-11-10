@@ -11,7 +11,9 @@ import {
   UseGuards,
   ValidationPipe,
   ParseIntPipe,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { TestimonialService } from './testimonial.service';
 import { CreateTestimonialDto } from './dto/create-testimonial.dto';
 import { UpdateTestimonialDto } from './dto/update-testimonial.dto';
@@ -56,9 +58,27 @@ export class TestimonialController {
   @UseGuards(JwtAuthGuard)
   async findAll(
     @GetCurrentUser() user: CurrentUser,
-    @Query(new ValidationPipe({ transform: true, transformOptions: { enableImplicitConversion: true } })) query: TestimonialQueryDto,
+    @Req() req: Request,
+    @Query(new ValidationPipe({ transform: true, transformOptions: { enableImplicitConversion: false } })) query: TestimonialQueryDto,
   ): Promise<TestimonialListResponseDto> {
-    return this.testimonialService.findAll(query);
+    // Fix: Get raw query parameter to handle "false" string correctly
+    const rawIsActive = req.query.isActive as string | undefined;
+    if (rawIsActive !== undefined) {
+      // Override the query.isActive with correct boolean conversion
+      if (rawIsActive === 'false' || rawIsActive === '0') {
+        query.isActive = false;
+      } else if (rawIsActive === 'true' || rawIsActive === '1') {
+        query.isActive = true;
+      }
+    }
+    
+    console.log('[Backend Controller] Raw query isActive:', rawIsActive);
+    console.log('[Backend Controller] Received query params:', JSON.stringify(query, null, 2));
+    console.log('[Backend Controller] isActive value:', query.isActive, 'Type:', typeof query.isActive);
+    const result = await this.testimonialService.findAll(query);
+    console.log('[Backend Controller] Returning testimonials count:', result.testimonials.length);
+    console.log('[Backend Controller] Returning testimonials isActive values:', result.testimonials.map(t => ({ id: t.id, isActive: t.isActive })));
+    return result;
   }
 
   @Get(':id')

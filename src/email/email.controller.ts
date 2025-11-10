@@ -10,6 +10,7 @@ import { EmailService } from './email.service';
 import { SendMailDto } from './dto/send-mail.dto';
 import { SendMailResponseDto } from './dto/send-mail-response.dto';
 
+
 @Controller('mail')
 export class EmailController {
   constructor(private readonly emailService: EmailService) {}
