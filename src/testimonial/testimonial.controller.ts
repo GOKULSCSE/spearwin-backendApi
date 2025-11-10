@@ -47,7 +47,7 @@ export class TestimonialController {
   @UseGuards(JwtAuthGuard)
   async create(
     @GetCurrentUser() user: CurrentUser,
-    @Body(ValidationPipe) createTestimonialDto: CreateTestimonialDto,
+    @Body(new ValidationPipe({ transform: true })) createTestimonialDto: CreateTestimonialDto,
   ): Promise<TestimonialResponseDto> {
     return this.testimonialService.create(createTestimonialDto);
   }
@@ -56,7 +56,7 @@ export class TestimonialController {
   @UseGuards(JwtAuthGuard)
   async findAll(
     @GetCurrentUser() user: CurrentUser,
-    @Query(ValidationPipe) query: TestimonialQueryDto,
+    @Query(new ValidationPipe({ transform: true, transformOptions: { enableImplicitConversion: true } })) query: TestimonialQueryDto,
   ): Promise<TestimonialListResponseDto> {
     return this.testimonialService.findAll(query);
   }
@@ -75,7 +75,7 @@ export class TestimonialController {
   async update(
     @GetCurrentUser() user: CurrentUser,
     @Param('id', ParseIntPipe) id: number,
-    @Body(ValidationPipe) updateTestimonialDto: UpdateTestimonialDto,
+    @Body(new ValidationPipe({ transform: true })) updateTestimonialDto: UpdateTestimonialDto,
   ): Promise<TestimonialResponseDto> {
     return this.testimonialService.update(id, updateTestimonialDto);
   }
@@ -85,7 +85,7 @@ export class TestimonialController {
   async updatePartial(
     @GetCurrentUser() user: CurrentUser,
     @Param('id', ParseIntPipe) id: number,
-    @Body(ValidationPipe) updateTestimonialDto: UpdateTestimonialDto,
+    @Body(new ValidationPipe({ transform: true })) updateTestimonialDto: UpdateTestimonialDto,
   ): Promise<TestimonialResponseDto> {
     return this.testimonialService.update(id, updateTestimonialDto);
   }

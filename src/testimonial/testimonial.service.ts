@@ -57,8 +57,20 @@ export class TestimonialService {
         ];
       }
 
-      if (isActive !== undefined) {
-        where.isActive = isActive;
+      // Handle isActive filter - DTO should have already converted to boolean
+      if (isActive !== undefined && isActive !== null) {
+        // Ensure it's a boolean (DTO Transform should handle this, but add safety check)
+        if (typeof isActive === 'boolean') {
+          where.isActive = isActive;
+        } else {
+          // Fallback conversion if DTO didn't transform properly
+          const stringValue = String(isActive).toLowerCase().trim();
+          if (stringValue === 'false' || stringValue === '0') {
+            where.isActive = false;
+          } else if (stringValue === 'true' || stringValue === '1') {
+            where.isActive = true;
+          }
+        }
       }
 
       if (minRating !== undefined || maxRating !== undefined) {
