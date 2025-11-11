@@ -53,9 +53,16 @@ export class EmailService {
         host: mailHost,
         port: parseInt(mailPort),
         secure: mailSecure === 'true', // true for 465, false for other ports
+        service: "Outlook365",
         auth: {
+          type: "OAuth2",
           user: mailUser,
-          pass: mailPass,
+          // pass: mailPass,
+          clientId: process.env.SMTP_OAUTH2_CLIENT_ID || "",
+          clientSecret: process.env.SMTP_OAUTH2_CLIENT_SECRET || "",
+          refreshToken: process.env.SMTP_OAUTH2_REFRESH_TOKEN || "",
+          accessToken: process.env.SMTP_OAUTH2_ACCESS_TOKEN || "",
+
         },
       };
 
