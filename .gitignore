@@ -195,4 +195,4 @@ prisma/migrations/
 
 # Build outputs
 dist/
-build/
+build/.env
