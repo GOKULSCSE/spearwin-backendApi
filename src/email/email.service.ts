@@ -37,13 +37,18 @@ export class EmailService {
         return;
       }
 
+      // Detect email provider based on host
+      const isGmail = mailHost && (mailHost.includes('gmail.com') || mailHost.includes('google'));
+      const isOutlook = mailHost && (mailHost.includes('office365.com') || mailHost.includes('outlook.com'));
+      
       this.logger.log('📧 Initializing email transporter...');
+      this.logger.log(`  Provider: ${isGmail ? 'Gmail' : isOutlook ? 'Outlook/Office365' : 'Custom SMTP'}`);
       this.logger.log(`  Host: ${mailHost}`);
       this.logger.log(`  Port: ${mailPort}`);
       this.logger.log(`  User: ${mailUser}`);
       this.logger.log(`  Secure: ${mailSecure}`);
 
-      // Build transporter configuration
+      // Build base transporter configuration
       const transporterConfig: any = {
         host: mailHost,
         port: parseInt(mailPort),
@@ -54,11 +59,32 @@ export class EmailService {
         },
       };
 
-      // Add TLS configuration for Outlook/Office365
-      if (mailHost && (mailHost.includes('office365.com') || mailHost.includes('outlook.com'))) {
+      // Gmail-specific configuration
+      if (isGmail) {
+        this.logger.log('  🔧 Applying Gmail SMTP configuration...');
+        // Gmail works best with default settings, but ensure TLS
         transporterConfig.tls = {
-          ciphers: 'SSLv3',
+          rejectUnauthorized: true,
+          minVersion: 'TLSv1.2',
         };
+        // Gmail requires STARTTLS on port 587
+        if (parseInt(mailPort) === 587) {
+          transporterConfig.requireTLS = true;
+        }
+      }
+      
+      // Outlook/Office365-specific configuration
+      if (isOutlook) {
+        this.logger.log('  🔧 Applying Outlook/Office365 SMTP configuration...');
+        transporterConfig.tls = {
+          rejectUnauthorized: false, // Allow self-signed certificates if needed
+          minVersion: 'TLSv1.2',
+        };
+        // Use requireTLS for Office 365
+        transporterConfig.requireTLS = true;
+        // Office 365 may need specific connection pool settings
+        transporterConfig.pool = true;
+        transporterConfig.maxConnections = 1;
       }
 
       this.transporter = nodemailer.createTransport(transporterConfig);
@@ -76,6 +102,29 @@ export class EmailService {
         if (verifyError.response) {
           this.logger.error(`   Response: ${verifyError.response}`);
         }
+        
+        // Provide provider-specific error guidance
+        if (isOutlook && verifyError.response && verifyError.response.includes('SmtpClientAuthentication is disabled')) {
+          this.logger.error('');
+          this.logger.error('   ⚠️  SMTP AUTH is disabled for your Office 365 tenant.');
+          this.logger.error('   📋 To fix this, you need to enable SMTP AUTH in Office 365 Admin Center:');
+          this.logger.error('      1. Go to https://admin.microsoft.com');
+          this.logger.error('      2. Navigate to Settings → Org settings → Mail');
+          this.logger.error('      3. Find "SMTP AUTH" and enable it for your tenant');
+          this.logger.error('      4. Or use PowerShell: Set-TransportConfig -SmtpClientAuthenticationDisabled $false');
+          this.logger.error('   🔗 More info: https://aka.ms/smtp_auth_disabled');
+          this.logger.error('');
+        } else if (isGmail && verifyError.code === 'EAUTH') {
+          this.logger.error('');
+          this.logger.error('   ⚠️  Gmail authentication failed.');
+          this.logger.error('   📋 Common solutions:');
+          this.logger.error('      1. Make sure you\'re using an App Password, not your regular Gmail password');
+          this.logger.error('      2. Enable 2-Step Verification in your Google Account');
+          this.logger.error('      3. Generate a new App Password at: https://myaccount.google.com/apppasswords');
+          this.logger.error('      4. Remove spaces from the App Password when pasting');
+          this.logger.error('');
+        }
+        
         this.transporterReady = false;
         // Don't set transporter to null, but mark as not ready
         // This way we can still attempt to send and get better error messages
