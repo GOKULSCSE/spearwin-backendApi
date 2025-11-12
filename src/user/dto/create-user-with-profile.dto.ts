@@ -105,6 +105,10 @@ export class CandidateDataDto {
   @IsOptional()
   @IsString({ message: 'Profile picture must be a string (URL)' })
   profilePicture?: string;
+
+  @IsOptional()
+  @IsString({ message: 'CV/Resume must be a string (URL)' })
+  cvResume?: string;
 }
 
 export class CreateUserWithProfileDto extends CreateUserDto {
