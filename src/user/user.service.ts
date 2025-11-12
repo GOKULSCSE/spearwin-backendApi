@@ -84,9 +84,42 @@ export class UserService {
               ...(candidateData.profilePicture && { profilePicture: candidateData.profilePicture }),
             };
 
-            await tx.candidate.create({
+            const candidate = await tx.candidate.create({
               data: candidateProfileData,
             });
+
+            // Create Resume record if cvResume URL is provided
+            if (candidateData.cvResume) {
+              try {
+                // Extract filename from URL
+                const urlParts = candidateData.cvResume.split('/');
+                const fileName = urlParts[urlParts.length - 1] || 'resume.pdf';
+                
+                // Determine file size and mime type from URL/file extension
+                const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'pdf';
+                const mimeTypeMap: { [key: string]: string } = {
+                  'pdf': 'application/pdf',
+                  'doc': 'application/msword',
+                  'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                };
+                const mimeType = mimeTypeMap[fileExtension] || 'application/pdf';
+
+                await tx.resume.create({
+                  data: {
+                    candidateId: candidate.id,
+                    title: 'Resume',
+                    fileName: fileName,
+                    filePath: candidateData.cvResume,
+                    fileSize: 0, // Size unknown from URL, set to 0
+                    mimeType: mimeType,
+                    isDefault: true, // Set as default resume
+                  },
+                });
+              } catch (resumeError) {
+                // Log error but don't fail the entire user creation
+                console.error('Failed to create resume record:', resumeError);
+              }
+            }
           }
 
           // Return user with candidate data

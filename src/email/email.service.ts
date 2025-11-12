@@ -1,15 +1,97 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
+import axios, { AxiosInstance } from 'axios';
 
 @Injectable()
 export class EmailService {
   private transporter: Transporter;
   private transporterReady: boolean = false;
   private readonly logger = new Logger(EmailService.name);
+  private axiosInstance: AxiosInstance;
+  private accessToken: string | null = null;
+  private tokenExpiresAt: Date | null = null;
+  private useGraphAPI: boolean = false;
 
   constructor() {
-    this.initializeTransporter();
+    this.axiosInstance = axios.create();
+    this.initializeEmailService();
+  }
+
+  private async initializeEmailService() {
+    // Check if Microsoft Graph API credentials are available
+    const graphTenantId = process.env.GRAPH_TENANT_ID || process.env.MS_GRAPH_TENANT_ID;
+    const graphClientId = process.env.GRAPH_CLIENT_ID || process.env.MS_GRAPH_CLIENT_ID;
+    const graphClientSecret = process.env.GRAPH_CLIENT_SECRET || process.env.MS_GRAPH_CLIENT_SECRET;
+    const graphUserEmail = process.env.GRAPH_USER_EMAIL || process.env.MS_GRAPH_USER_EMAIL;
+
+    if (graphTenantId && graphClientId && graphClientSecret && graphUserEmail) {
+      this.useGraphAPI = true;
+      this.logger.log('📧 Using Microsoft Graph API for email sending');
+      this.logger.log(`  Tenant ID: ${graphTenantId}`);
+      this.logger.log(`  Client ID: ${graphClientId}`);
+      this.logger.log(`  User Email: ${graphUserEmail}`);
+      // Get initial access token
+      await this.getAccessToken();
+    } else {
+      this.logger.log('📧 Using SMTP for email sending');
+      this.initializeTransporter();
+    }
+  }
+
+  /**
+   * Get access token from Microsoft Graph API using client credentials flow
+   */
+  private async getAccessToken(): Promise<string> {
+    // Check if we have a valid token
+    if (this.accessToken && this.tokenExpiresAt && new Date() < this.tokenExpiresAt) {
+      return this.accessToken;
+    }
+
+    const tenantId = process.env.GRAPH_TENANT_ID || process.env.MS_GRAPH_TENANT_ID;
+    const clientId = process.env.GRAPH_CLIENT_ID || process.env.MS_GRAPH_CLIENT_ID;
+    const clientSecret = process.env.GRAPH_CLIENT_SECRET || process.env.MS_GRAPH_CLIENT_SECRET;
+
+    if (!tenantId || !clientId || !clientSecret) {
+      throw new Error('Microsoft Graph API credentials not configured');
+    }
+
+    try {
+      const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
+      
+      const params = new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        scope: 'https://graph.microsoft.com/.default',
+        grant_type: 'client_credentials',
+      });
+
+      const response = await axios.post(tokenUrl, params, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      });
+
+      const token = response.data.access_token;
+      if (!token) {
+        throw new Error('Access token not received from Microsoft Graph API');
+      }
+      
+      this.accessToken = token;
+      // Set expiration time (subtract 5 minutes for safety)
+      const expiresIn = response.data.expires_in || 3600;
+      this.tokenExpiresAt = new Date(Date.now() + (expiresIn - 300) * 1000);
+
+      this.logger.log('✅ Microsoft Graph API access token obtained');
+      return token;
+    } catch (error: any) {
+      this.logger.error('❌ Failed to get Microsoft Graph API access token');
+      this.logger.error(`   Error: ${error.message || error}`);
+      if (error.response) {
+        this.logger.error(`   Response: ${JSON.stringify(error.response.data)}`);
+      }
+      throw error;
+    }
   }
 
   private async initializeTransporter() {
@@ -168,7 +250,71 @@ export class EmailService {
    * Check if email transporter is ready to send emails
    */
   isTransporterReady(): boolean {
+    if (this.useGraphAPI) {
+      return !!this.accessToken;
+    }
     return this.transporterReady && !!this.transporter;
+  }
+
+  /**
+   * Send email using Microsoft Graph API
+   */
+  private async sendEmailViaGraphAPI(
+    to: string,
+    subject: string,
+    htmlContent: string,
+    textContent?: string,
+  ): Promise<boolean> {
+    try {
+      // Ensure we have a valid access token
+      const accessToken = await this.getAccessToken();
+      const userEmail = process.env.GRAPH_USER_EMAIL || process.env.MS_GRAPH_USER_EMAIL;
+
+      if (!userEmail) {
+        throw new Error('GRAPH_USER_EMAIL not configured');
+      }
+
+      const graphUrl = `https://graph.microsoft.com/v1.0/users/${userEmail}/sendMail`;
+      
+      // Get from name from environment or use default
+      const fromName = process.env.GRAPH_FROM_NAME || process.env.MS_GRAPH_FROM_NAME || process.env.SMTP_FROM_NAME || process.env.MAIL_FROM_NAME || 'Spearwin';
+
+      const emailPayload = {
+        message: {
+          subject: subject,
+          body: {
+            contentType: 'HTML',
+            content: htmlContent,
+          },
+          toRecipients: [
+            {
+              emailAddress: {
+                address: to,
+              },
+            },
+          ],
+        },
+        saveToSentItems: true, // Save a copy to sent items
+      };
+
+      const response = await this.axiosInstance.post(graphUrl, emailPayload, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      this.logger.log(`✅ Email sent successfully via Microsoft Graph API to ${to}`);
+      return true;
+    } catch (error: any) {
+      this.logger.error(`❌ Failed to send email via Microsoft Graph API to ${to}`);
+      this.logger.error(`   Error: ${error.message || error}`);
+      if (error.response) {
+        this.logger.error(`   Status: ${error.response.status}`);
+        this.logger.error(`   Response: ${JSON.stringify(error.response.data)}`);
+      }
+      return false;
+    }
   }
 
   async sendPasswordResetEmail(
@@ -176,6 +322,38 @@ export class EmailService {
     otpCode: string,
     expiresAt: Date,
   ): Promise<boolean> {
+    // Use Microsoft Graph API if configured
+    if (this.useGraphAPI) {
+      const expiryMinutes = Math.round((expiresAt.getTime() - new Date().getTime()) / 60000);
+      const htmlTemplate = this.getPasswordResetOTPTemplate(otpCode, expiryMinutes);
+      const textContent = `
+Reset Your Password
+
+Hello,
+
+You requested to reset your password. Use the OTP code below to verify your identity:
+
+Your OTP Code: ${otpCode}
+
+This code will expire in ${expiryMinutes} minutes.
+
+Please enter this code in the OTP verification form to reset your password.
+
+If you didn't request this, please ignore this email.
+
+Best regards,
+Spearwin Team
+      `.trim();
+      
+      return await this.sendEmailViaGraphAPI(
+        email,
+        'Password Reset OTP - Spearwin',
+        htmlTemplate,
+        textContent,
+      );
+    }
+
+    // Fallback to SMTP
     // Check if transporter exists
     if (!this.transporter) {
       this.logger.error('❌ Email transporter not initialized. Cannot send email.');
@@ -278,6 +456,36 @@ Spearwin Team
     verificationCode: string,
     expiresAt: Date,
   ): Promise<boolean> {
+    // Use Microsoft Graph API if configured
+    if (this.useGraphAPI) {
+      const expiryHours = Math.round((expiresAt.getTime() - new Date().getTime()) / 3600000);
+      const htmlTemplate = this.getEmailVerificationTemplate(verificationCode, expiryHours);
+      const textContent = `
+Verify Your Email
+
+Hello,
+
+Thank you for registering with Spearwin!
+
+Your verification code is: ${verificationCode}
+
+This code will expire in ${expiryHours} hours.
+
+Please enter this code to verify your email address.
+
+Best regards,
+Spearwin Team
+      `.trim();
+      
+      return await this.sendEmailViaGraphAPI(
+        email,
+        'Verify Your Email - Spearwin',
+        htmlTemplate,
+        textContent,
+      );
+    }
+
+    // Fallback to SMTP
     if (!this.transporter) {
       this.logger.warn('Email transporter not initialized. Cannot send email.');
       return false;
@@ -324,6 +532,31 @@ Spearwin Team
   }
 
   async sendWelcomeEmail(email: string, firstName: string): Promise<boolean> {
+    // Use Microsoft Graph API if configured
+    if (this.useGraphAPI) {
+      const htmlTemplate = this.getWelcomeEmailTemplate(firstName);
+      const textContent = `
+Welcome to Spearwin!
+
+Hi ${firstName},
+
+Welcome to Spearwin! We're excited to have you on board.
+
+Start exploring job opportunities and build your career with us.
+
+Best regards,
+Spearwin Team
+      `.trim();
+      
+      return await this.sendEmailViaGraphAPI(
+        email,
+        'Welcome to Spearwin!',
+        htmlTemplate,
+        textContent,
+      );
+    }
+
+    // Fallback to SMTP
     if (!this.transporter) {
       this.logger.warn('Email transporter not initialized. Cannot send email.');
       return false;
@@ -691,16 +924,28 @@ Spearwin Team
     text?: string,
     html?: string,
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
-    if (!this.transporter) {
-      const errorMsg = 'Email transporter not initialized. Cannot send email.';
-      this.logger.warn(errorMsg);
-      return { success: false, error: errorMsg };
-    }
-
     // Validate that at least text or html is provided
     if (!text && !html) {
       const errorMsg = 'Either text or html content must be provided';
       this.logger.error(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+
+    // Use Microsoft Graph API if configured
+    if (this.useGraphAPI) {
+      const htmlContent = html || (text ? `<pre>${text}</pre>` : '');
+      const success = await this.sendEmailViaGraphAPI(to, subject, htmlContent, text);
+      return {
+        success,
+        messageId: success ? 'graph-api' : undefined,
+        error: success ? undefined : 'Failed to send email via Microsoft Graph API',
+      };
+    }
+
+    // Fallback to SMTP
+    if (!this.transporter) {
+      const errorMsg = 'Email transporter not initialized. Cannot send email.';
+      this.logger.warn(errorMsg);
       return { success: false, error: errorMsg };
     }
 
