@@ -47,24 +47,44 @@ export class EmailService {
       this.logger.log(`  Port: ${mailPort}`);
       this.logger.log(`  User: ${mailUser}`);
       this.logger.log(`  Secure: ${mailSecure}`);
+      
+      // Check for OAuth2 credentials (optional, for Office365)
+      const oauth2ClientId = process.env.SMTP_OAUTH2_CLIENT_ID || process.env.MAIL_OAUTH2_CLIENT_ID || process.env.EMAIL_OAUTH2_CLIENT_ID;
+      const oauth2ClientSecret = process.env.SMTP_OAUTH2_CLIENT_SECRET || process.env.MAIL_OAUTH2_CLIENT_SECRET || process.env.EMAIL_OAUTH2_CLIENT_SECRET;
+      const oauth2RefreshToken = process.env.SMTP_OAUTH2_REFRESH_TOKEN || process.env.MAIL_OAUTH2_REFRESH_TOKEN || process.env.EMAIL_OAUTH2_REFRESH_TOKEN;
+      const oauth2AccessToken = process.env.SMTP_OAUTH2_ACCESS_TOKEN || process.env.MAIL_OAUTH2_ACCESS_TOKEN || process.env.EMAIL_OAUTH2_ACCESS_TOKEN;
+
+      // Determine authentication method
+      const useOAuth2 = isOutlook && oauth2ClientId && oauth2ClientSecret && (oauth2RefreshToken || oauth2AccessToken);
+      
+      if (useOAuth2) {
+        this.logger.log(`  Auth Method: OAuth2`);
+      } else {
+        this.logger.log(`  Auth Method: Password-based`);
+      }
 
       // Build base transporter configuration
       const transporterConfig: any = {
         host: mailHost,
         port: parseInt(mailPort),
         secure: mailSecure === 'true', // true for 465, false for other ports
-        service: "Outlook365",
-        auth: {
+        auth: useOAuth2 ? {
           type: "OAuth2",
           user: mailUser,
-          // pass: mailPass,
-          clientId: process.env.SMTP_OAUTH2_CLIENT_ID || "",
-          clientSecret: process.env.SMTP_OAUTH2_CLIENT_SECRET || "",
-          refreshToken: process.env.SMTP_OAUTH2_REFRESH_TOKEN || "",
-          accessToken: process.env.SMTP_OAUTH2_ACCESS_TOKEN || "",
-
+          clientId: oauth2ClientId,
+          clientSecret: oauth2ClientSecret,
+          ...(oauth2RefreshToken && { refreshToken: oauth2RefreshToken }),
+          ...(oauth2AccessToken && { accessToken: oauth2AccessToken }),
+        } : {
+          user: mailUser,
+          pass: mailPass,
         },
       };
+
+      // Add service for Outlook365 if using OAuth2
+      if (useOAuth2 && isOutlook) {
+        transporterConfig.service = "Outlook365";
+      }
 
       // Gmail-specific configuration
       if (isGmail) {
