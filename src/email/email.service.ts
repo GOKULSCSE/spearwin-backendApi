@@ -106,17 +106,24 @@ export class EmailService {
       const mailSecure = process.env.SMTP_SECURE || process.env.MAIL_SECURE || process.env.EMAIL_SECURE || 'false';
 
       // Check if email environment variables are set
-      if (!mailHost || !mailUser || !mailPass) {
+      if (!mailHost || !mailUser) {
         this.logger.error(
           '⚠️ Email environment variables not set. Email features will be disabled. ' +
-          'Set SMTP_HOST, SMTP_USER, and SMTP_PASS (or MAIL_HOST, MAIL_USER, MAIL_PASS, or EMAIL_HOST, EMAIL_USER, EMAIL_PASSWORD) in your .env file.'
+          'Set SMTP_HOST and SMTP_USER (or MAIL_HOST and MAIL_USER, or EMAIL_HOST and EMAIL_USER) in your .env file.'
         );
         this.logger.error('Current env values:');
         this.logger.error(`  SMTP_HOST/MAIL_HOST: ${mailHost || 'NOT SET'}`);
         this.logger.error(`  SMTP_USER/MAIL_USER: ${mailUser || 'NOT SET'}`);
-        this.logger.error(`  SMTP_PASS/MAIL_PASS: ${mailPass ? '***SET***' : 'NOT SET'}`);
         this.transporterReady = false;
         return;
+      }
+
+      // Warn if password is not set (but allow initialization to proceed)
+      if (!mailPass) {
+        this.logger.warn(
+          '⚠️ SMTP_PASS not set. Email sending may fail due to authentication requirements. ' +
+          'For Gmail, you need to set SMTP_PASS with an App Password.'
+        );
       }
 
       // Detect email provider based on host
@@ -157,10 +164,10 @@ export class EmailService {
           clientSecret: oauth2ClientSecret,
           ...(oauth2RefreshToken && { refreshToken: oauth2RefreshToken }),
           ...(oauth2AccessToken && { accessToken: oauth2AccessToken }),
-        } : {
+        } : mailPass ? {
           user: mailUser,
           pass: mailPass,
-        },
+        } : undefined, // Allow no auth if password not set (will fail on send, but allows initialization)
       };
 
       // Add service for Outlook365 if using OAuth2
@@ -198,45 +205,51 @@ export class EmailService {
 
       this.transporter = nodemailer.createTransport(transporterConfig);
 
-      // Verify connection configuration (await the promise)
-      try {
-        await this.transporter.verify();
-        this.logger.log('✅ Email transporter is ready to send emails');
-        this.transporterReady = true;
-      } catch (verifyError: any) {
-        this.logger.error('❌ Email transporter verification failed:');
-        this.logger.error(`   Error: ${verifyError.message || verifyError}`);
-        this.logger.error(`   Code: ${verifyError.code || 'N/A'}`);
-        this.logger.error(`   Command: ${verifyError.command || 'N/A'}`);
-        if (verifyError.response) {
-          this.logger.error(`   Response: ${verifyError.response}`);
+      // Verify connection configuration (skip if no password is provided)
+      if (!mailPass && !useOAuth2) {
+        this.logger.warn('⚠️ Skipping SMTP verification (no password provided). Email sending will be attempted but may fail.');
+        this.logger.warn('   Note: Gmail requires authentication. Add SMTP_PASS with an App Password for successful email sending.');
+        this.transporterReady = true; // Mark as ready to allow sending attempts
+      } else {
+        try {
+          await this.transporter.verify();
+          this.logger.log('✅ Email transporter is ready to send emails');
+          this.transporterReady = true;
+        } catch (verifyError: any) {
+          this.logger.error('❌ Email transporter verification failed:');
+          this.logger.error(`   Error: ${verifyError.message || verifyError}`);
+          this.logger.error(`   Code: ${verifyError.code || 'N/A'}`);
+          this.logger.error(`   Command: ${verifyError.command || 'N/A'}`);
+          if (verifyError.response) {
+            this.logger.error(`   Response: ${verifyError.response}`);
+          }
+          
+          // Provide provider-specific error guidance
+          if (isOutlook && verifyError.response && verifyError.response.includes('SmtpClientAuthentication is disabled')) {
+            this.logger.error('');
+            this.logger.error('   ⚠️  SMTP AUTH is disabled for your Office 365 tenant.');
+            this.logger.error('   📋 To fix this, you need to enable SMTP AUTH in Office 365 Admin Center:');
+            this.logger.error('      1. Go to https://admin.microsoft.com');
+            this.logger.error('      2. Navigate to Settings → Org settings → Mail');
+            this.logger.error('      3. Find "SMTP AUTH" and enable it for your tenant');
+            this.logger.error('      4. Or use PowerShell: Set-TransportConfig -SmtpClientAuthenticationDisabled $false');
+            this.logger.error('   🔗 More info: https://aka.ms/smtp_auth_disabled');
+            this.logger.error('');
+          } else if (isGmail && verifyError.code === 'EAUTH') {
+            this.logger.error('');
+            this.logger.error('   ⚠️  Gmail authentication failed.');
+            this.logger.error('   📋 Common solutions:');
+            this.logger.error('      1. Make sure you\'re using an App Password, not your regular Gmail password');
+            this.logger.error('      2. Enable 2-Step Verification in your Google Account');
+            this.logger.error('      3. Generate a new App Password at: https://myaccount.google.com/apppasswords');
+            this.logger.error('      4. Remove spaces from the App Password when pasting');
+            this.logger.error('');
+          }
+          
+          this.transporterReady = false;
+          // Don't set transporter to null, but mark as not ready
+          // This way we can still attempt to send and get better error messages
         }
-        
-        // Provide provider-specific error guidance
-        if (isOutlook && verifyError.response && verifyError.response.includes('SmtpClientAuthentication is disabled')) {
-          this.logger.error('');
-          this.logger.error('   ⚠️  SMTP AUTH is disabled for your Office 365 tenant.');
-          this.logger.error('   📋 To fix this, you need to enable SMTP AUTH in Office 365 Admin Center:');
-          this.logger.error('      1. Go to https://admin.microsoft.com');
-          this.logger.error('      2. Navigate to Settings → Org settings → Mail');
-          this.logger.error('      3. Find "SMTP AUTH" and enable it for your tenant');
-          this.logger.error('      4. Or use PowerShell: Set-TransportConfig -SmtpClientAuthenticationDisabled $false');
-          this.logger.error('   🔗 More info: https://aka.ms/smtp_auth_disabled');
-          this.logger.error('');
-        } else if (isGmail && verifyError.code === 'EAUTH') {
-          this.logger.error('');
-          this.logger.error('   ⚠️  Gmail authentication failed.');
-          this.logger.error('   📋 Common solutions:');
-          this.logger.error('      1. Make sure you\'re using an App Password, not your regular Gmail password');
-          this.logger.error('      2. Enable 2-Step Verification in your Google Account');
-          this.logger.error('      3. Generate a new App Password at: https://myaccount.google.com/apppasswords');
-          this.logger.error('      4. Remove spaces from the App Password when pasting');
-          this.logger.error('');
-        }
-        
-        this.transporterReady = false;
-        // Don't set transporter to null, but mark as not ready
-        // This way we can still attempt to send and get better error messages
       }
     } catch (error: any) {
       this.logger.error('❌ Failed to initialize email transporter:');
