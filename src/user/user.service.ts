@@ -213,6 +213,11 @@ export class UserService {
                   },
                 },
               },
+              // Include all candidate relations: skills, education, experience, resumes
+              skills: true,
+              education: true,
+              experience: true,
+              resumes: true,
             },
           },
           // Include all admin fields (email, phone, bio, profileImage, country, state, city, streetAddress, social links)
