@@ -15,6 +15,8 @@ async function bootstrap() {
       'https://admin.spearwin.com/', // With trailing slash
       'https://frontend.spearwin.com',
       'https://frontend.spearwin.com/',
+      'https://spearwin.com/',
+      'https://spearwin.com'
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
