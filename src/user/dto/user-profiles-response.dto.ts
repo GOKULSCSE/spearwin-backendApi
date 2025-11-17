@@ -30,6 +30,16 @@ export interface UserProfileDto {
         };
       };
     };
+    resumes?: Array<{
+      id: string;
+      title: string;
+      fileName: string;
+      filePath: string;
+      fileSize: number;
+      mimeType: string;
+      isDefault: boolean;
+      uploadedAt: Date;
+    }>;
   };
   admin?: {
     id: string;

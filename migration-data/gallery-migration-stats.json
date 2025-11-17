@@ -1,0 +1,196 @@
+{
+  "totalFiles": 1717,
+  "processedFiles": 1698,
+  "skippedFiles": 19,
+  "createdUsers": 1598,
+  "createdCandidates": 1598,
+  "createdResumes": 1698,
+  "errors": [
+    {
+      "file": "AjithResume.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    },
+    {
+      "file": "Dashyam-Siddharth-Resume.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    },
+    {
+      "file": "Resume-Jeeva.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    },
+    {
+      "file": "Rpresume-1.docx.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    },
+    {
+      "file": "SPEARWIN_AJAY-PATHAK_12.5Yrs_Core-Banking_OFX_XML.pdf",
+      "error": "PrismaClientKnownRequestError: \nInvalid `prisma.user.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:409:36\n\n  406 \n  407 // Create new user\n  408 const defaultPassword = await bcrypt.hash('TempPassword123!', 10);\n→ 409 const user = await prisma.user.create(\nUnique constraint failed on the fields: (`phone`)"
+    },
+    {
+      "file": "SPEARWIN_Anantha-Sivamani-K_5.6-Yrs_Java_Developer.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    },
+    {
+      "file": "SPEARWIN_DANISH-ALI_2yrs_Desktop-support.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    },
+    {
+      "file": "SPEARWIN_DHANANJAY_10Mths_QA_Testing.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    },
+    {
+      "file": "SPEARWIN_Dipak_Kumar_Sharma_6yrs_BFSI.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    },
+    {
+      "file": "SPEARWIN_Durgesh_Nainwal_3Yrs_FLEXCUBE.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    },
+    {
+      "file": "SPEARWIN_Kamlesh-Jewlia_6.9Yrs_Flexcube_Core-Banking.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    },
+    {
+      "file": "SPEARWIN_ManuSeth_Fresher.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    },
+    {
+      "file": "SPEARWIN_PankajANavarkar_3yrs_Data_Scientist.pdf",
+      "error": "PrismaClientKnownRequestError: \nInvalid `prisma.user.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:409:36\n\n  406 \n  407 // Create new user\n  408 const defaultPassword = await bcrypt.hash('TempPassword123!', 10);\n→ 409 const user = await prisma.user.create(\nUnique constraint failed on the fields: (`phone`)"
+    },
+    {
+      "file": "SPEARWIN_ROSHINI_P_3yrs_FLEXCUBE.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    },
+    {
+      "file": "SPEARWIN_Rajat_Pathania_5Yrs_Senior-Revenue-Analyst.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    },
+    {
+      "file": "SPEARWIN_Ranjeeta-Reddy_Fresher.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    },
+    {
+      "file": "SPEARWIN_SharfrajAkhterMD_3yrs_Data_Scientist.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    },
+    {
+      "file": "Spearwin_jeyaramgowtham_6y_Flexcube_FCR.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    },
+    {
+      "file": "cv-new-sweta-1-1.pdf",
+      "error": "PrismaClientUnknownRequestError: \nInvalid `prisma.resume.create()` invocation in\n/home/webnox/Gokul spearwin/spearwinifrontend/spearwin-backendApi/scripts/migrate-gallery.ts:477:25\n\n  474   resumeFilePath = path.resolve(filePath);\n  475 }\n  476 \n→ 477 await prisma.resume.create(\nError occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: \"22021\", message: \"invalid byte sequence for encoding \\\"UTF8\\\": 0x00\", severity: \"ERROR\", detail: None, column: None, hint: None }), transient: false })"
+    }
+  ],
+  "analysis": {
+    "byExperience": {
+      "2-3 years": 59,
+      "3-4 years": 97,
+      "4-5 years": 69,
+      "7-8 years": 78,
+      "9-10 years": 43,
+      "5-6 years": 74,
+      "11-12 years": 34,
+      "6-7 years": 67,
+      "10-11 years": 56,
+      "8-9 years": 49,
+      "12-13 years": 33,
+      "15-16 years": 20,
+      "1-2 years": 60,
+      "35-36 years": 1,
+      "19-20 years": 2,
+      "18-19 years": 6,
+      "17-18 years": 5,
+      "28-29 years": 2,
+      "14-15 years": 13,
+      "16-17 years": 10,
+      "13-14 years": 20,
+      "29-30 years": 1,
+      "20-21 years": 3,
+      "21-22 years": 1,
+      "32-33 years": 1,
+      "23-24 years": 1,
+      "30-31 years": 2,
+      "25-26 years": 2
+    },
+    "byRole": {
+      "Backend": 87,
+      "BA": 164,
+      "Frontend": 21,
+      "OFSAA": 108,
+      "Developer": 59,
+      "Test": 7,
+      "Automation": 30,
+      "Analyst": 19,
+      "BE": 212,
+      "JAVA": 88,
+      "QA": 54,
+      "Testing": 121,
+      "Engineer": 11,
+      "Manual": 15,
+      "Technical": 25,
+      "Data": 46,
+      "Architect": 16,
+      "Python": 20,
+      "Fullstack": 21,
+      "Consultant": 28,
+      "BFSI": 34,
+      "Flexcube": 2,
+      "Finance": 3,
+      "FCR": 1
+    },
+    "bySkill": {
+      "AWS": 145,
+      "Git": 459,
+      "Backend": 87,
+      "Banking": 632,
+      "BA": 164,
+      "Java": 599,
+      "Python": 248,
+      "SQL": 929,
+      "MySQL": 249,
+      "Frontend": 21,
+      "Oracle": 630,
+      "Flexcube": 291,
+      "FLEXCUBE": 289,
+      "Testing": 907,
+      "Automation": 421,
+      "Selenium": 183,
+      "Agile": 460,
+      "OFSAA": 242,
+      "Developer": 59,
+      "JavaScript": 196,
+      "Linux": 253,
+      "Docker": 66,
+      "DevOps": 67,
+      "Test": 7,
+      "QA": 309,
+      "Cypress": 6,
+      "Scrum": 275,
+      "Windows": 469,
+      "Analyst": 19,
+      "BE": 212,
+      "JAVA": 88,
+      "Engineer": 11,
+      "CI/CD": 37,
+      "Manual": 15,
+      "Kubernetes": 27,
+      "TypeScript": 18,
+      "React": 50,
+      "Node": 55,
+      "Angular": 62,
+      "Jest": 3,
+      "MongoDB": 63,
+      "Technical": 25,
+      "BFSI": 84,
+      "Data": 46,
+      "Architect": 16,
+      "Fullstack": 21,
+      "Consultant": 28,
+      "PostgreSQL": 44,
+      "Finance": 3,
+      "FCR": 1
+    }
+  }
+}
