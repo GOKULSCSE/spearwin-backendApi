@@ -1156,6 +1156,21 @@ export class UserService {
                     },
                   },
                 },
+                resumes: {
+                  select: {
+                    id: true,
+                    title: true,
+                    fileName: true,
+                    filePath: true,
+                    fileSize: true,
+                    mimeType: true,
+                    isDefault: true,
+                    uploadedAt: true,
+                  },
+                  orderBy: {
+                    uploadedAt: 'desc',
+                  },
+                },
               },
             },
             admin: true,
@@ -1239,6 +1254,7 @@ export class UserService {
                       : undefined,
                   }
                 : undefined,
+              resumes: user.candidate.resumes || [],
             }
           : undefined,
         admin: user.admin
