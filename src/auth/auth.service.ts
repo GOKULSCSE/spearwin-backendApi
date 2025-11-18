@@ -118,9 +118,10 @@ export class AuthService {
       throw new UnauthorizedException('Account is inactive');
     }
 
-    // if (user.status === UserStatus.PENDING_VERIFICATION) {
-    //   throw new UnauthorizedException('Please verify your email before logging in');
-    // }
+    // Check if email is verified
+    if (!user.emailVerified) {
+      throw new UnauthorizedException('Please verify your email to continue');
+    }
 
     // Check if 2FA is enabled
     if (user.twoFactorEnabled) {
@@ -447,7 +448,7 @@ export class AuthService {
       },
     });
 
-    if (!otp) {
+    if (!otp || !otp.user || !otp.userId) {
       throw new BadRequestException('Invalid or expired OTP code');
     }
 
@@ -509,15 +510,17 @@ export class AuthService {
     });
 
     // Invalidate all existing sessions
-    await this.prisma.loginSession.updateMany({
-      where: {
-        userId: otp.userId,
-        isActive: true,
-      },
-      data: {
-        isActive: false,
-      },
-    });
+    if (otp.userId) {
+      await this.prisma.loginSession.updateMany({
+        where: {
+          userId: otp.userId,
+          isActive: true,
+        },
+        data: {
+          isActive: false,
+        },
+      });
+    }
 
     // Log activity
     await this.prisma.activityLog.create({
@@ -655,8 +658,19 @@ export class AuthService {
         },
       });
 
-      // TODO: Send verification email
-      // In production, you would send an email with the verification code
+      // Send verification email
+      try {
+        await this.emailService.sendVerificationEmail(
+          result.user.email,
+          verificationCode,
+          expiresAt,
+          result.user.id,
+        );
+        this.logger.log(`Verification email sent to ${result.user.email}`);
+      } catch (emailError) {
+        this.logger.error(`Failed to send verification email: ${emailError.message}`);
+        // Don't fail registration if email fails, but log it
+      }
 
       return {
         success: true,
@@ -695,7 +709,7 @@ export class AuthService {
 
   async candidateSimpleRegister(
     candidateSimpleRegisterDto: CandidateSimpleRegisterDto,
-  ): Promise<RegisterResponseDto> {
+    ): Promise<RegisterResponseDto> {
     try {
       console.log('candidateSimpleRegisterDto ', candidateSimpleRegisterDto);
 
@@ -706,6 +720,25 @@ export class AuthService {
 
       if (existingUser) {
         throw new BadRequestException('User with this email already exists');
+      }
+
+      // Check if there's already a pending registration for this email
+      const existingPending = await this.prisma.pendingRegistration.findUnique({
+        where: { email: candidateSimpleRegisterDto.email },
+      });
+
+      if (existingPending) {
+        // If pending registration exists and not expired, delete it and create a new one
+        if (existingPending.expiresAt > new Date()) {
+          await this.prisma.pendingRegistration.delete({
+            where: { id: existingPending.id },
+          });
+        } else {
+          // If expired, delete it
+          await this.prisma.pendingRegistration.delete({
+            where: { id: existingPending.id },
+          });
+        }
       }
 
       // Split full name into first and last name
@@ -723,86 +756,74 @@ export class AuthService {
         10,
       );
 
-      // Create user and candidate in a transaction
-      const result = await this.prisma.$transaction(async (prisma) => {
-        // Create user
-        const user = await prisma.user.create({
-          data: {
-            email: candidateSimpleRegisterDto.email,
-            password: hashedPassword,
-            role: UserRole.CANDIDATE,
+      // Store registration data in PendingRegistration (DO NOT create user yet)
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours expiry
+
+      const pendingRegistration = await this.prisma.pendingRegistration.create({
+        data: {
+          email: candidateSimpleRegisterDto.email,
+          password: hashedPassword,
+          fullName: candidateSimpleRegisterDto.fullName,
+          firstName: firstName,
+          lastName: lastName,
+          role: UserRole.CANDIDATE,
+          registrationData: JSON.stringify({
+            // Store any additional data here if needed
+            reenterPassword: candidateSimpleRegisterDto.reenterPassword,
+          }),
+          expiresAt,
+        },
+      });
+
+      // Generate email verification OTP linked to pending registration
+      const verificationCode = uuidv4();
+      const otpExpiresAt = new Date();
+      otpExpiresAt.setHours(otpExpiresAt.getHours() + 24); // 24 hours expiry
+
+      await this.prisma.oTP.create({
+        data: {
+          pendingRegistrationId: pendingRegistration.id,
+          code: verificationCode,
+          type: OTPType.EMAIL_VERIFICATION,
+          expiresAt: otpExpiresAt,
+        },
+      });
+
+      // Send verification email
+      try {
+        await this.emailService.sendVerificationEmail(
+          pendingRegistration.email,
+          verificationCode,
+          otpExpiresAt,
+          pendingRegistration.id, // Pass pending registration ID instead of userId
+        );
+        this.logger.log(`Verification email sent to ${pendingRegistration.email}`);
+      } catch (emailError) {
+        this.logger.error(`Failed to send verification email: ${emailError.message}`);
+        // Clean up pending registration if email fails
+        await this.prisma.pendingRegistration.delete({
+          where: { id: pendingRegistration.id },
+        });
+        throw new BadRequestException('Failed to send verification email. Please try again.');
+      }
+
+      return {
+        success: true,
+        message:
+          'Registration initiated. Please check your email for verification. Your account will be created after email verification.',
+        data: {
+          // Return minimal user-like structure for compatibility
+          user: {
+            id: pendingRegistration.id, // Use pending registration ID temporarily
+            email: pendingRegistration.email,
+            role: pendingRegistration.role,
             status: UserStatus.PENDING_VERIFICATION,
             emailVerified: false,
             phoneVerified: false,
             profileCompleted: false,
             twoFactorEnabled: false,
-          },
-        });
-
-        // Create candidate profile with minimal data
-        const candidate = await prisma.candidate.create({
-          data: {
-            userId: user.id,
-            firstName: firstName,
-            lastName: lastName,
-            isAvailable: true,
-          },
-        });
-
-        return { user, candidate };
-      });
-
-      // Generate email verification OTP
-      const verificationCode = uuidv4();
-      const expiresAt = new Date();
-      expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours expiry
-
-      await this.prisma.oTP.create({
-        data: {
-          userId: result.user.id,
-          code: verificationCode,
-          type: OTPType.EMAIL_VERIFICATION,
-          expiresAt,
-        },
-      });
-
-      // Log activity
-      await this.prisma.activityLog.create({
-        data: {
-          userId: result.user.id,
-          action: 'CREATE',
-          level: 'INFO',
-          description: 'Candidate registered successfully (simple registration)',
-          entity: 'User',
-          entityId: result.user.id,
-        },
-      });
-
-      // TODO: Send verification email
-      // In production, you would send an email with the verification code
-
-      return {
-        success: true,
-        message:
-          'Candidate registered successfully. Please check your email for verification.',
-        data: {
-          user: {
-            id: result.user.id,
-            email: result.user.email,
-            role: result.user.role,
-            status: result.user.status,
-            emailVerified: result.user.emailVerified,
-            phoneVerified: result.user.phoneVerified,
-            profileCompleted: result.user.profileCompleted,
-            twoFactorEnabled: result.user.twoFactorEnabled,
-            createdAt: result.user.createdAt,
-          },
-          candidate: {
-            id: result.candidate.id,
-            firstName: result.candidate.firstName,
-            lastName: result.candidate.lastName,
-            isAvailable: result.candidate.isAvailable,
-            createdAt: result.candidate.createdAt,
+            createdAt: pendingRegistration.createdAt,
           },
         },
       };
@@ -964,12 +985,15 @@ export class AuthService {
 
   async verifyEmail(
     verifyEmailDto: VerifyEmailDto,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<{ success: boolean; message: string; userId?: string }> {
     try {
-      // Find valid OTP for email verification
+      // Find valid OTP for email verification - check both userId and pendingRegistrationId
       const otp = await this.prisma.oTP.findFirst({
         where: {
-          userId: verifyEmailDto.userId,
+          OR: [
+            { userId: verifyEmailDto.userId },
+            { pendingRegistrationId: verifyEmailDto.userId }, // userId can be pendingRegistrationId
+          ],
           code: verifyEmailDto.code,
           type: OTPType.EMAIL_VERIFICATION,
           used: false,
@@ -977,55 +1001,266 @@ export class AuthService {
             gt: new Date(),
           },
         },
+        include: {
+          pendingRegistration: true,
+        },
       });
 
       if (!otp) {
         throw new BadRequestException('Invalid or expired verification code');
       }
 
-      // Update user email verification status
-      await this.prisma.$transaction(async (prisma) => {
-        // Mark OTP as used
-        await prisma.oTP.update({
-          where: { id: otp.id },
-          data: {
-            used: true,
-            usedAt: new Date(),
-          },
+      // If OTP is linked to a pending registration, create user from it
+      if (otp.pendingRegistrationId && otp.pendingRegistration) {
+        const pendingReg = otp.pendingRegistration;
+
+        // Check if pending registration is expired
+        if (pendingReg.expiresAt < new Date()) {
+          throw new BadRequestException('Registration link has expired. Please register again.');
+        }
+
+        // Check if user already exists (edge case)
+        const existingUser = await this.prisma.user.findUnique({
+          where: { email: pendingReg.email },
         });
+
+        if (existingUser) {
+          // User already exists, mark OTP as used and return success
+          await this.prisma.oTP.update({
+            where: { id: otp.id },
+            data: {
+              used: true,
+              usedAt: new Date(),
+            },
+          });
+          return {
+            success: true,
+            message: 'Email already verified',
+            userId: existingUser.id,
+          };
+        }
+
+        // Create user and candidate from pending registration
+        const result = await this.prisma.$transaction(async (prisma) => {
+          // Create user
+          const user = await prisma.user.create({
+            data: {
+              email: pendingReg.email,
+              password: pendingReg.password,
+              role: pendingReg.role,
+              status: UserStatus.ACTIVE, // Activate user immediately after email verification
+              emailVerified: true,
+              emailVerifiedAt: new Date(),
+              phoneVerified: false,
+              profileCompleted: false,
+              twoFactorEnabled: false,
+            },
+          });
+
+          // Create candidate profile
+          const candidate = await prisma.candidate.create({
+            data: {
+              userId: user.id,
+              firstName: pendingReg.firstName,
+              lastName: pendingReg.lastName,
+              isAvailable: true,
+            },
+          });
+
+          // Mark OTP as used
+          await prisma.oTP.update({
+            where: { id: otp.id },
+            data: {
+              used: true,
+              usedAt: new Date(),
+              userId: user.id, // Link OTP to the newly created user
+            },
+          });
+
+          // Delete pending registration
+          await prisma.pendingRegistration.delete({
+            where: { id: pendingReg.id },
+          });
+
+          // Log activity
+          await prisma.activityLog.create({
+            data: {
+              userId: user.id,
+              action: 'CREATE',
+              level: 'INFO',
+              description: 'User account created and email verified',
+              entity: 'User',
+              entityId: user.id,
+            },
+          });
+
+          return { user, candidate };
+        });
+
+        return {
+          success: true,
+          message: 'Email verified successfully. Your account has been created.',
+          userId: result.user.id,
+        };
+      } else {
+        // Existing flow: OTP is linked to an existing user
+        if (!otp.userId) {
+          throw new BadRequestException('Invalid verification code');
+        }
 
         // Update user email verification status
-        await prisma.user.update({
-          where: { id: verifyEmailDto.userId },
+        await this.prisma.$transaction(async (prisma) => {
+          // Mark OTP as used
+          await prisma.oTP.update({
+            where: { id: otp.id },
+            data: {
+              used: true,
+              usedAt: new Date(),
+            },
+          });
+
+        // Update user email verification status
+        if (otp.userId) {
+          await prisma.user.update({
+            where: { id: otp.userId },
+            data: {
+              emailVerified: true,
+              emailVerifiedAt: new Date(),
+              status: UserStatus.ACTIVE, // Activate user after email verification
+            },
+          });
+        }
+        });
+
+        // Log activity
+        await this.prisma.activityLog.create({
           data: {
-            emailVerified: true,
-            emailVerifiedAt: new Date(),
-            status: UserStatus.ACTIVE, // Activate user after email verification
+            userId: otp.userId,
+            action: 'UPDATE',
+            level: 'INFO',
+            description: 'Email verified successfully',
+            entity: 'User',
+            entityId: otp.userId,
           },
         });
-      });
 
-      // Log activity
-      await this.prisma.activityLog.create({
-        data: {
-          userId: verifyEmailDto.userId,
-          action: 'UPDATE',
-          level: 'INFO',
-          description: 'Email verified successfully',
-          entity: 'User',
-          entityId: verifyEmailDto.userId,
-        },
-      });
-
-      return {
-        success: true,
-        message: 'Email verified successfully',
-      };
+        return {
+          success: true,
+          message: 'Email verified successfully',
+          userId: otp.userId,
+        };
+      }
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
       }
       throw new BadRequestException('Failed to verify email');
+    }
+  }
+
+  /**
+   * Auto-login user after email verification
+   * Generates JWT tokens and creates login session
+   */
+  async autoLoginAfterVerification(
+    userId: string,
+  ): Promise<LoginResponseDto> {
+    try {
+      // Get user with all relations
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          candidate: true,
+          admin: true,
+          superAdmin: true,
+          company: true,
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // Check account status
+      if (user.status === UserStatus.SUSPENDED) {
+        throw new UnauthorizedException('Account is suspended');
+      }
+
+      if (user.status === UserStatus.INACTIVE) {
+        throw new UnauthorizedException('Account is inactive');
+      }
+
+      // Skip 2FA check for email verification auto-login
+      // User has already verified their email, which is a form of verification
+
+      // Update last login time
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      });
+
+      // Create login session
+      const sessionToken = uuidv4();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
+
+      await this.prisma.loginSession.create({
+        data: {
+          userId: user.id,
+          sessionToken,
+          expiresAt,
+          isActive: true,
+        },
+      });
+
+      // Generate tokens
+      const payload = {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+      };
+
+      const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+      const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+      // Log activity
+      await this.prisma.activityLog.create({
+        data: {
+          userId: user.id,
+          action: 'LOGIN',
+          level: 'INFO',
+          description: 'User auto-logged in after email verification',
+          entity: 'User',
+          entityId: user.id,
+        },
+      });
+
+      const authResponse: AuthResponseDto = {
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          status: user.status,
+          emailVerified: user.emailVerified,
+          phoneVerified: user.phoneVerified,
+          profileCompleted: user.profileCompleted,
+          twoFactorEnabled: user.twoFactorEnabled,
+          lastLoginAt: user.lastLoginAt,
+          createdAt: user.createdAt,
+        },
+      };
+
+      return {
+        success: true,
+        message: 'Auto-login successful',
+        data: authResponse,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to auto-login user after verification: ${error.message}`);
+      throw error;
     }
   }
 
@@ -1146,7 +1381,74 @@ export class AuthService {
     resendOtpDto: ResendOtpDto,
   ): Promise<{ success: boolean; message: string }> {
     try {
-      // Find user by email
+      // Check for pending registration first (for new registrations)
+      if (resendOtpDto.type === OTPType.EMAIL_VERIFICATION) {
+        const pendingReg = await this.prisma.pendingRegistration.findUnique({
+          where: { email: resendOtpDto.email },
+        });
+
+        if (pendingReg) {
+          // Check if expired
+          if (pendingReg.expiresAt < new Date()) {
+            // Delete expired registration
+            await this.prisma.pendingRegistration.delete({
+              where: { id: pendingReg.id },
+            });
+            return {
+              success: false,
+              message: 'Registration link has expired. Please register again.',
+            };
+          }
+
+          // Invalidate existing OTPs
+          await this.prisma.oTP.updateMany({
+            where: {
+              pendingRegistrationId: pendingReg.id,
+              type: resendOtpDto.type,
+              used: false,
+            },
+            data: {
+              used: true,
+              usedAt: new Date(),
+            },
+          });
+
+          // Generate new OTP
+          const otpCode = uuidv4();
+          const expiresAt = new Date();
+          expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours
+
+          await this.prisma.oTP.create({
+            data: {
+              pendingRegistrationId: pendingReg.id,
+              code: otpCode,
+              type: resendOtpDto.type,
+              expiresAt,
+            },
+          });
+
+          // Send verification email
+          try {
+            await this.emailService.sendVerificationEmail(
+              pendingReg.email,
+              otpCode,
+              expiresAt,
+              pendingReg.id,
+            );
+            this.logger.log(`Verification email resent to ${pendingReg.email}`);
+          } catch (emailError) {
+            this.logger.error(`Failed to resend verification email: ${emailError.message}`);
+            throw new BadRequestException('Failed to send verification email. Please try again.');
+          }
+
+          return {
+            success: true,
+            message: 'A new verification code has been sent to your email.',
+          };
+        }
+      }
+
+      // Find user by email (for existing users)
       const user = await this.prisma.user.findUnique({
         where: { email: resendOtpDto.email },
       });

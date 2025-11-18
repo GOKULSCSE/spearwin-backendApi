@@ -525,6 +525,15 @@ export class AdminController {
     return this.adminService.downloadResume(resumeId, user);
   }
 
+  @Post('resumes/extract-text')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async extractResumeText(
+    @GetCurrentUser() user: CurrentUser,
+  ) {
+    return this.adminService.extractTextFromAllResumes(user);
+  }
+
   // =================================================================
   // NOTIFICATION MANAGEMENT
   // =================================================================
