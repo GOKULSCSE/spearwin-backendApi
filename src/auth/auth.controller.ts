@@ -1,11 +1,15 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
+  Query,
   HttpCode,
   HttpStatus,
   UseGuards,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -85,6 +89,43 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
     return this.authService.verifyEmail(verifyEmailDto);
+  }
+
+  @Get('verify-email')
+  async verifyEmailGet(
+    @Query('token') token: string,
+    @Query('userId') userId: string,
+    @Res() res: Response,
+  ) {
+    if (!token || !userId) {
+      const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000';
+      return res.redirect(`${frontendUrl}/verify-email?error=Invalid verification link`);
+    }
+
+    try {
+      const result = await this.authService.verifyEmail({ userId, code: token });
+      
+      // If verification successful, auto-login the user
+      if (result.success && result.userId) {
+        const loginResult = await this.authService.autoLoginAfterVerification(result.userId);
+
+        if (loginResult.success && loginResult.data && 'accessToken' in loginResult.data) {
+          const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000';
+          // Redirect to auto-login page with tokens
+          const accessToken = encodeURIComponent(loginResult.data.accessToken);
+          const refreshToken = encodeURIComponent(loginResult.data.refreshToken);
+          return res.redirect(`${frontendUrl}/auto-login?accessToken=${accessToken}&refreshToken=${refreshToken}`);
+        }
+      }
+      
+      // Fallback to login page if auto-login fails
+      const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000';
+      return res.redirect(`${frontendUrl}/login?verified=true`);
+    } catch (error) {
+      const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000';
+      const errorMessage = error.message || 'Verification failed';
+      return res.redirect(`${frontendUrl}/verify-email?error=${encodeURIComponent(errorMessage)}`);
+    }
   }
 
   @Post('verify-phone')

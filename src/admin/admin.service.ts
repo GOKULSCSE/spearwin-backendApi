@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { DatabaseService } from '../database/database.service';
+import { PdfExtractorService } from './services/pdf-extractor.service';
 import { ChangePasswordDto } from '../user/dto/change-password.dto';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { AdminLoginDto } from '../auth/dto/admin-login.dto';
@@ -82,6 +83,7 @@ export class AdminService {
   constructor(
     private prisma: DatabaseService,
     private readonly jwtService: JwtService,
+    private readonly pdfExtractor: PdfExtractorService,
   ) {}
 
   // =================================================================
@@ -2522,6 +2524,11 @@ export class AdminService {
             {
               lastName: { contains: query.candidateName, mode: 'insensitive' },
             },
+            {
+              user: {
+                email: { contains: query.candidateName, mode: 'insensitive' },
+              },
+            },
           ],
         };
       }
@@ -4718,22 +4725,28 @@ export class AdminService {
       const skip = (page - 1) * limit;
 
       // Build where clause for resume search
-      const resumeWhere: any = {
-        extractedText: { not: null }, // Only search resumes with extracted text
-      };
+      const resumeWhere: any = {};
+
+      // Build extractedText condition - must have extracted text AND match keywords if provided
+      if (query.keywords) {
+        const keywords = query.keywords.trim();
+        resumeWhere.AND = [
+          { extractedText: { not: null } },
+          {
+            extractedText: {
+              contains: keywords,
+              mode: 'insensitive',
+            },
+          },
+        ];
+      } else {
+        // If no keywords, just check that extracted text exists
+        resumeWhere.extractedText = { not: null };
+      }
 
       // Build where clause for candidate
       const candidateWhere: any = {};
       const orConditions: any[] = [];
-
-      // Search in extracted text if keywords provided
-      if (query.keywords) {
-        const keywords = query.keywords.trim();
-        resumeWhere.extractedText = {
-          contains: keywords,
-          mode: 'insensitive',
-        };
-      }
 
       // Filter by candidate name
       if (query.candidateName) {
@@ -4743,11 +4756,13 @@ export class AdminService {
         );
       }
 
-      // Filter by email
+      // Filter by email - email is on the User model, not Candidate
       if (query.email) {
-        candidateWhere.email = {
-          contains: query.email,
-          mode: 'insensitive',
+        candidateWhere.user = {
+          email: {
+            contains: query.email,
+            mode: 'insensitive',
+          },
         };
       }
 
@@ -4819,50 +4834,90 @@ export class AdminService {
         orderBy.uploadedAt = 'desc';
       }
 
-      // Execute search
-      const [resumes, total] = await Promise.all([
-        this.prisma.resume.findMany({
-          where: resumeWhere,
-          orderBy,
-          skip,
-          take: limit,
-          select: {
-            id: true,
-            candidateId: true,
-            fileName: true,
-            uploadedAt: true,
-            extractedText: true,
-            candidate: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-                mobileNumber: true,
-                currentTitle: true,
-                experienceYears: true,
-                currentCompany: true,
-                currentLocation: true,
-                expectedSalary: true,
-                skills: {
-                  select: {
-                    skillName: true,
+      // Execute search with error handling
+      let resumes: any[] = [];
+      let total = 0;
+
+      try {
+        [resumes, total] = await Promise.all([
+          this.prisma.resume.findMany({
+            where: resumeWhere,
+            orderBy,
+            skip,
+            take: limit,
+            select: {
+              id: true,
+              candidateId: true,
+              fileName: true,
+              uploadedAt: true,
+              extractedText: true,
+              candidate: {
+                select: {
+                  id: true,
+                  userId: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                  mobileNumber: true,
+                  currentTitle: true,
+                  experienceYears: true,
+                  currentCompany: true,
+                  currentLocation: true,
+                  expectedSalary: true,
+                  skills: {
+                    select: {
+                      skillName: true,
+                    },
                   },
-                },
-                city: {
-                  select: {
-                    id: true,
-                    name: true,
-                    state_name: true,
-                    country_name: true,
+                  city: {
+                    select: {
+                      id: true,
+                      name: true,
+                      state_name: true,
+                      country_name: true,
+                    },
+                  },
+                  user: {
+                    select: {
+                      id: true,
+                      email: true,
+                      phone: true,
+                    },
                   },
                 },
               },
             },
-          },
-        }),
-        this.prisma.resume.count({ where: resumeWhere }),
-      ]);
+          }),
+          this.prisma.resume.count({ where: resumeWhere }),
+        ]);
+      } catch (dbError: any) {
+        this.logger.error('Database query error in advanced CV search:', dbError);
+        this.logger.error('Query where clause:', JSON.stringify(resumeWhere, null, 2));
+        
+        // Check if it's a database connection error
+        if (
+          dbError.message?.includes("Can't reach database server") ||
+          dbError.message?.includes("connection") ||
+          dbError.code === 'P1001' ||
+          dbError.code === 'P1017'
+        ) {
+          throw new InternalServerErrorException(
+            'Database connection error. Please check your database server connection.',
+          );
+        }
+        
+        // Check for Prisma query errors
+        if (dbError.code?.startsWith('P')) {
+          throw new BadRequestException(
+            `Database query error: ${dbError.message || 'Invalid query parameters'}`,
+          );
+        }
+        
+        // Generic database error
+        throw new InternalServerErrorException(
+          `Database error: ${dbError.message || 'Unknown database error'}`,
+        );
+      }
 
       // Transform results
       const results = resumes.map((resume) => {
@@ -4901,10 +4956,11 @@ export class AdminService {
 
         return {
           candidateId: candidate.id,
+          userId: candidate.userId || candidate.user?.id || undefined,
           firstName: candidate.firstName,
           lastName: candidate.lastName,
-          email: candidate.email || 'N/A',
-          phone: candidate.mobileNumber || undefined,
+          email: candidate.email || candidate.user?.email || 'N/A',
+          phone: candidate.mobileNumber || candidate.user?.phone || undefined,
           currentTitle: candidate.currentTitle || undefined,
           experienceYears: candidate.experienceYears || undefined,
           currentCompany: candidate.currentCompany || undefined,
@@ -4946,9 +5002,124 @@ export class AdminService {
         message: error.message,
         stack: error.stack,
         query,
+        errorName: error?.constructor?.name,
       });
-      throw new BadRequestException(
+      
+      // Provide more specific error messages
+      if (error?.code === 'P2002') {
+        throw new BadRequestException('Database constraint violation');
+      } else if (error?.code === 'P2025') {
+        throw new NotFoundException('Record not found');
+      } else if (error?.message?.includes('Invalid')) {
+        throw new BadRequestException(`Invalid query: ${error.message}`);
+      }
+      
+      throw new InternalServerErrorException(
         `Failed to perform advanced CV search: ${error.message || 'Unknown error'}`,
+      );
+    }
+  }
+
+  // =================================================================
+  // EXTRACT TEXT FROM ALL RESUMES
+  // =================================================================
+
+  async extractTextFromAllResumes(currentUser: any): Promise<{
+    message: string;
+    total: number;
+    processed: number;
+    successful: number;
+    failed: number;
+  }> {
+    try {
+      // Verify admin permissions
+      if (
+        currentUser.role !== UserRole.ADMIN &&
+        currentUser.role !== UserRole.SUPER_ADMIN
+      ) {
+        throw new ForbiddenException('Only admins can extract resume text');
+      }
+
+      // Find all resumes that don't have extracted text and are PDFs
+      const resumes = await this.prisma.resume.findMany({
+        where: {
+          OR: [
+            { extractedText: null },
+            { extractedText: '' },
+          ],
+          mimeType: {
+            contains: 'pdf',
+            mode: 'insensitive',
+          },
+        },
+        select: {
+          id: true,
+          filePath: true,
+          fileName: true,
+          mimeType: true,
+        },
+      });
+
+      this.logger.log(`Found ${resumes.length} resumes without extracted text`);
+
+      let successful = 0;
+      let failed = 0;
+
+      // Process resumes in batches to avoid overwhelming the system
+      const batchSize = 10;
+      for (let i = 0; i < resumes.length; i += batchSize) {
+        const batch = resumes.slice(i, i + batchSize);
+        
+        await Promise.all(
+          batch.map(async (resume) => {
+            try {
+              // Build full URL for the PDF file
+              const fileUrl = resume.filePath.startsWith('http')
+                ? resume.filePath
+                : `https://spearwin.sfo3.digitaloceanspaces.com/${resume.filePath}`;
+
+              // Extract text from PDF
+              const extractedText = await this.pdfExtractor.extractTextFromPDF(fileUrl);
+
+              if (extractedText && extractedText.length > 0) {
+                // Clean the extracted text
+                const cleanedText = this.pdfExtractor.cleanExtractedText(extractedText);
+
+                // Update the resume with extracted text
+                await this.prisma.resume.update({
+                  where: { id: resume.id },
+                  data: { extractedText: cleanedText },
+                });
+
+                successful++;
+                this.logger.log(
+                  `Successfully extracted ${cleanedText.length} characters from ${resume.fileName}`,
+                );
+              } else {
+                this.logger.warn(`No text extracted from ${resume.fileName}`);
+                failed++;
+              }
+            } catch (error) {
+              this.logger.error(
+                `Failed to extract text from resume ${resume.id}: ${error.message}`,
+              );
+              failed++;
+            }
+          })
+        );
+      }
+
+      return {
+        message: `Text extraction completed. ${successful} successful, ${failed} failed.`,
+        total: resumes.length,
+        processed: successful + failed,
+        successful,
+        failed,
+      };
+    } catch (error) {
+      this.logger.error('Error extracting text from resumes:', error);
+      throw new InternalServerErrorException(
+        `Failed to extract text from resumes: ${error.message}`,
       );
     }
   }

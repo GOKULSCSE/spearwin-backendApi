@@ -468,11 +468,13 @@ Spearwin Team
     email: string,
     verificationCode: string,
     expiresAt: Date,
+    userId?: string,
   ): Promise<boolean> {
     // Use Microsoft Graph API if configured
     if (this.useGraphAPI) {
       const expiryHours = Math.round((expiresAt.getTime() - new Date().getTime()) / 3600000);
-      const htmlTemplate = this.getEmailVerificationTemplate(verificationCode, expiryHours);
+      const htmlTemplate = this.getEmailVerificationTemplate(verificationCode, expiryHours, userId);
+      this.logger.log(`📧 Sending verification email with button. userId: ${userId}, hasButton: ${htmlTemplate.includes('Verify Email Address')}`);
       const textContent = `
 Verify Your Email
 
@@ -512,11 +514,14 @@ Spearwin Team
       const mailFrom = process.env.SMTP_FROM || process.env.MAIL_FROM || process.env.EMAIL_USER || process.env.MAIL_USER;
       const mailFromName = process.env.SMTP_FROM_NAME || process.env.MAIL_FROM_NAME || process.env.EMAIL_FROM_NAME || 'Spearwin';
       
+      const htmlTemplate = this.getEmailVerificationTemplate(verificationCode, expiryHours, userId);
+      this.logger.log(`📧 Sending verification email with button. userId: ${userId}, hasButton: ${htmlTemplate.includes('Verify Email Address')}`);
+      
       const mailOptions = {
         from: `"${mailFromName}" <${mailFrom}>`,
         to: email,
         subject: 'Verify Your Email - Spearwin',
-        html: this.getEmailVerificationTemplate(verificationCode, expiryHours),
+        html: htmlTemplate,
         text: `
 Verify Your Email
 
@@ -769,7 +774,18 @@ Spearwin Team
     `.trim();
   }
 
-  private getEmailVerificationTemplate(verificationCode: string, expiryHours: number): string {
+  private getEmailVerificationTemplate(verificationCode: string, expiryHours: number, userId?: string): string {
+    // Build verification link - use backend API endpoint that will verify and redirect
+    const backendUrl = process.env.BACKEND_URL || process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000';
+    
+    // Always create verification link - userId should always be provided (either user ID or pending registration ID)
+    const verificationLink = userId 
+      ? `${backendUrl}/api/auth/verify-email?token=${verificationCode}&userId=${userId}`
+      : `${backendUrl}/api/auth/verify-email?token=${verificationCode}`;
+    const frontendVerificationLink = userId
+      ? `${frontendUrl}/verify-email?token=${verificationCode}&userId=${userId}`
+      : `${frontendUrl}/verify-email?token=${verificationCode}`;
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -802,15 +818,25 @@ Spearwin Team
                 Your verification code is:
               </p>
               
-              <!-- Verification Code -->
-              <div style="background-color: #f8f9fa; border: 2px dashed #0A4CA6; border-radius: 8px; padding: 20px; margin: 30px 0; text-align: center;">
-                <p style="color: #0A4CA6; font-size: 32px; font-weight: bold; letter-spacing: 8px; margin: 0;">
-                  ${verificationCode}
-                </p>
+              <!-- Verification Button - Primary CTA -->
+              <div style="text-align: center; margin: 40px 0;">
+                <a href="${verificationLink}" 
+                   style="display: inline-block; padding: 20px 60px; background: linear-gradient(135deg, #0A4CA6 0%, #013C7E 100%); color: #ffffff; text-decoration: none; border-radius: 10px; font-size: 20px; font-weight: bold; box-shadow: 0 6px 20px rgba(10, 76, 166, 0.5); transition: all 0.3s ease; letter-spacing: 1px; border: none; cursor: pointer;">
+                  ✓ Verify Email & Login to Dashboard
+                </a>
               </div>
               
-              <p style="color: #666666; line-height: 1.6; margin: 0 0 20px 0; font-size: 14px;">
-                Please enter this code to verify your email address and complete your registration.
+              <p style="color: #666666; line-height: 1.6; margin: 25px 0 20px 0; font-size: 17px; text-align: center; font-weight: 600;">
+                Click the button above to verify your email address. You will be automatically logged into your dashboard!
+              </p>
+              
+              <p style="color: #666666; line-height: 1.6; margin: 25px 0 0 0; font-size: 14px; text-align: center;">
+                If the button doesn't work, you can copy and paste this link into your browser:<br>
+                <a href="${verificationLink}" style="color: #0A4CA6; word-break: break-all; text-decoration: underline; margin-top: 5px; display: inline-block; font-size: 12px;">${verificationLink}</a>
+              </p>
+
+              <p style="color: #666666; line-height: 1.6; margin: 15px 0 0 0; font-size: 14px; text-align: center; font-style: italic;">
+                ✨ After clicking the verify button, you'll be automatically logged into your dashboard - no need to enter your password!
               </p>
               
               <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">

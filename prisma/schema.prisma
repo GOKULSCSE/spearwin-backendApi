@@ -385,31 +385,31 @@ model Job {
 }
 
 model JobApplication {
-  id                 String            @id @default(cuid())
-  jobId              String
-  candidateId        String
-  resumeId           String?
-  resumeFilePath     String? // Path to uploaded resume file in storage
-  coverLetter        String?
-  status             ApplicationStatus @default(APPLIED)
-  appliedAt          DateTime          @default(now())
-  reviewedAt         DateTime?
-  reviewedBy         String?
-  feedback           String?
+  id              String            @id @default(cuid())
+  jobId           String
+  candidateId     String
+  resumeId        String?
+  resumeFilePath  String? // Path to uploaded resume file in storage
+  coverLetter     String?
+  status          ApplicationStatus @default(APPLIED)
+  appliedAt       DateTime          @default(now())
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  feedback        String?
   // Contact information from application form
-  fullName           String?
-  email              String?
-  phone              String?
-  location           String?
-  experienceLevel    String?
+  fullName        String?
+  email           String?
+  phone           String?
+  location        String?
+  experienceLevel String?
   // Additional application details
-  noticePeriod       String?
-  currentCTC         String?
-  expectedCTC        String?
-  updatedAt          DateTime          @updatedAt
-  candidate          Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  job                Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  resume             Resume?           @relation(fields: [resumeId], references: [id])
+  noticePeriod    String?
+  currentCTC      String?
+  expectedCTC     String?
+  updatedAt       DateTime          @updatedAt
+  candidate       Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  job             Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resume          Resume?           @relation(fields: [resumeId], references: [id])
 
   @@unique([jobId, candidateId])
   @@index([candidateId, status])
@@ -455,18 +455,40 @@ model JobAlert {
 }
 
 model OTP {
-  id        String    @id @default(cuid())
-  userId    String
-  code      String
-  type      OTPType
-  expiresAt DateTime
-  used      Boolean   @default(false)
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                    String               @id @default(cuid())
+  userId                String?
+  code                  String
+  type                  OTPType
+  expiresAt             DateTime
+  used                  Boolean              @default(false)
+  usedAt                DateTime?
+  createdAt             DateTime             @default(now())
+  user                  User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pendingRegistrationId String?
+  pendingRegistration   PendingRegistration? @relation(fields: [pendingRegistrationId], references: [id], onDelete: Cascade)
 
   @@index([userId, type, used])
+  @@index([pendingRegistrationId, type, used])
   @@map("otps")
+}
+
+model PendingRegistration {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  password         String
+  fullName         String
+  firstName        String
+  lastName         String
+  role             UserRole
+  registrationData String // JSON string storing additional registration data
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  otps             OTP[]
+
+  @@index([email])
+  @@index([expiresAt])
+  @@map("pending_registrations")
 }
 
 model LoginSession {
