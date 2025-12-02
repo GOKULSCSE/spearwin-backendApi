@@ -56,8 +56,9 @@ let JobController = class JobController {
     async getJobAttributes(query) {
         return this.jobService.getJobAttributes(query);
     }
-    async getJobAttributesByCategory() {
-        return this.jobService.getJobAttributesByCategory();
+    async getAllJobAttributes() {
+        const result = await this.jobService.getJobAttributes({ limit: 1000 });
+        return result.data;
     }
     async getJobAttribute(id) {
         return this.jobService.getJobAttribute(id);
@@ -147,11 +148,11 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], JobController.prototype, "getJobAttributes", null);
 __decorate([
-    (0, common_1.Get)('attributes/categories'),
+    (0, common_1.Get)('attributes/all'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
-], JobController.prototype, "getJobAttributesByCategory", null);
+], JobController.prototype, "getAllJobAttributes", null);
 __decorate([
     (0, common_1.Get)('attributes/:id'),
     __param(0, (0, common_1.Param)('id')),

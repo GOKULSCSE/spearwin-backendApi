@@ -1,4 +1,15 @@
 import { CandidateService } from './candidate.service';
+interface MulterFile {
+    fieldname: string;
+    originalname: string;
+    encoding: string;
+    mimetype: string;
+    size: number;
+    buffer: Buffer;
+    destination?: string;
+    filename?: string;
+    path?: string;
+}
 import { UpdateCandidateProfileDto, UpdateAvailabilityDto, type CandidateProfileResponseDto } from './dto/candidate-profile.dto';
 import { CreateCandidateSkillDto, UpdateCandidateSkillDto, type CandidateSkillResponseDto } from './dto/candidate-skill.dto';
 import { CreateCandidateEducationDto, UpdateCandidateEducationDto, type CandidateEducationResponseDto } from './dto/candidate-education.dto';
@@ -12,7 +23,7 @@ export declare class CandidateController {
     constructor(candidateService: CandidateService);
     getCandidateProfile(user: CurrentUser): Promise<CandidateProfileResponseDto>;
     updateCandidateProfile(user: CurrentUser, updateDto: UpdateCandidateProfileDto): Promise<CandidateProfileResponseDto>;
-    uploadProfilePicture(user: CurrentUser, file: Multer.File): Promise<{
+    uploadProfilePicture(user: CurrentUser, file: MulterFile | undefined): Promise<{
         message: string;
         profilePicture: string;
     }>;
@@ -52,3 +63,4 @@ export declare class CandidateController {
     getResumeAnalysis(user: CurrentUser, resumeId: string): Promise<ResumeAnalysisResponseDto>;
     optimizeResume(user: CurrentUser, resumeId: string): Promise<ResumeOptimizationResponseDto>;
 }
+export {};

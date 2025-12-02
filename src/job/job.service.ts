@@ -1006,33 +1006,33 @@ export class JobService {
       // Check if attribute with same name and category already exists
       const existingAttribute = await this.db.job_attributes.findFirst({
         where: {
-          name: createJobAttributeDto.name,
-          category: createJobAttributeDto.category as any,
+          name: createJobAttributeDto.attributeName,
+          category: createJobAttributeDto.category,
         },
       });
 
       if (existingAttribute) {
         throw new BadRequestException(
-          `Job attribute with name "${createJobAttributeDto.name}" already exists in category "${createJobAttributeDto.category}"`,
+          `Job attribute with name "${createJobAttributeDto.attributeName}" and category "${createJobAttributeDto.category}" already exists`,
         );
       }
 
       const jobAttribute = await this.db.job_attributes.create({
         data: {
           id: `attr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          name: createJobAttributeDto.name,
-          category: createJobAttributeDto.category as any,
+          name: createJobAttributeDto.attributeName,
+          category: createJobAttributeDto.category,
           description: createJobAttributeDto.description,
-          isActive: createJobAttributeDto.isActive ?? true,
           sortOrder: createJobAttributeDto.sortOrder ?? 0,
+          isActive: createJobAttributeDto.isActive ?? true,
           updatedAt: new Date(),
         },
       });
 
       return {
         id: jobAttribute.id,
-        name: jobAttribute.name,
-        category: jobAttribute.category as any,
+        attributeName: jobAttribute.name,
+        category: jobAttribute.category,
         description: jobAttribute.description,
         isActive: jobAttribute.isActive,
         sortOrder: jobAttribute.sortOrder,
@@ -1064,34 +1064,38 @@ export class JobService {
       }
 
       // Check for name conflicts if name is being updated
-      if (updateJobAttributeDto.name && updateJobAttributeDto.name !== existingAttribute.name) {
+      if (updateJobAttributeDto.attributeName && updateJobAttributeDto.attributeName !== existingAttribute.name) {
         const conflictingAttribute = await this.db.job_attributes.findFirst({
           where: {
-            name: updateJobAttributeDto.name,
-            category: (updateJobAttributeDto.category || existingAttribute.category) as any,
+            name: updateJobAttributeDto.attributeName,
             id: { not: id },
           },
         });
 
         if (conflictingAttribute) {
           throw new BadRequestException(
-            `Job attribute with name "${updateJobAttributeDto.name}" already exists in category "${updateJobAttributeDto.category || existingAttribute.category}"`,
+            `Job attribute with name "${updateJobAttributeDto.attributeName}" already exists`,
           );
         }
       }
 
+      const updateData: any = {};
+      if (updateJobAttributeDto.attributeName !== undefined) {
+        updateData.name = updateJobAttributeDto.attributeName;
+      }
+      if (updateJobAttributeDto.isActive !== undefined) {
+        updateData.isActive = updateJobAttributeDto.isActive;
+      }
+
       const updatedAttribute = await this.db.job_attributes.update({
         where: { id },
-        data: {
-          ...updateJobAttributeDto,
-          category: updateJobAttributeDto.category as any,
-        },
+        data: updateData,
       });
 
       return {
         id: updatedAttribute.id,
-        name: updatedAttribute.name,
-        category: updatedAttribute.category as any,
+        attributeName: updatedAttribute.name,
+        category: updatedAttribute.category,
         description: updatedAttribute.description,
         isActive: updatedAttribute.isActive,
         sortOrder: updatedAttribute.sortOrder,
@@ -1148,8 +1152,8 @@ export class JobService {
 
       return {
         id: jobAttribute.id,
-        name: jobAttribute.name,
-        category: jobAttribute.category as any,
+        attributeName: jobAttribute.name,
+        category: jobAttribute.category,
         description: jobAttribute.description,
         isActive: jobAttribute.isActive,
         sortOrder: jobAttribute.sortOrder,
@@ -1186,7 +1190,7 @@ export class JobService {
       const where: Prisma.job_attributesWhereInput = {};
 
       if (category) {
-        where.category = category as any;
+        where.category = category;
       }
 
       if (isActive !== undefined) {
@@ -1218,8 +1222,8 @@ export class JobService {
         message: 'Job attributes retrieved successfully',
         data: attributes.map((attr) => ({
           id: attr.id,
-          name: attr.name,
-          category: attr.category as any,
+          attributeName: attr.name,
+          category: attr.category,
           description: attr.description,
           isActive: attr.isActive,
           sortOrder: attr.sortOrder,
@@ -1248,18 +1252,18 @@ export class JobService {
       for (const category of categories) {
         const attributes = await this.db.job_attributes.findMany({
           where: {
-            category: category as JobAttributeCategory,
+            category: category,
             isActive: true,
           },
           orderBy: { sortOrder: 'asc' },
         });
 
         result.push({
-          category: category as any,
+          category: category,
           attributes: attributes.map((attr) => ({
             id: attr.id,
-            name: attr.name,
-            category: attr.category as any,
+            attributeName: attr.name,
+            category: attr.category,
             description: attr.description,
             isActive: attr.isActive,
             sortOrder: attr.sortOrder,
@@ -1290,7 +1294,7 @@ export class JobService {
       // Check for existing attributes to avoid duplicates
       const existingNames = await this.db.job_attributes.findMany({
         where: {
-          category: category as any,
+          category: category,
           name: { in: attributes.map((attr) => attr.name) },
         },
         select: { name: true },
@@ -1312,7 +1316,7 @@ export class JobService {
         data: newAttributes.map((attr) => ({
           id: `attr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           name: attr.name,
-          category: category as any,
+          category: category,
           description: attr.description,
           sortOrder: attr.sortOrder ?? 0,
           updatedAt: new Date(),

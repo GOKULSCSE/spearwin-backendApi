@@ -304,6 +304,9 @@ let AuthService = class AuthService {
             throw new common_1.BadRequestException('Invalid or expired reset token');
         }
         const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, 10);
+        if (!otp.userId) {
+            throw new common_1.BadRequestException('Invalid OTP: missing user ID');
+        }
         await this.prisma.user.update({
             where: { id: otp.userId },
             data: { password: hashedPassword },
@@ -315,6 +318,9 @@ let AuthService = class AuthService {
                 usedAt: new Date(),
             },
         });
+        if (!otp.userId) {
+            throw new common_1.BadRequestException('Invalid OTP: missing user ID');
+        }
         await this.prisma.loginSession.updateMany({
             where: {
                 userId: otp.userId,

@@ -5,7 +5,6 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { Multer } from 'multer';
 import {
   UpdateCandidateProfileDto,
   UpdateAvailabilityDto,
@@ -1321,9 +1320,23 @@ export class CandidateService {
 
   async uploadProfilePicture(
     userId: string,
-    file: Multer.File,
+    file: {
+      fieldname: string;
+      originalname: string;
+      encoding: string;
+      mimetype: string;
+      size: number;
+      buffer: Buffer;
+      destination?: string;
+      filename?: string;
+      path?: string;
+    } | undefined,
   ): Promise<{ message: string; profilePicture: string }> {
     try {
+      if (!file) {
+        throw new BadRequestException('No file provided');
+      }
+
       const candidate = await this.db.candidate.findFirst({
         where: { userId },
       });
@@ -1334,7 +1347,7 @@ export class CandidateService {
 
       // In a real application, you would upload the file to a cloud storage service
       // For now, we'll just store the filename
-      const profilePicture = `/uploads/profile-pictures/${file.filename}`;
+      const profilePicture = `/uploads/profile-pictures/${file.originalname}`;
 
       await this.db.candidate.update({
         where: { id: candidate.id },

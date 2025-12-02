@@ -29,7 +29,6 @@ import {
   JobAttributeQueryDto,
   JobAttributeResponseDto,
   JobAttributeListResponseDto,
-  JobAttributeCategoriesResponseDto,
   BulkCreateJobAttributesDto,
 } from './dto/job-attribute.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -127,9 +126,10 @@ export class JobController {
     return this.jobService.getJobAttributes(query);
   }
 
-  @Get('attributes/categories')
-  async getJobAttributesByCategory(): Promise<JobAttributeCategoriesResponseDto> {
-    return this.jobService.getJobAttributesByCategory();
+  @Get('attributes/all')
+  async getAllJobAttributes(): Promise<JobAttributeResponseDto[]> {
+    const result = await this.jobService.getJobAttributes({ limit: 1000 });
+    return result.data;
   }
 
   @Get('attributes/:id')

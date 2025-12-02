@@ -13,6 +13,7 @@ exports.JobService = void 0;
 const common_1 = require("@nestjs/common");
 const database_service_1 = require("../database/database.service");
 const client_1 = require("@prisma/client");
+const client_2 = require("@prisma/client");
 let JobService = class JobService {
     db;
     constructor(db) {
@@ -685,7 +686,7 @@ let JobService = class JobService {
                     },
                 },
             });
-            await this.logActivity(userId, client_1.LogAction.APPLY, client_1.LogLevel.INFO, 'JobApplication', application.id, `Applied for job: ${job.title}`);
+            await this.logActivity(userId, client_2.LogAction.APPLY, client_2.LogLevel.INFO, 'JobApplication', application.id, `Applied for job: ${job.title}`);
             return {
                 id: application.id,
                 jobId: application.jobId,
@@ -814,27 +815,27 @@ let JobService = class JobService {
         try {
             const existingAttribute = await this.db.job_attributes.findFirst({
                 where: {
-                    name: createJobAttributeDto.name,
+                    name: createJobAttributeDto.attributeName,
                     category: createJobAttributeDto.category,
                 },
             });
             if (existingAttribute) {
-                throw new common_1.BadRequestException(`Job attribute with name "${createJobAttributeDto.name}" already exists in category "${createJobAttributeDto.category}"`);
+                throw new common_1.BadRequestException(`Job attribute with name "${createJobAttributeDto.attributeName}" and category "${createJobAttributeDto.category}" already exists`);
             }
             const jobAttribute = await this.db.job_attributes.create({
                 data: {
                     id: `attr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                    name: createJobAttributeDto.name,
+                    name: createJobAttributeDto.attributeName,
                     category: createJobAttributeDto.category,
                     description: createJobAttributeDto.description,
-                    isActive: createJobAttributeDto.isActive ?? true,
                     sortOrder: createJobAttributeDto.sortOrder ?? 0,
+                    isActive: createJobAttributeDto.isActive ?? true,
                     updatedAt: new Date(),
                 },
             });
             return {
                 id: jobAttribute.id,
-                name: jobAttribute.name,
+                attributeName: jobAttribute.name,
                 category: jobAttribute.category,
                 description: jobAttribute.description,
                 isActive: jobAttribute.isActive,
@@ -858,28 +859,31 @@ let JobService = class JobService {
             if (!existingAttribute) {
                 throw new common_1.NotFoundException('Job attribute not found');
             }
-            if (updateJobAttributeDto.name && updateJobAttributeDto.name !== existingAttribute.name) {
+            if (updateJobAttributeDto.attributeName && updateJobAttributeDto.attributeName !== existingAttribute.name) {
                 const conflictingAttribute = await this.db.job_attributes.findFirst({
                     where: {
-                        name: updateJobAttributeDto.name,
-                        category: (updateJobAttributeDto.category || existingAttribute.category),
+                        name: updateJobAttributeDto.attributeName,
                         id: { not: id },
                     },
                 });
                 if (conflictingAttribute) {
-                    throw new common_1.BadRequestException(`Job attribute with name "${updateJobAttributeDto.name}" already exists in category "${updateJobAttributeDto.category || existingAttribute.category}"`);
+                    throw new common_1.BadRequestException(`Job attribute with name "${updateJobAttributeDto.attributeName}" already exists`);
                 }
+            }
+            const updateData = {};
+            if (updateJobAttributeDto.attributeName !== undefined) {
+                updateData.name = updateJobAttributeDto.attributeName;
+            }
+            if (updateJobAttributeDto.isActive !== undefined) {
+                updateData.isActive = updateJobAttributeDto.isActive;
             }
             const updatedAttribute = await this.db.job_attributes.update({
                 where: { id },
-                data: {
-                    ...updateJobAttributeDto,
-                    category: updateJobAttributeDto.category,
-                },
+                data: updateData,
             });
             return {
                 id: updatedAttribute.id,
-                name: updatedAttribute.name,
+                attributeName: updatedAttribute.name,
                 category: updatedAttribute.category,
                 description: updatedAttribute.description,
                 isActive: updatedAttribute.isActive,
@@ -928,7 +932,7 @@ let JobService = class JobService {
             }
             return {
                 id: jobAttribute.id,
-                name: jobAttribute.name,
+                attributeName: jobAttribute.name,
                 category: jobAttribute.category,
                 description: jobAttribute.description,
                 isActive: jobAttribute.isActive,
@@ -974,7 +978,7 @@ let JobService = class JobService {
                 message: 'Job attributes retrieved successfully',
                 data: attributes.map((attr) => ({
                     id: attr.id,
-                    name: attr.name,
+                    attributeName: attr.name,
                     category: attr.category,
                     description: attr.description,
                     isActive: attr.isActive,
@@ -996,7 +1000,7 @@ let JobService = class JobService {
     }
     async getJobAttributesByCategory() {
         try {
-            const categories = Object.values(client_2.JobAttributeCategory);
+            const categories = Object.values(client_1.JobAttributeCategory);
             const result = [];
             for (const category of categories) {
                 const attributes = await this.db.job_attributes.findMany({
@@ -1010,7 +1014,7 @@ let JobService = class JobService {
                     category: category,
                     attributes: attributes.map((attr) => ({
                         id: attr.id,
-                        name: attr.name,
+                        attributeName: attr.name,
                         category: attr.category,
                         description: attr.description,
                         isActive: attr.isActive,

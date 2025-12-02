@@ -9,35 +9,24 @@ import {
   Max,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { Model } from 'firebase-admin/machine-learning';
+import { JobAttributeCategory } from '@prisma/client';
 
-// Define JobAttributeCategory enum locally to avoid import issues
-export enum JobAttributeCategory {
-  SKILL = 'SKILL',
-  EXPERIENCE = 'EXPERIENCE',
-  EDUCATION = 'EDUCATION',
-  LOCATION = 'LOCATION',
-  INDUSTRY = 'INDUSTRY',
-  COMPANY_SIZE = 'COMPANY_SIZE',
-  JOB_TYPE = 'JOB_TYPE',
-  SALARY_RANGE = 'SALARY_RANGE',
-  BENEFITS = 'BENEFITS',
-  REQUIREMENTS = 'REQUIREMENTS',
-  PREFERENCES = 'PREFERENCES',
-}
+// Re-export for convenience
+export { JobAttributeCategory };
 
 // =================================================================
 // CREATE JOB ATTRIBUTE DTO
 // =================================================================
 
 export class CreateJobAttributeDto {
-  @IsString({ message: 'Name must be a string' })
-  @IsNotEmpty({ message: 'Name is required' })
-  name: string;
+  @IsString({ message: 'Attribute name must be a string' })
+  @IsNotEmpty({ message: 'Attribute name is required' })
+  attributeName: string;
 
-  @IsEnum(Object.values(JobAttributeCategory), {
+  @IsEnum(JobAttributeCategory, {
     message: 'Category must be a valid job attribute category',
   })
+  @IsNotEmpty({ message: 'Category is required' })
   category: JobAttributeCategory;
 
   @IsOptional()
@@ -45,13 +34,12 @@ export class CreateJobAttributeDto {
   description?: string;
 
   @IsOptional()
-  @IsBoolean({ message: 'Is active must be a boolean' })
-  isActive?: boolean = true;
+  @IsInt({ message: 'Sort order must be a number' })
+  sortOrder?: number;
 
   @IsOptional()
-  @IsInt({ message: 'Sort order must be a number' })
-  @Min(0, { message: 'Sort order must be at least 0' })
-  sortOrder?: number = 0;
+  @IsBoolean({ message: 'Is active must be a boolean' })
+  isActive?: boolean = true;
 }
 
 // =================================================================
@@ -60,27 +48,12 @@ export class CreateJobAttributeDto {
 
 export class UpdateJobAttributeDto {
   @IsOptional()
-  @IsString({ message: 'Name must be a string' })
-  name?: string;
-
-  @IsOptional()
-  @IsEnum(Object.values(JobAttributeCategory), {
-    message: 'Category must be a valid job attribute category',
-  })
-  category?: JobAttributeCategory;
-
-  @IsOptional()
-  @IsString({ message: 'Description must be a string' })
-  description?: string;
+  @IsString({ message: 'Attribute name must be a string' })
+  attributeName?: string;
 
   @IsOptional()
   @IsBoolean({ message: 'Is active must be a boolean' })
   isActive?: boolean;
-
-  @IsOptional()
-  @IsInt({ message: 'Sort order must be a number' })
-  @Min(0, { message: 'Sort order must be at least 0' })
-  sortOrder?: number;
 }
 
 // =================================================================
@@ -89,7 +62,7 @@ export class UpdateJobAttributeDto {
 
 export class JobAttributeQueryDto {
   @IsOptional()
-  @IsEnum(Object.values(JobAttributeCategory), {
+  @IsEnum(JobAttributeCategory, {
     message: 'Category must be a valid job attribute category',
   })
   category?: JobAttributeCategory;
@@ -130,7 +103,7 @@ export class JobAttributeQueryDto {
 // =================================================================
 
 export class BulkCreateJobAttributesDto {
-  @IsEnum(Object.values(JobAttributeCategory), {
+  @IsEnum(JobAttributeCategory, {
     message: 'Category must be a valid job attribute category',
   })
   category: JobAttributeCategory;
@@ -149,11 +122,11 @@ export class BulkCreateJobAttributesDto {
 
 export class JobAttributeResponseDto {
   id: string;
-  name: string;
+  attributeName: string;
   category: JobAttributeCategory;
   description?: string | null;
   isActive: boolean;
-  sortOrder: number;
+  sortOrder?: number;
   createdAt: Date;
   updatedAt: Date;
 }

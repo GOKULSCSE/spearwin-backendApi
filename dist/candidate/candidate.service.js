@@ -1118,13 +1118,16 @@ let CandidateService = class CandidateService {
     }
     async uploadProfilePicture(userId, file) {
         try {
+            if (!file) {
+                throw new common_1.BadRequestException('No file provided');
+            }
             const candidate = await this.db.candidate.findFirst({
                 where: { userId },
             });
             if (!candidate) {
                 throw new common_1.NotFoundException('Candidate profile not found');
             }
-            const profilePicture = `/uploads/profile-pictures/${file.filename}`;
+            const profilePicture = `/uploads/profile-pictures/${file.originalname}`;
             await this.db.candidate.update({
                 where: { id: candidate.id },
                 data: { profilePicture },

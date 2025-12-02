@@ -156,7 +156,7 @@ let CompanyService = class CompanyService {
                 country: company.country,
                 state: company.state,
                 city: company.city,
-                user: company.user
+                user: 'user' in company && company.user
                     ? {
                         id: company.user.id,
                         email: company.user.email,

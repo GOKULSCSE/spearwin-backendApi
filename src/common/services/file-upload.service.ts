@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+// @ts-ignore - aws-sdk types may not be available
 import * as AWS from 'aws-sdk';
 import { v4 as uuidv4 } from 'uuid';
 

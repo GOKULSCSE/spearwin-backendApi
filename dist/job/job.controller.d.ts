@@ -3,7 +3,7 @@ import { JobQueryDto, JobSearchDto } from './dto/job-query.dto';
 import { JobResponseDto, JobListResponseDto, JobFiltersResponseDto, JobViewResponseDto } from './dto/job-response.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { ApplyForJobDto, ApplicationResponseDto } from '../candidate/dto/job-application.dto';
-import { CreateJobAttributeDto, UpdateJobAttributeDto, JobAttributeQueryDto, JobAttributeResponseDto, JobAttributeListResponseDto, JobAttributeCategoriesResponseDto, BulkCreateJobAttributesDto } from './dto/job-attribute.dto';
+import { CreateJobAttributeDto, UpdateJobAttributeDto, JobAttributeQueryDto, JobAttributeResponseDto, JobAttributeListResponseDto, BulkCreateJobAttributesDto } from './dto/job-attribute.dto';
 import { type CurrentUser } from '../auth/decorators/current-user.decorator';
 export declare class JobController {
     private readonly jobService;
@@ -18,7 +18,7 @@ export declare class JobController {
     updateJob(jobId: string, updateJobDto: UpdateJobDto): Promise<JobResponseDto>;
     createJobAttribute(createJobAttributeDto: CreateJobAttributeDto): Promise<JobAttributeResponseDto>;
     getJobAttributes(query: JobAttributeQueryDto): Promise<JobAttributeListResponseDto>;
-    getJobAttributesByCategory(): Promise<JobAttributeCategoriesResponseDto>;
+    getAllJobAttributes(): Promise<JobAttributeResponseDto[]>;
     getJobAttribute(id: string): Promise<JobAttributeResponseDto>;
     updateJobAttribute(id: string, updateJobAttributeDto: UpdateJobAttributeDto): Promise<JobAttributeResponseDto>;
     deleteJobAttribute(id: string): Promise<{

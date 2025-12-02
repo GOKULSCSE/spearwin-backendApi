@@ -47,7 +47,17 @@ export declare class CandidateService {
     private logActivity;
     private getOrCreateCandidate;
     updateCandidateProfile(userId: string, updateDto: UpdateCandidateProfileDto): Promise<CandidateProfileResponseDto>;
-    uploadProfilePicture(userId: string, file: Multer.File): Promise<{
+    uploadProfilePicture(userId: string, file: {
+        fieldname: string;
+        originalname: string;
+        encoding: string;
+        mimetype: string;
+        size: number;
+        buffer: Buffer;
+        destination?: string;
+        filename?: string;
+        path?: string;
+    } | undefined): Promise<{
         message: string;
         profilePicture: string;
     }>;

@@ -366,6 +366,9 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, 10);
 
     // Update user password
+    if (!otp.userId) {
+      throw new BadRequestException('Invalid OTP: missing user ID');
+    }
     await this.prisma.user.update({
       where: { id: otp.userId },
       data: { password: hashedPassword },
@@ -381,6 +384,9 @@ export class AuthService {
     });
 
     // Invalidate all existing sessions
+    if (!otp.userId) {
+      throw new BadRequestException('Invalid OTP: missing user ID');
+    }
     await this.prisma.loginSession.updateMany({
       where: {
         userId: otp.userId,
