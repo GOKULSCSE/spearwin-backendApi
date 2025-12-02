@@ -1,87 +1,164 @@
 import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+import axios from 'axios';
 import { ContactDto } from './dto/contact.dto';
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private transporter: nodemailer.Transporter;
+  private accessToken: string | null = null;
+  private tokenExpiry: number = 0;
 
   constructor(private configService: ConfigService) {
-    this.initializeTransporter();
+    this.initializeGraphAPI();
   }
 
-  private initializeTransporter() {
+  private async initializeGraphAPI() {
     try {
-      const smtpConfig = {
-        host: this.configService.get<string>('SMTP_HOST'),
-        port: parseInt(this.configService.get<string>('SMTP_PORT') || '587'),
-        secure: this.configService.get<string>('SMTP_SECURE') === 'true', // true for 465, false for other ports
-        auth: {
-          user: this.configService.get<string>('SMTP_USER'),
-          pass: this.configService.get<string>('SMTP_PASS'),
-        },
-        tls: {
-          rejectUnauthorized: false, // Set to true in production with valid certificates
-        },
-      };
+      const tenantId = this.configService.get<string>('GRAPH_TENANT_ID');
+      const clientId = this.configService.get<string>('GRAPH_CLIENT_ID');
+      const clientSecret = this.configService.get<string>('GRAPH_CLIENT_SECRET');
 
-      // Validate required SMTP configuration
-      if (!smtpConfig.host || !smtpConfig.auth.user || !smtpConfig.auth.pass) {
+      if (!tenantId || !clientId || !clientSecret) {
         this.logger.warn(
-          'SMTP configuration is incomplete. Email functionality will be disabled.',
+          'Microsoft Graph API configuration is incomplete. Email functionality will be disabled.',
         );
         return;
       }
 
-      this.transporter = nodemailer.createTransport(smtpConfig);
-
-      // Verify connection
-      this.transporter.verify((error, success) => {
-        if (error) {
-          this.logger.error('SMTP connection failed:', error);
-        } else {
-          this.logger.log('SMTP server is ready to send emails');
-        }
-      });
+      this.logger.log('Microsoft Graph API configuration loaded successfully');
     } catch (error) {
-      this.logger.error('Failed to initialize SMTP transporter:', error);
+      this.logger.error('Failed to initialize Microsoft Graph API:', error);
+    }
+  }
+
+  private async getAccessToken(): Promise<string> {
+    // Check if we have a valid token
+    if (this.accessToken && Date.now() < this.tokenExpiry) {
+      return this.accessToken as string;
+    }
+
+    try {
+      const tenantId = this.configService.get<string>('GRAPH_TENANT_ID');
+      const clientId = this.configService.get<string>('GRAPH_CLIENT_ID');
+      const clientSecret = this.configService.get<string>('GRAPH_CLIENT_SECRET');
+
+      if (!tenantId || !clientId || !clientSecret) {
+        throw new Error('Microsoft Graph API credentials are not configured');
+      }
+
+      const tokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
+
+      const params = new URLSearchParams();
+      params.append('client_id', clientId);
+      params.append('client_secret', clientSecret);
+      params.append('scope', 'https://graph.microsoft.com/.default');
+      params.append('grant_type', 'client_credentials');
+
+      const response = await axios.post(tokenUrl, params.toString(), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      });
+
+      this.accessToken = response.data.access_token;
+      // Set expiry to 5 minutes before actual expiry for safety
+      this.tokenExpiry = Date.now() + (response.data.expires_in - 300) * 1000;
+
+      this.logger.log('Successfully obtained Microsoft Graph API access token');
+      return this.accessToken as string;
+    } catch (error) {
+      this.logger.error('Failed to obtain access token:', error);
+      throw new InternalServerErrorException(
+        'Failed to authenticate with Microsoft Graph API',
+      );
     }
   }
 
   async sendContactEmail(contactDto: ContactDto): Promise<{ success: boolean; message: string }> {
     try {
-      if (!this.transporter) {
+      const accessToken = await this.getAccessToken();
+      const fromEmail = this.configService.get<string>('GRAPH_USER_EMAIL') || this.configService.get<string>('SMTP_FROM');
+      const fromName = this.configService.get<string>('GRAPH_FROM_NAME') || this.configService.get<string>('APP_NAME') || 'SpearWin';
+      const toEmail = this.configService.get<string>('SMTP_TO') || fromEmail;
+      const appName = this.configService.get<string>('APP_NAME') || 'SpearWin';
+
+      if (!fromEmail) {
         throw new InternalServerErrorException(
-          'SMTP is not configured. Please check your environment variables.',
+          'Email sender is not configured. Please check your environment variables.',
         );
       }
 
-      const fromEmail = this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER');
-      const toEmail = this.configService.get<string>('SMTP_TO') || this.configService.get<string>('SMTP_USER');
-      const appName = this.configService.get<string>('APP_NAME') || 'SpearWin';
-
       // Email to admin/company
-      const adminMailOptions = {
-        from: `"${appName}" <${fromEmail}>`,
-        to: toEmail,
-        subject: `New Contact Form Submission - ${contactDto.service}`,
-        html: this.getAdminEmailTemplate(contactDto),
+      const adminMessageBody = {
+        contentType: 'HTML' as const,
+        content: this.getAdminEmailTemplate(contactDto),
+      };
+
+      const adminMessageRecipients = [
+        {
+          emailAddress: {
+            address: toEmail,
+          },
+        },
+      ];
+
+      const adminMessage = {
+        message: {
+          subject: `New Contact Form Submission - ${contactDto.service}`,
+          body: adminMessageBody,
+          toRecipients: adminMessageRecipients,
+        },
+        saveToSentItems: true,
       };
 
       // Email confirmation to user
-      const userMailOptions = {
-        from: `"${appName}" <${fromEmail}>`,
-        to: contactDto.email,
-        subject: `Thank you for contacting ${appName}`,
-        html: this.getUserConfirmationTemplate(contactDto, appName),
+      const userMessageBody = {
+        contentType: 'HTML' as const,
+        content: this.getUserConfirmationTemplate(contactDto, appName),
       };
 
-      // Send both emails
+      const userMessageRecipients = [
+        {
+          emailAddress: {
+            address: contactDto.email,
+          },
+        },
+      ];
+
+      const userMessage = {
+        message: {
+          subject: `Thank you for contacting ${appName}`,
+          body: userMessageBody,
+          toRecipients: userMessageRecipients,
+        },
+        saveToSentItems: true,
+      };
+
+      // Send both emails using Microsoft Graph API
+      const graphApiUrl = `https://graph.microsoft.com/v1.0/users/${fromEmail}/sendMail`;
+
       await Promise.all([
-        this.transporter.sendMail(adminMailOptions),
-        this.transporter.sendMail(userMailOptions),
+        axios.post(
+          graphApiUrl,
+          adminMessage,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+          },
+        ),
+        axios.post(
+          graphApiUrl,
+          userMessage,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+          },
+        ),
       ]);
 
       this.logger.log(`Contact email sent successfully from ${contactDto.email}`);
@@ -90,8 +167,11 @@ export class MailService {
         success: true,
         message: 'Your message has been sent successfully. We will get back to you soon!',
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('Failed to send contact email:', error);
+      if (error.response) {
+        this.logger.error('Graph API error response:', error.response.data);
+      }
       throw new InternalServerErrorException(
         'Failed to send email. Please try again later.',
       );
@@ -184,4 +264,3 @@ export class MailService {
     `;
   }
 }
-
