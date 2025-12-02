@@ -141,6 +141,8 @@ Please respond directly to: ${email}
         errorMessage = 'Email service authentication is required. Please configure SMTP credentials in the backend.';
       } else if (errorMessage.includes('EAUTH') || errorMessage.includes('Invalid login')) {
         errorMessage = 'Email authentication failed. Please check SMTP credentials.';
+      } else if (errorMessage.includes('Access denied') || errorMessage.includes('Mail.Send')) {
+        errorMessage = 'Email service configuration error. Please contact the administrator.';
       }
       
       throw new BadRequestException(errorMessage);
