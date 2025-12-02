@@ -75,33 +75,42 @@ export class MailService {
     }
   }
 
-  async sendContactEmail(contactDto: ContactDto): Promise<{ success: boolean; message: string }> {
-    const fromEmail =
-      this.configService.get<string>('GRAPH_USER_EMAIL') ||
-      this.configService.get<string>('SMTP_FROM');
-    const fromName =
-      this.configService.get<string>('GRAPH_FROM_NAME') ||
-      this.configService.get<string>('APP_NAME') ||
-      'SpearWin';
-    const toEmail = this.configService.get<string>('SMTP_TO') || fromEmail;
-    const appName = this.configService.get<string>('APP_NAME') || 'SpearWin';
-
+  /**
+   * Generic method to send email using Microsoft Graph API
+   * @param fromEmail - Email address to send from (must exist in Azure AD)
+   * @param toEmail - Email address to send to
+   * @param subject - Email subject
+   * @param htmlContent - HTML content of the email
+   * @param fromName - Display name for sender (optional)
+   */
+  async sendEmail(
+    fromEmail: string,
+    toEmail: string,
+    subject: string,
+    htmlContent: string,
+    fromName?: string,
+    replyToEmail?: string,
+  ): Promise<void> {
     try {
       const accessToken = await this.getAccessToken();
 
       if (!fromEmail) {
         throw new InternalServerErrorException(
-          'Email sender is not configured. Please check your environment variables.',
+          'From email address is required.',
         );
       }
 
-      // Email to admin/company
-      const adminMessageBody = {
+      const displayName = fromName || 
+        this.configService.get<string>('GRAPH_FROM_NAME') ||
+        this.configService.get<string>('APP_NAME') ||
+        'SpearWin';
+
+      const messageBody = {
         contentType: 'HTML' as const,
-        content: this.getAdminEmailTemplate(contactDto),
+        content: htmlContent,
       };
 
-      const adminMessageRecipients = [
+      const messageRecipients = [
         {
           emailAddress: {
             address: toEmail,
@@ -109,90 +118,58 @@ export class MailService {
         },
       ];
 
-      const adminMessage = {
+      const message = {
         message: {
-          subject: `New Contact Form Submission - ${contactDto.service}`,
-          body: adminMessageBody,
-          toRecipients: adminMessageRecipients,
+          subject,
+          body: messageBody,
+          toRecipients: messageRecipients,
+          ...(replyToEmail && {
+            replyTo: [
+              {
+                emailAddress: {
+                  address: replyToEmail,
+                },
+              },
+            ],
+          }),
         },
         saveToSentItems: true,
       };
 
-      // Email confirmation to user
-      const userMessageBody = {
-        contentType: 'HTML' as const,
-        content: this.getUserConfirmationTemplate(contactDto, appName),
-      };
-
-      const userMessageRecipients = [
-        {
-          emailAddress: {
-            address: contactDto.email,
-          },
-        },
-      ];
-
-      const userMessage = {
-        message: {
-          subject: `Thank you for contacting ${appName}`,
-          body: userMessageBody,
-          toRecipients: userMessageRecipients,
-        },
-        saveToSentItems: true,
-      };
-
-      // Send both emails using Microsoft Graph API
       const graphApiUrl = `https://graph.microsoft.com/v1.0/users/${fromEmail}/sendMail`;
 
-      await Promise.all([
-        axios.post(
-          graphApiUrl,
-          adminMessage,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-            },
-          },
-        ),
-        axios.post(
-          graphApiUrl,
-          userMessage,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-            },
-          },
-        ),
-      ]);
+      this.logger.log(`Sending email from ${fromEmail} to ${toEmail} with subject: ${subject}`);
 
-      this.logger.log(`Contact email sent successfully from ${contactDto.email}`);
+      await axios.post(
+        graphApiUrl,
+        message,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
 
-      return {
-        success: true,
-        message: 'Your message has been sent successfully. We will get back to you soon!',
-      };
+      this.logger.log(`Email sent successfully from ${fromEmail} to ${toEmail}`);
     } catch (error: any) {
-      this.logger.error('Failed to send contact email:', error);
+      this.logger.error(`Failed to send email from ${fromEmail} to ${toEmail}:`, error);
       if (error.response) {
         this.logger.error('Graph API error response:', JSON.stringify(error.response.data, null, 2));
         this.logger.error('Graph API error status:', error.response.status);
-        this.logger.error('Graph API error headers:', error.response.headers);
         
-        // Provide more specific error messages
         const errorData = error.response.data;
         if (errorData?.error?.code === 'ErrorMailSendDisabled') {
           throw new InternalServerErrorException(
-            'Mail sending is disabled for this user. Please enable it in Microsoft 365 admin center.',
+            `Mail sending is disabled for ${fromEmail}. Please enable it in Microsoft 365 admin center.`,
           );
         } else if (errorData?.error?.code === 'ErrorAccessDenied' || errorData?.error?.message?.includes('Insufficient privileges')) {
           throw new InternalServerErrorException(
-            'Insufficient privileges. Please ensure Mail.Send permission is granted and admin consent is provided in Azure AD.',
+            `Insufficient privileges to send from ${fromEmail}. Please ensure Mail.Send permission is granted and admin consent is provided in Azure AD.`,
           );
         } else if (errorData?.error?.code === 'Request_ResourceNotFound' || errorData?.error?.message?.includes('User not found')) {
           throw new InternalServerErrorException(
-            `User ${fromEmail} not found in Azure AD. Please verify the email address exists.`,
+            `User ${fromEmail} not found in Azure AD. Please verify the email address exists and the app has permission to send from it.`,
           );
         } else if (errorData?.error) {
           throw new InternalServerErrorException(
@@ -201,8 +178,67 @@ export class MailService {
         }
       }
       throw new InternalServerErrorException(
-        'Failed to send email. Please try again later.',
+        `Failed to send email from ${fromEmail}. Please try again later.`,
       );
+    }
+  }
+
+  async sendContactEmail(contactDto: ContactDto): Promise<{ success: boolean; message: string }> {
+    const fromEmail =
+      this.configService.get<string>('GRAPH_USER_EMAIL') ||
+      this.configService.get<string>('SMTP_FROM');
+    const fromName =
+      this.configService.get<string>('GRAPH_FROM_NAME') ||
+      this.configService.get<string>('APP_NAME') ||
+      'SpearWin';
+    const appName = this.configService.get<string>('APP_NAME') || 'SpearWin';
+
+    try {
+      if (!fromEmail) {
+        throw new InternalServerErrorException(
+          'Email sender is not configured. Please check your environment variables.',
+        );
+      }
+
+      const toEmail = this.configService.get<string>('SMTP_TO') || fromEmail;
+
+      this.logger.log(`Sending contact email using fromEmail: ${fromEmail}`);
+
+      // Send email to admin/company
+      // - From: noreply@spearwin.com (or configured GRAPH_USER_EMAIL)
+      // - To: contact@spearwin.com (or configured SMTP_TO)
+      // - Reply-To: user's email (so admin can reply directly to the sender)
+      await this.sendEmail(
+        fromEmail,
+        toEmail,
+        `New Contact Form Submission - ${contactDto.service}`,
+        this.getAdminEmailTemplate(contactDto),
+        fromName,
+        contactDto.email,
+      );
+
+      // Send confirmation email to user
+      // - From: noreply@spearwin.com
+      // - To: user's email
+      // - Reply-To: noreply@spearwin.com (default behaviour)
+      await this.sendEmail(
+        fromEmail,
+        contactDto.email,
+        `Thank you for contacting ${appName}`,
+        this.getUserConfirmationTemplate(contactDto, appName),
+        fromName,
+      );
+
+      this.logger.log(`Contact email sent successfully from ${fromEmail}`);
+
+      return {
+        success: true,
+        message: 'Your message has been sent successfully. We will get back to you soon!',
+      };
+    } catch (error: any) {
+      this.logger.error('Failed to send contact email:', error);
+      // Error handling is done in sendEmail method
+      throw error;
     }
   }
 
@@ -227,10 +263,6 @@ export class MailService {
             <h2>New Contact Form Submission</h2>
           </div>
           <div class="content">
-            <div class="field">
-              <div class="label">Name:</div>
-              <div class="value">${contactDto.name || 'Not provided'}</div>
-            </div>
             <div class="field">
               <div class="label">Email:</div>
               <div class="value">${contactDto.email}</div>
