@@ -197,4 +197,4 @@ prisma/migrations/
 dist/
 build/.env
 
-.env
+.env.env
