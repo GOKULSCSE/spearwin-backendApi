@@ -2,19 +2,21 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Install dependencies
+# Copy package files and install dependencies
 COPY package*.json ./
 RUN npm install --force
 
-# Copy source code
+# Copy the rest of the project files
 COPY . .
 
-# Build the NestJS project inside the image so that /dist is always up to date
-RUN npm run build
+# Generate Prisma Client
+RUN npx prisma generate
 
-ENV NODE_ENV=production
+# Set environment variables
 ENV PORT=5000
+
+# Expose the application port
 EXPOSE 5000
 
-# Run the compiled app
-CMD ["npm", "run", "start:prod"]
+# Start the app
+CMD ["npm", "run", "start"]
