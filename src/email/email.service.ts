@@ -1022,7 +1022,8 @@ Spearwin Team
 
     try {
       const mailFrom = process.env.SMTP_FROM || process.env.MAIL_FROM || process.env.EMAIL_USER || process.env.MAIL_USER;
-      const mailFromName = process.env.SMTP_FROM_NAME || process.env.MAIL_FROM_NAME || process.env.EMAIL_FROM_NAME || 'Spearwin';
+      // Always use "Spearwin" as the sender name
+      const mailFromName = 'Spearwin';
 
       const mailOptions = {
         from: `"${mailFromName}" <${mailFrom}>`,
