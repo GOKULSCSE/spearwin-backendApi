@@ -76,12 +76,18 @@ export class MailService {
   }
 
   async sendContactEmail(contactDto: ContactDto): Promise<{ success: boolean; message: string }> {
+    const fromEmail =
+      this.configService.get<string>('GRAPH_USER_EMAIL') ||
+      this.configService.get<string>('SMTP_FROM');
+    const fromName =
+      this.configService.get<string>('GRAPH_FROM_NAME') ||
+      this.configService.get<string>('APP_NAME') ||
+      'SpearWin';
+    const toEmail = this.configService.get<string>('SMTP_TO') || fromEmail;
+    const appName = this.configService.get<string>('APP_NAME') || 'SpearWin';
+
     try {
       const accessToken = await this.getAccessToken();
-      const fromEmail = this.configService.get<string>('GRAPH_USER_EMAIL') || this.configService.get<string>('SMTP_FROM');
-      const fromName = this.configService.get<string>('GRAPH_FROM_NAME') || this.configService.get<string>('APP_NAME') || 'SpearWin';
-      const toEmail = this.configService.get<string>('SMTP_TO') || fromEmail;
-      const appName = this.configService.get<string>('APP_NAME') || 'SpearWin';
 
       if (!fromEmail) {
         throw new InternalServerErrorException(
@@ -170,7 +176,29 @@ export class MailService {
     } catch (error: any) {
       this.logger.error('Failed to send contact email:', error);
       if (error.response) {
-        this.logger.error('Graph API error response:', error.response.data);
+        this.logger.error('Graph API error response:', JSON.stringify(error.response.data, null, 2));
+        this.logger.error('Graph API error status:', error.response.status);
+        this.logger.error('Graph API error headers:', error.response.headers);
+        
+        // Provide more specific error messages
+        const errorData = error.response.data;
+        if (errorData?.error?.code === 'ErrorMailSendDisabled') {
+          throw new InternalServerErrorException(
+            'Mail sending is disabled for this user. Please enable it in Microsoft 365 admin center.',
+          );
+        } else if (errorData?.error?.code === 'ErrorAccessDenied' || errorData?.error?.message?.includes('Insufficient privileges')) {
+          throw new InternalServerErrorException(
+            'Insufficient privileges. Please ensure Mail.Send permission is granted and admin consent is provided in Azure AD.',
+          );
+        } else if (errorData?.error?.code === 'Request_ResourceNotFound' || errorData?.error?.message?.includes('User not found')) {
+          throw new InternalServerErrorException(
+            `User ${fromEmail} not found in Azure AD. Please verify the email address exists.`,
+          );
+        } else if (errorData?.error) {
+          throw new InternalServerErrorException(
+            `Graph API Error: ${errorData.error.code || 'Unknown'} - ${errorData.error.message || 'Please check the logs for details.'}`,
+          );
+        }
       }
       throw new InternalServerErrorException(
         'Failed to send email. Please try again later.',
