@@ -13,7 +13,6 @@ exports.JobService = void 0;
 const common_1 = require("@nestjs/common");
 const database_service_1 = require("../database/database.service");
 const client_1 = require("@prisma/client");
-const client_2 = require("@prisma/client");
 let JobService = class JobService {
     db;
     constructor(db) {
@@ -686,7 +685,7 @@ let JobService = class JobService {
                     },
                 },
             });
-            await this.logActivity(userId, client_2.LogAction.APPLY, client_2.LogLevel.INFO, 'JobApplication', application.id, `Applied for job: ${job.title}`);
+            await this.logActivity(userId, client_1.LogAction.APPLY, client_1.LogLevel.INFO, 'JobApplication', application.id, `Applied for job: ${job.title}`);
             return {
                 id: application.id,
                 jobId: application.jobId,
@@ -997,7 +996,7 @@ let JobService = class JobService {
     }
     async getJobAttributesByCategory() {
         try {
-            const categories = Object.values(client_1.JobAttributeCategory);
+            const categories = Object.values(client_2.JobAttributeCategory);
             const result = [];
             for (const category of categories) {
                 const attributes = await this.db.job_attributes.findMany({

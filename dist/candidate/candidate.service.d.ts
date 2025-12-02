@@ -1,5 +1,4 @@
 import { DatabaseService } from '../database/database.service';
-import { Multer } from 'multer';
 import { UpdateCandidateProfileDto, UpdateAvailabilityDto, CandidateProfileResponseDto } from './dto/candidate-profile.dto';
 import { CreateCandidateSkillDto, UpdateCandidateSkillDto, CandidateSkillResponseDto } from './dto/candidate-skill.dto';
 import { CreateCandidateEducationDto, UpdateCandidateEducationDto, CandidateEducationResponseDto } from './dto/candidate-education.dto';

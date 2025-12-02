@@ -16,7 +16,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CandidateController = void 0;
 const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
-const multer_1 = require("multer");
 const candidate_service_1 = require("./candidate.service");
 const candidate_profile_dto_1 = require("./dto/candidate-profile.dto");
 const candidate_skill_dto_1 = require("./dto/candidate-skill.dto");

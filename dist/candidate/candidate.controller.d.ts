@@ -1,4 +1,3 @@
-import { Multer } from 'multer';
 import { CandidateService } from './candidate.service';
 import { UpdateCandidateProfileDto, UpdateAvailabilityDto, type CandidateProfileResponseDto } from './dto/candidate-profile.dto';
 import { CreateCandidateSkillDto, UpdateCandidateSkillDto, type CandidateSkillResponseDto } from './dto/candidate-skill.dto';
