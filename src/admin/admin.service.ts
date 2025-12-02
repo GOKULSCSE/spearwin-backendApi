@@ -354,13 +354,13 @@ export class AdminService {
 
       // Generate UUID for company
       const existingCompanies = await this.prisma.company.findMany({
-        select: { uuid: true, companyId: true },
-      });
-      const existingUuids = existingCompanies.map(c => c.uuid).filter((uuid): uuid is string => uuid !== null);
+        select: { id: true },
+      }) as any[];
+      const existingUuids = existingCompanies.map((c: any) => c.uuid).filter((uuid): uuid is string => uuid !== null);
       const companyUuid = generateCompanyUuid(createCompanyDto.name, existingUuids);
       
       // Generate companyId
-      const existingCompanyIds = existingCompanies.map(c => c.companyId).filter((id): id is string => id !== null);
+      const existingCompanyIds = existingCompanies.map((c: any) => c.companyId).filter((id): id is string => id !== null);
       const companyId = generateCompanyId(createCompanyDto.name, existingCompanyIds);
 
       // Create user and company in a transaction
@@ -385,8 +385,8 @@ export class AdminService {
             userId: user.id,
             name: createCompanyDto.name,
             slug: slug,
-            uuid: companyUuid,
             companyId: companyId,
+            ...(companyUuid && { uuid: companyUuid } as any),
             description: createCompanyDto.description,
             website: createCompanyDto.website,
             industry: createCompanyDto.industry,
@@ -562,15 +562,16 @@ export class AdminService {
         throw new NotFoundException('Admin profile not found');
       }
 
+      const adminData = admin as any;
       return {
         id: admin.id,
         userId: admin.userId,
         firstName: admin.firstName || undefined,
         lastName: admin.lastName || undefined,
-        email: admin.email || admin.user.email,
-        phone: admin.phone || admin.user.phone || undefined,
-        bio: admin.bio || undefined,
-        profileImage: admin.profileImage || undefined,
+        email: adminData.email || admin.user.email,
+        phone: adminData.phone || admin.user.phone || undefined,
+        bio: adminData.bio || undefined,
+        profileImage: adminData.profileImage || undefined,
         department: admin.department || undefined,
         designation: admin.designation || undefined,
         country: admin.country || undefined,
@@ -1131,25 +1132,26 @@ export class AdminService {
         throw new NotFoundException('Admin not found');
       }
 
+      const adminData = admin as any;
       return {
         id: admin.id,
         userId: admin.userId,
         firstName: admin.firstName || undefined,
         lastName: admin.lastName || undefined,
-        email: admin.email || admin.user.email,
-        phone: admin.phone || admin.user.phone || undefined,
-        bio: admin.bio || undefined,
-        profileImage: admin.profileImage || undefined,
+        email: adminData.email || admin.user.email,
+        phone: adminData.phone || admin.user.phone || undefined,
+        bio: adminData.bio || undefined,
+        profileImage: adminData.profileImage || undefined,
         department: admin.department || undefined,
         designation: admin.designation || undefined,
-        country: admin.country || undefined,
-        state: admin.state || undefined,
-        city: admin.city || undefined,
-        streetAddress: admin.streetAddress || undefined,
-        linkedinUrl: admin.linkedinUrl || undefined,
-        facebookUrl: admin.facebookUrl || undefined,
-        twitterUrl: admin.twitterUrl || undefined,
-        instagramUrl: admin.instagramUrl || undefined,
+        country: adminData.country || undefined,
+        state: adminData.state || undefined,
+        city: adminData.city || undefined,
+        streetAddress: adminData.streetAddress || undefined,
+        linkedinUrl: adminData.linkedinUrl || undefined,
+        facebookUrl: adminData.facebookUrl || undefined,
+        twitterUrl: adminData.twitterUrl || undefined,
+        instagramUrl: adminData.instagramUrl || undefined,
         permissions: admin.permissions,
         createdAt: admin.createdAt,
         updatedAt: admin.updatedAt,
@@ -2307,7 +2309,7 @@ export class AdminService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        applications: applications.map((app) => ({
+        applications: (applications as any[]).map((app: any) => ({
           id: app.id,
           status: app.status,
           appliedAt: app.appliedAt,
@@ -2609,7 +2611,7 @@ export class AdminService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        applications: applications.map((app) => ({
+        applications: (applications as any[]).map((app: any) => ({
           id: app.id, // Keep as string (cuid)
           jobId: app.jobId, // Keep as string (cuid)
           candidateId: app.candidateId, // Keep as string (cuid)
@@ -3882,7 +3884,7 @@ export class AdminService {
       });
 
       // Generate export data
-      const exportData = applications.map((app) => ({
+      const exportData = (applications as any[]).map((app: any) => ({
         'Application ID': app.id,
         'Job Title': app.job.title,
         Company: app.job.company.companyId || app.job.company.name,
