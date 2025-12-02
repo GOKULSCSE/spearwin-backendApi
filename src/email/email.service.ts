@@ -325,8 +325,17 @@ export class EmailService {
       if (error.response) {
         this.logger.error(`   Status: ${error.response.status}`);
         this.logger.error(`   Response: ${JSON.stringify(error.response.data)}`);
+        
+        // Provide helpful error messages for common issues
+        if (error.response.status === 403) {
+          const errorData = error.response.data?.error;
+          if (errorData?.code === 'ErrorAccessDenied') {
+            this.logger.error(`   💡 Solution: The app needs 'Mail.Send' permission with admin consent.`);
+            this.logger.error(`   💡 Go to Azure Portal → App registrations → API permissions → Add 'Mail.Send' (Application permission) → Grant admin consent`);
+          }
+        }
       }
-      return false;
+      return false; // Return false instead of throwing
     }
   }
 
@@ -972,13 +981,36 @@ Spearwin Team
 
     // Use Microsoft Graph API if configured
     if (this.useGraphAPI) {
-      const htmlContent = html || (text ? `<pre>${text}</pre>` : '');
-      const success = await this.sendEmailViaGraphAPI(to, subject, htmlContent, text);
-      return {
-        success,
-        messageId: success ? 'graph-api' : undefined,
-        error: success ? undefined : 'Failed to send email via Microsoft Graph API',
-      };
+      try {
+        const htmlContent = html || (text ? `<pre>${text}</pre>` : '');
+        const success = await this.sendEmailViaGraphAPI(to, subject, htmlContent, text);
+        return {
+          success,
+          messageId: success ? 'graph-api' : undefined,
+          error: success ? undefined : 'Failed to send email via Microsoft Graph API',
+        };
+      } catch (error: any) {
+        let errorMessage = 'Failed to send email via Microsoft Graph API';
+        
+        if (error.response) {
+          const errorData = error.response.data?.error;
+          if (error.response.status === 403 && errorData?.code === 'ErrorAccessDenied') {
+            errorMessage = 'Access denied. The app needs Mail.Send permission with admin consent in Azure Portal.';
+          } else if (error.response.status === 401) {
+            errorMessage = 'Authentication failed. Please check your Graph API credentials.';
+          } else {
+            errorMessage = errorData?.message || error.response.data?.error_description || errorMessage;
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        this.logger.error(`Error sending email via Graph API: ${errorMessage}`);
+        return {
+          success: false,
+          error: errorMessage,
+        };
+      }
     }
 
     // Fallback to SMTP
