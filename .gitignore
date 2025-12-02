@@ -57,7 +57,9 @@ jspm_packages/
 .yarn-integrity
 
 # dotenv environment variables file
-
+.env
+.env.local
+.env.*.local
 
 # parcel-bundler cache
 .cache
@@ -197,9 +199,4 @@ prisma/migrations/
 dist/
 build/.env
 
-.env.env
-
-# Environment variables
-.env
-.env.local
-.env.*.local
+# Environment variables (duplicate entries removed - see above)
