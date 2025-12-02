@@ -22,9 +22,11 @@ const update_permissions_dto_1 = require("./dto/update-permissions.dto");
 const admin_profile_dto_1 = require("./dto/admin-profile.dto");
 const admin_list_dto_1 = require("./dto/admin-list.dto");
 const update_admin_status_dto_1 = require("./dto/update-admin-status.dto");
+const update_user_profile_dto_1 = require("./dto/update-user-profile.dto");
 const admin_job_dto_1 = require("./dto/admin-job.dto");
 const admin_application_dto_1 = require("./dto/admin-application.dto");
 const admin_resume_dto_1 = require("./dto/admin-resume.dto");
+const advanced_cv_search_dto_1 = require("./dto/advanced-cv-search.dto");
 const admin_notification_dto_1 = require("./dto/admin-notification.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
@@ -61,11 +63,17 @@ let AdminController = class AdminController {
     async getAdminById(adminId) {
         return this.adminService.getAdminById(adminId);
     }
+    async updateAdminProfileById(adminId, user, updateDto) {
+        return this.adminService.updateAdminProfileById(adminId, updateDto);
+    }
     async updateAdminPermissions(adminId, user, updateDto) {
         return this.adminService.updatePermissions(updateDto, user);
     }
     async updateAdminStatus(adminId, user, statusDto) {
         return this.adminService.updateAdminStatus(adminId, statusDto, user.id);
+    }
+    async updateUserProfile(userId, user, updateDto) {
+        return this.adminService.updateUserProfile(userId, updateDto, user.id);
     }
     async getAllJobs(query, user) {
         console.log('user', user);
@@ -91,6 +99,9 @@ let AdminController = class AdminController {
     }
     async archiveJob(jobId, user) {
         return this.adminService.archiveJob(jobId, user);
+    }
+    async updateJobStatus(jobId, body, user) {
+        return this.adminService.updateJobStatus(jobId, body.status, user);
     }
     async getJobApplications(jobId, query, user) {
         return this.adminService.getJobApplications(jobId, query, user);
@@ -137,17 +148,23 @@ let AdminController = class AdminController {
     async getAllResumes(query, user) {
         return this.adminService.getAllResumes(query, user);
     }
+    async advancedCVSearch(query, user) {
+        return this.adminService.advancedCVSearch(query, user);
+    }
+    async getResumeStats(user) {
+        return this.adminService.getResumeStats(user);
+    }
+    async bulkDownloadResumes(bulkDownloadDto, user) {
+        return this.adminService.bulkDownloadResumes(bulkDownloadDto, user);
+    }
     async getResumeById(resumeId, user) {
         return this.adminService.getResumeById(resumeId, user);
     }
     async downloadResume(resumeId, user) {
         return this.adminService.downloadResume(resumeId, user);
     }
-    async bulkDownloadResumes(bulkDownloadDto, user) {
-        return this.adminService.bulkDownloadResumes(bulkDownloadDto, user);
-    }
-    async getResumeStats(user) {
-        return this.adminService.getResumeStats(user);
+    async extractResumeText(user) {
+        return this.adminService.extractTextFromAllResumes(user);
     }
     async sendNotification(sendNotificationDto, user) {
         return this.adminService.sendNotification(sendNotificationDto, user);
@@ -242,6 +259,16 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getAdminById", null);
 __decorate([
+    (0, common_1.Put)('admins/:id/profile'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
+    __param(2, (0, common_1.Body)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, admin_profile_dto_1.UpdateAdminProfileDto]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "updateAdminProfileById", null);
+__decorate([
     (0, common_1.Put)('admins/:id/permissions'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, common_1.Param)('id')),
@@ -261,6 +288,16 @@ __decorate([
     __metadata("design:paramtypes", [String, Object, update_admin_status_dto_1.UpdateAdminStatusDto]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "updateAdminStatus", null);
+__decorate([
+    (0, common_1.Put)('users/:id/profile'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
+    __param(2, (0, common_1.Body)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, update_user_profile_dto_1.UpdateUserProfileDto]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "updateUserProfile", null);
 __decorate([
     (0, common_1.Get)('jobs'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
@@ -336,6 +373,16 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "archiveJob", null);
+__decorate([
+    (0, common_1.Put)('jobs/:id/status'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, current_user_decorator_1.GetCurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "updateJobStatus", null);
 __decorate([
     (0, common_1.Get)('jobs/:id/applications'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
@@ -474,6 +521,32 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getAllResumes", null);
 __decorate([
+    (0, common_1.Get)('resumes/search/advanced'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Query)(common_1.ValidationPipe)),
+    __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [advanced_cv_search_dto_1.AdvancedCVSearchQueryDto, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "advancedCVSearch", null);
+__decorate([
+    (0, common_1.Get)('resumes/stats'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getResumeStats", null);
+__decorate([
+    (0, common_1.Post)('resumes/bulk-download'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
+    __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [admin_resume_dto_1.BulkDownloadDto, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "bulkDownloadResumes", null);
+__decorate([
     (0, common_1.Get)('resumes/:id'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, common_1.Param)('id')),
@@ -492,22 +565,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "downloadResume", null);
 __decorate([
-    (0, common_1.Post)('resumes/bulk-download'),
+    (0, common_1.Post)('resumes/extract-text'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
-    __param(1, (0, current_user_decorator_1.GetCurrentUser)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [admin_resume_dto_1.BulkDownloadDto, Object]),
-    __metadata("design:returntype", Promise)
-], AdminController.prototype, "bulkDownloadResumes", null);
-__decorate([
-    (0, common_1.Get)('resumes/stats'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], AdminController.prototype, "getResumeStats", null);
+], AdminController.prototype, "extractResumeText", null);
 __decorate([
     (0, common_1.Post)('notifications/send'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

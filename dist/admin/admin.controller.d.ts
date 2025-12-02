@@ -6,9 +6,11 @@ import { UpdatePermissionsDto } from './dto/update-permissions.dto';
 import { UpdateAdminProfileDto, type AdminProfileResponseDto } from './dto/admin-profile.dto';
 import { AdminListQueryDto, type AdminListResponseDto } from './dto/admin-list.dto';
 import { UpdateAdminStatusDto } from './dto/update-admin-status.dto';
+import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 import { CreateJobDto, UpdateJobDto, JobListQueryDto, JobStatsResponseDto, JobApplicationsResponseDto } from './dto/admin-job.dto';
 import { UpdateApplicationStatusDto, AddApplicationFeedbackDto, ApplicationQueryDto, AdminApplicationResponseDto, ApplicationsListResponseDto, ApplicationStatsResponseDto, BulkUpdateApplicationsDto, BulkUpdateResponseDto, BulkExportQueryDto, BulkExportResponseDto } from './dto/admin-application.dto';
 import { ResumeQueryDto, AdminResumeResponseDto, ResumesListResponseDto, ResumeStatsResponseDto, BulkDownloadDto, BulkDownloadResponseDto } from './dto/admin-resume.dto';
+import { AdvancedCVSearchQueryDto, AdvancedCVSearchResponseDto } from './dto/advanced-cv-search.dto';
 import { SendNotificationDto, BroadcastNotificationDto, CreateNotificationTemplateDto, NotificationTemplateResponseDto, SendNotificationResponseDto, BroadcastNotificationResponseDto, NotificationTemplatesListResponseDto, NotificationQueryDto } from './dto/admin-notification.dto';
 import { ChangePasswordDto } from '../user/dto/change-password.dto';
 import type { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -26,9 +28,14 @@ export declare class AdminController {
     }>;
     getAllAdmins(query: AdminListQueryDto): Promise<AdminListResponseDto>;
     getAdminById(adminId: string): Promise<AdminProfileResponseDto>;
+    updateAdminProfileById(adminId: string, user: CurrentUser, updateDto: UpdateAdminProfileDto): Promise<AdminProfileResponseDto>;
     updateAdminPermissions(adminId: string, user: CurrentUser, updateDto: UpdatePermissionsDto): Promise<import("./dto/admin-response.dto").UpdatePermissionsResponseDto>;
     updateAdminStatus(adminId: string, user: CurrentUser, statusDto: UpdateAdminStatusDto): Promise<{
         message: string;
+    }>;
+    updateUserProfile(userId: string, user: CurrentUser, updateDto: UpdateUserProfileDto): Promise<{
+        message: string;
+        user: any;
     }>;
     getAllJobs(query: JobListQueryDto, user: CurrentUser): Promise<{
         jobs: {
@@ -268,6 +275,49 @@ export declare class AdminController {
             status: import("@prisma/client").$Enums.JobStatus;
         };
     }>;
+    updateJobStatus(jobId: string, body: {
+        status: string;
+    }, user: CurrentUser): Promise<{
+        success: boolean;
+        message: string;
+        data: {
+            company: {
+                name: string;
+                id: string;
+                logo: string | null;
+            };
+        } & {
+            status: import("@prisma/client").$Enums.JobStatus;
+            createdAt: Date;
+            id: string;
+            updatedAt: Date;
+            address: string | null;
+            cityId: number | null;
+            description: string;
+            title: string;
+            expiresAt: Date | null;
+            slug: string;
+            companyId: string;
+            requirements: string | null;
+            responsibilities: string | null;
+            benefits: string | null;
+            jobType: import("@prisma/client").$Enums.JobType;
+            workMode: import("@prisma/client").$Enums.WorkMode;
+            experienceLevel: import("@prisma/client").$Enums.ExperienceLevel;
+            minExperience: number | null;
+            maxExperience: number | null;
+            minSalary: import("@prisma/client/runtime/library").Decimal | null;
+            maxSalary: import("@prisma/client/runtime/library").Decimal | null;
+            salaryNegotiable: boolean;
+            skillsRequired: string[];
+            educationLevel: import("@prisma/client").$Enums.EducationLevel | null;
+            publishedAt: Date | null;
+            postedById: string | null;
+            applicationCount: number;
+            viewCount: number;
+            closedAt: Date | null;
+        };
+    }>;
     getJobApplications(jobId: string, query: any, user: CurrentUser): Promise<JobApplicationsResponseDto>;
     getJobStats(jobId: string, user: CurrentUser): Promise<JobStatsResponseDto>;
     getAllApplications(query: ApplicationQueryDto, user: CurrentUser): Promise<ApplicationsListResponseDto>;
@@ -283,6 +333,9 @@ export declare class AdminController {
     bulkUpdateApplications(bulkUpdateDto: BulkUpdateApplicationsDto, user: CurrentUser): Promise<BulkUpdateResponseDto>;
     bulkExportApplications(exportQuery: BulkExportQueryDto, user: CurrentUser): Promise<BulkExportResponseDto>;
     getAllResumes(query: ResumeQueryDto, user: CurrentUser): Promise<ResumesListResponseDto>;
+    advancedCVSearch(query: AdvancedCVSearchQueryDto, user: CurrentUser): Promise<AdvancedCVSearchResponseDto>;
+    getResumeStats(user: CurrentUser): Promise<ResumeStatsResponseDto>;
+    bulkDownloadResumes(bulkDownloadDto: BulkDownloadDto, user: CurrentUser): Promise<BulkDownloadResponseDto>;
     getResumeById(resumeId: string, user: CurrentUser): Promise<AdminResumeResponseDto>;
     downloadResume(resumeId: string, user: CurrentUser): Promise<{
         success: boolean;
@@ -297,8 +350,13 @@ export declare class AdminController {
             candidateEmail: string;
         };
     }>;
-    bulkDownloadResumes(bulkDownloadDto: BulkDownloadDto, user: CurrentUser): Promise<BulkDownloadResponseDto>;
-    getResumeStats(user: CurrentUser): Promise<ResumeStatsResponseDto>;
+    extractResumeText(user: CurrentUser): Promise<{
+        message: string;
+        total: number;
+        processed: number;
+        successful: number;
+        failed: number;
+    }>;
     sendNotification(sendNotificationDto: SendNotificationDto, user: CurrentUser): Promise<SendNotificationResponseDto>;
     broadcastNotification(broadcastNotificationDto: BroadcastNotificationDto, user: CurrentUser): Promise<BroadcastNotificationResponseDto>;
     getNotificationTemplates(query: NotificationQueryDto, user: CurrentUser): Promise<NotificationTemplatesListResponseDto>;

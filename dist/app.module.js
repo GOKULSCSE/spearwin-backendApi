@@ -8,7 +8,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
-const config_1 = require("@nestjs/config");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const user_module_1 = require("./user/user.module");
@@ -24,18 +23,19 @@ const location_module_1 = require("./location/location.module");
 const job_module_1 = require("./job/job.module");
 const notification_module_1 = require("./notification/notification.module");
 const dashboard_module_1 = require("./dashboard/dashboard.module");
-const candidate_update_module_1 = require("./candidate/candidate-update.module");
-const mail_module_1 = require("./mail/mail.module");
+const job_attribute_module_1 = require("./job-attribute/job-attribute.module");
+const testimonial_module_1 = require("./testimonial/testimonial.module");
+const file_upload_module_1 = require("./image-upload/file-upload.module");
+const email_module_1 = require("./email/email.module");
+const cors_friendly_throttler_guard_1 = require("./common/guards/cors-friendly-throttler.guard");
+const config_1 = require("@nestjs/config");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            config_1.ConfigModule.forRoot({
-                isGlobal: true,
-                envFilePath: '.env',
-            }),
+            config_1.ConfigModule.forRoot({ isGlobal: true }),
             user_module_1.UserModule,
             database_module_1.DatabaseModule,
             auth_module_1.AuthModule,
@@ -46,8 +46,10 @@ exports.AppModule = AppModule = __decorate([
             job_module_1.JobModule,
             notification_module_1.NotificationModule,
             dashboard_module_1.DashboardModule,
-            candidate_update_module_1.CandidateUpdateModule,
-            mail_module_1.MailModule,
+            job_attribute_module_1.JobAttributeModule,
+            testimonial_module_1.TestimonialModule,
+            file_upload_module_1.FileUploadModule,
+            email_module_1.EmailModule,
             throttler_1.ThrottlerModule.forRoot([
                 {
                     name: 'short',
@@ -58,7 +60,7 @@ exports.AppModule = AppModule = __decorate([
             setting_module_1.SettingModule,
         ],
         controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService, { provide: core_1.APP_GUARD, useClass: throttler_1.ThrottlerGuard }],
+        providers: [app_service_1.AppService, { provide: core_1.APP_GUARD, useClass: cors_friendly_throttler_guard_1.CorsFriendlyThrottlerGuard }],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

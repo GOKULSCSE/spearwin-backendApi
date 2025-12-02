@@ -1,7 +1,16 @@
 import { ApplicationStatus } from '@prisma/client';
 export declare class ApplyForJobDto {
     resumeId?: string;
+    resumeFilePath?: string;
     coverLetter?: string;
+    fullName?: string;
+    email?: string;
+    phone?: string;
+    location?: string;
+    experienceLevel?: string;
+    noticePeriod?: string;
+    currentCTC?: string;
+    expectedCTC?: string;
 }
 export declare class UpdateApplicationDto {
     coverLetter?: string;
@@ -12,21 +21,33 @@ export declare class ApplicationResponseDto {
     jobId: string;
     candidateId: string;
     resumeId?: string;
+    resumeFilePath?: string;
     coverLetter?: string;
     status: ApplicationStatus;
     appliedAt: Date;
     reviewedAt?: Date;
     reviewedBy?: string;
     feedback?: string;
+    fullName?: string;
+    email?: string;
+    phone?: string;
+    location?: string;
+    experienceLevel?: string;
+    noticePeriod?: string;
+    currentCTC?: string;
+    expectedCTC?: string;
     updatedAt: Date;
     job?: {
         id: string;
         title: string;
         slug: string;
         description: string;
+        jobType?: string;
+        workMode?: string;
         company: {
             id: string;
             name: string;
+            companyId: string;
             logo?: string;
         };
         location?: {

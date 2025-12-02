@@ -14,7 +14,11 @@ async function bootstrap() {
             'http://localhost:3000',
             'http://localhost:3001',
             'https://admin.spearwin.com',
-            'https://frontend.spearwin.com'
+            'https://admin.spearwin.com/',
+            'https://frontend.spearwin.com',
+            'https://frontend.spearwin.com/',
+            'https://spearwin.com/',
+            'https://spearwin.com'
         ],
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
         allowedHeaders: [
@@ -27,12 +31,14 @@ async function bootstrap() {
             'X-User-Email',
             'Cache-Control',
             'Pragma',
+            'DNT',
+            'Sec-CH-UA',
+            'Sec-CH-UA-Mobile',
+            'Sec-CH-UA-Platform',
+            'User-Agent',
+            'Referer',
         ],
-        exposedHeaders: [
-            'Authorization',
-            'X-Total-Count',
-            'X-Page-Count',
-        ],
+        exposedHeaders: ['Authorization', 'X-Total-Count', 'X-Page-Count'],
         credentials: true,
         preflightContinue: false,
         optionsSuccessStatus: 204,

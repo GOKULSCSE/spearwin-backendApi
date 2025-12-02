@@ -23,6 +23,8 @@ const candidate_experience_dto_1 = require("./dto/candidate-experience.dto");
 const job_alert_dto_1 = require("./dto/job-alert.dto");
 const job_application_dto_1 = require("./dto/job-application.dto");
 const resume_analysis_dto_1 = require("./dto/resume-analysis.dto");
+const upsert_full_profile_dto_1 = require("./dto/upsert-full-profile.dto");
+const change_password_dto_1 = require("../user/dto/change-password.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
 let CandidateController = class CandidateController {
@@ -33,8 +35,20 @@ let CandidateController = class CandidateController {
     async getCandidateProfile(user) {
         return this.candidateService.getCandidateProfile(user.id);
     }
+    async getDashboardStats(user) {
+        return this.candidateService.getDashboardStats(user.id);
+    }
+    async createCandidateProfile(user, createDto) {
+        return this.candidateService.updateCandidateProfile(user.id, createDto);
+    }
     async updateCandidateProfile(user, updateDto) {
         return this.candidateService.updateCandidateProfile(user.id, updateDto);
+    }
+    async upsertFullProfile(user, body) {
+        return this.candidateService.upsertFullProfile(user.id, body);
+    }
+    async getCompleteProfile(user) {
+        return this.candidateService.getCompleteProfile(user.id);
     }
     async uploadProfilePicture(user, file) {
         return this.candidateService.uploadProfilePicture(user.id, file);
@@ -44,6 +58,9 @@ let CandidateController = class CandidateController {
     }
     async updateAvailability(user, updateDto) {
         return this.candidateService.updateAvailability(user.id, updateDto);
+    }
+    async changePassword(user, changePasswordDto) {
+        return this.candidateService.changePassword(user.id, changePasswordDto);
     }
     async getCandidateSkills(user) {
         return this.candidateService.getCandidateSkills(user.id);
@@ -93,6 +110,21 @@ let CandidateController = class CandidateController {
     async updateJobAlert(user, alertId, updateDto) {
         return this.candidateService.updateJobAlert(user.id, alertId, updateDto);
     }
+    async getFavoriteJobs(user) {
+        return this.candidateService.getFavoriteJobs(user.id);
+    }
+    async checkFavoriteJob(user, jobId) {
+        return this.candidateService.checkFavoriteJob(user.id, jobId);
+    }
+    async addFavoriteJob(user, jobId) {
+        return this.candidateService.addFavoriteJob(user.id, jobId);
+    }
+    async removeFavoriteJob(user, jobId) {
+        return this.candidateService.removeFavoriteJob(user.id, jobId);
+    }
+    async applyForJob(user, jobId, applyDto) {
+        return this.candidateService.applyForJob(user.id, jobId, applyDto);
+    }
     async getCandidateApplications(user, query) {
         return this.candidateService.getCandidateApplications(user.id, query);
     }
@@ -124,6 +156,21 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CandidateController.prototype, "getCandidateProfile", null);
 __decorate([
+    (0, common_1.Get)('dashboard/stats'),
+    __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], CandidateController.prototype, "getDashboardStats", null);
+__decorate([
+    (0, common_1.Post)('profile'),
+    __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
+    __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, candidate_profile_dto_1.UpdateCandidateProfileDto]),
+    __metadata("design:returntype", Promise)
+], CandidateController.prototype, "createCandidateProfile", null);
+__decorate([
     (0, common_1.Put)('profile'),
     __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
     __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
@@ -131,6 +178,21 @@ __decorate([
     __metadata("design:paramtypes", [Object, candidate_profile_dto_1.UpdateCandidateProfileDto]),
     __metadata("design:returntype", Promise)
 ], CandidateController.prototype, "updateCandidateProfile", null);
+__decorate([
+    (0, common_1.Put)('profile/full'),
+    __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
+    __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, upsert_full_profile_dto_1.UpsertFullProfileDto]),
+    __metadata("design:returntype", Promise)
+], CandidateController.prototype, "upsertFullProfile", null);
+__decorate([
+    (0, common_1.Get)('profile/full'),
+    __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], CandidateController.prototype, "getCompleteProfile", null);
 __decorate([
     (0, common_1.Post)('profile/picture'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
@@ -155,6 +217,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, candidate_profile_dto_1.UpdateAvailabilityDto]),
     __metadata("design:returntype", Promise)
 ], CandidateController.prototype, "updateAvailability", null);
+__decorate([
+    (0, common_1.Put)('change-password'),
+    __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
+    __param(1, (0, common_1.Body)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, change_password_dto_1.ChangePasswordDto]),
+    __metadata("design:returntype", Promise)
+], CandidateController.prototype, "changePassword", null);
 __decorate([
     (0, common_1.Get)('skills'),
     __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
@@ -284,6 +354,46 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, job_alert_dto_1.UpdateJobAlertDto]),
     __metadata("design:returntype", Promise)
 ], CandidateController.prototype, "updateJobAlert", null);
+__decorate([
+    (0, common_1.Get)('favorite-jobs'),
+    __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], CandidateController.prototype, "getFavoriteJobs", null);
+__decorate([
+    (0, common_1.Get)('favorite-jobs/:jobId/check'),
+    __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
+    __param(1, (0, common_1.Param)('jobId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], CandidateController.prototype, "checkFavoriteJob", null);
+__decorate([
+    (0, common_1.Post)('favorite-jobs/:jobId'),
+    __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
+    __param(1, (0, common_1.Param)('jobId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], CandidateController.prototype, "addFavoriteJob", null);
+__decorate([
+    (0, common_1.Delete)('favorite-jobs/:jobId'),
+    __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
+    __param(1, (0, common_1.Param)('jobId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], CandidateController.prototype, "removeFavoriteJob", null);
+__decorate([
+    (0, common_1.Post)('applications/:jobId'),
+    __param(0, (0, current_user_decorator_1.GetCurrentUser)()),
+    __param(1, (0, common_1.Param)('jobId')),
+    __param(2, (0, common_1.Body)(common_1.ValidationPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, job_application_dto_1.ApplyForJobDto]),
+    __metadata("design:returntype", Promise)
+], CandidateController.prototype, "applyForJob", null);
 __decorate([
     (0, common_1.Get)('applications'),
     __param(0, (0, current_user_decorator_1.GetCurrentUser)()),

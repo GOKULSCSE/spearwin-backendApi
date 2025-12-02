@@ -13,6 +13,7 @@ exports.CompanyService = void 0;
 const common_1 = require("@nestjs/common");
 const database_service_1 = require("../database/database.service");
 const client_1 = require("@prisma/client");
+const company_uuid_util_1 = require("./utils/company-uuid.util");
 let CompanyService = class CompanyService {
     db;
     constructor(db) {
@@ -77,6 +78,8 @@ let CompanyService = class CompanyService {
                     userId: company.userId,
                     name: company.name,
                     slug: company.slug,
+                    uuid: company.uuid,
+                    companyId: company.companyId,
                     description: company.description,
                     website: company.website,
                     logo: company.logo,
@@ -115,6 +118,148 @@ let CompanyService = class CompanyService {
             throw error;
         }
     }
+    async getActiveCompanies(sortBy = 'name', sortOrder = 'asc') {
+        try {
+            const orderBy = {};
+            orderBy[sortBy] = sortOrder;
+            const companies = await this.db.company.findMany({
+                where: { isActive: true },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            email: true,
+                            role: true,
+                            status: true,
+                        },
+                    },
+                },
+                orderBy,
+            });
+            return { companies };
+        }
+        catch (error) {
+            this.handleException(error);
+            throw error;
+        }
+    }
+    async getActiveCompaniesWithPagination(query) {
+        try {
+            const { search, page = 1, limit = 10, sortBy = 'name', sortOrder = 'asc' } = query;
+            const skip = (page - 1) * limit;
+            const where = { isActive: true };
+            if (search && search.trim()) {
+                where.name = {
+                    contains: search.trim(),
+                    mode: 'insensitive',
+                };
+            }
+            const orderBy = {};
+            orderBy[sortBy] = sortOrder;
+            const [companies, total] = await Promise.all([
+                this.db.company.findMany({
+                    where,
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                email: true,
+                                role: true,
+                                status: true,
+                            },
+                        },
+                    },
+                    orderBy,
+                    skip,
+                    take: limit,
+                }),
+                this.db.company.count({ where }),
+            ]);
+            const totalPages = Math.ceil(total / limit);
+            return {
+                companies,
+                total,
+                page,
+                limit,
+                totalPages,
+            };
+        }
+        catch (error) {
+            this.handleException(error);
+            throw error;
+        }
+    }
+    async getInactiveCompanies(sortBy = 'name', sortOrder = 'asc') {
+        try {
+            const orderBy = {};
+            orderBy[sortBy] = sortOrder;
+            const companies = await this.db.company.findMany({
+                where: { isActive: false },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            email: true,
+                            role: true,
+                            status: true,
+                        },
+                    },
+                },
+                orderBy,
+            });
+            return { companies };
+        }
+        catch (error) {
+            this.handleException(error);
+            throw error;
+        }
+    }
+    async getInactiveCompaniesWithPagination(query) {
+        try {
+            const { search, page = 1, limit = 10, sortBy = 'name', sortOrder = 'asc' } = query;
+            const skip = (page - 1) * limit;
+            const where = { isActive: false };
+            if (search && search.trim()) {
+                where.name = {
+                    contains: search.trim(),
+                    mode: 'insensitive',
+                };
+            }
+            const orderBy = {};
+            orderBy[sortBy] = sortOrder;
+            const [companies, total] = await Promise.all([
+                this.db.company.findMany({
+                    where,
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                email: true,
+                                role: true,
+                                status: true,
+                            },
+                        },
+                    },
+                    orderBy,
+                    skip,
+                    take: limit,
+                }),
+                this.db.company.count({ where }),
+            ]);
+            const totalPages = Math.ceil(total / limit);
+            return {
+                companies,
+                total,
+                page,
+                limit,
+                totalPages,
+            };
+        }
+        catch (error) {
+            this.handleException(error);
+            throw error;
+        }
+    }
     async getCompanyById(companyId) {
         try {
             const company = await this.db.company.findUnique({
@@ -138,6 +283,8 @@ let CompanyService = class CompanyService {
                 userId: company.userId,
                 name: company.name,
                 slug: company.slug,
+                uuid: company.uuid,
+                companyId: company.companyId,
                 description: company.description,
                 website: company.website,
                 logo: company.logo,
@@ -156,7 +303,7 @@ let CompanyService = class CompanyService {
                 country: company.country,
                 state: company.state,
                 city: company.city,
-                user: 'user' in company && company.user
+                user: company.user
                     ? {
                         id: company.user.id,
                         email: company.user.email,
@@ -176,16 +323,84 @@ let CompanyService = class CompanyService {
     }
     async createCompany(createDto, adminUserId) {
         try {
-            const existingCompany = await this.db.company.findUnique({
-                where: { slug: createDto.slug },
+            const existingCompanies = await this.db.company.findMany({
+                select: { uuid: true, companyId: true },
+                orderBy: { createdAt: 'desc' },
             });
-            if (existingCompany) {
-                throw new common_1.BadRequestException('Company with this slug already exists');
+            console.log('Total existing companies found:', existingCompanies.length);
+            console.log('Existing companies with IDs:', existingCompanies.filter(c => c.companyId).map(c => c.companyId));
+            let uuid = createDto.uuid;
+            if (!uuid) {
+                const existingUuids = existingCompanies.map(c => c.uuid).filter((uuid) => uuid !== null);
+                uuid = (0, company_uuid_util_1.generateCompanyUuid)(createDto.name, existingUuids);
             }
+            const existingCompanyIds = existingCompanies
+                .map(c => c.companyId)
+                .filter((id) => id !== null && id !== undefined && id.trim() !== '');
+            console.log('Existing company IDs for generation:', existingCompanyIds);
+            let companyId = (0, company_uuid_util_1.generateCompanyId)(createDto.name, existingCompanyIds);
+            let attempts = 0;
+            while (attempts < 10) {
+                const existingCompanyWithId = await this.db.company.findUnique({
+                    where: { companyId },
+                });
+                if (!existingCompanyWithId) {
+                    console.log(`Company ID ${companyId} is unique, proceeding with creation`);
+                    break;
+                }
+                console.log(`Company ID ${companyId} already exists, regenerating... (attempt ${attempts + 1})`);
+                attempts++;
+                const allCompanies = await this.db.company.findMany({
+                    select: { companyId: true },
+                    orderBy: { createdAt: 'desc' },
+                });
+                const allIds = allCompanies
+                    .map(c => c.companyId)
+                    .filter((id) => id !== null && id !== undefined && id.trim() !== '');
+                console.log(`All company IDs found:`, allIds);
+                companyId = (0, company_uuid_util_1.generateCompanyId)(createDto.name, allIds);
+                console.log(`Regenerated company ID: ${companyId}`);
+            }
+            if (attempts >= 10) {
+                console.error('Failed to generate unique company ID after 10 attempts');
+                throw new common_1.InternalServerErrorException('Failed to generate unique company ID after multiple attempts');
+            }
+            let slug = createDto.slug;
+            if (!slug) {
+                slug = uuid;
+            }
+            else {
+                const existingCompany = await this.db.company.findUnique({
+                    where: { slug },
+                });
+                if (existingCompany) {
+                    throw new common_1.BadRequestException('Company with this slug already exists');
+                }
+            }
+            const companyData = {
+                name: createDto.name,
+                slug,
+                uuid,
+                companyId,
+                description: createDto.description,
+                website: createDto.website,
+                logo: createDto.logo,
+                industry: createDto.industry,
+                foundedYear: createDto.foundedYear,
+                employeeCount: createDto.employeeCount,
+                headquarters: createDto.headquarters,
+                address: createDto.address,
+                country: createDto.country,
+                state: createDto.state,
+                city: createDto.city,
+                linkedinUrl: createDto.linkedinUrl,
+                twitterUrl: createDto.twitterUrl,
+                facebookUrl: createDto.facebookUrl,
+                isVerified: createDto.isVerified ?? false,
+                isActive: createDto.isActive ?? true,
+            };
             const company = await this.db.company.create({
-                data: {
-                    ...createDto,
-                },
+                data: companyData,
                 include: {
                     user: {
                         select: {
@@ -203,6 +418,8 @@ let CompanyService = class CompanyService {
                 userId: company.userId,
                 name: company.name,
                 slug: company.slug,
+                uuid: company.uuid,
+                companyId: company.companyId,
                 description: company.description,
                 website: company.website,
                 logo: company.logo,
@@ -277,6 +494,8 @@ let CompanyService = class CompanyService {
                 userId: updatedCompany.userId,
                 name: updatedCompany.name,
                 slug: updatedCompany.slug,
+                uuid: updatedCompany.uuid,
+                companyId: updatedCompany.companyId,
                 description: updatedCompany.description,
                 website: updatedCompany.website,
                 logo: updatedCompany.logo,
@@ -598,7 +817,13 @@ let CompanyService = class CompanyService {
         }
     }
     handleException(error) {
-        throw new common_1.InternalServerErrorException("Can't process company request");
+        console.error('Company Service Error:', error);
+        console.error('Error message:', error?.message);
+        console.error('Error stack:', error?.stack);
+        if (error?.code) {
+            console.error('Error code:', error.code);
+        }
+        throw new common_1.InternalServerErrorException(error?.message || "Can't process company request");
     }
 };
 exports.CompanyService = CompanyService;

@@ -32,6 +32,12 @@ let CompanyController = class CompanyController {
     async getAllCompanies(query) {
         return this.companyService.getAllCompanies(query);
     }
+    async getActiveCompanies(sortBy, sortOrder) {
+        return this.companyService.getActiveCompanies(sortBy, sortOrder);
+    }
+    async getInactiveCompanies(sortBy, sortOrder) {
+        return this.companyService.getInactiveCompanies(sortBy, sortOrder);
+    }
     async getCompanyById(companyId) {
         return this.companyService.getCompanyById(companyId);
     }
@@ -65,6 +71,22 @@ __decorate([
     __metadata("design:paramtypes", [company_query_dto_1.CompanyQueryDto]),
     __metadata("design:returntype", Promise)
 ], CompanyController.prototype, "getAllCompanies", null);
+__decorate([
+    (0, common_1.Get)('active'),
+    __param(0, (0, common_1.Query)('sortBy')),
+    __param(1, (0, common_1.Query)('sortOrder')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], CompanyController.prototype, "getActiveCompanies", null);
+__decorate([
+    (0, common_1.Get)('inactive'),
+    __param(0, (0, common_1.Query)('sortBy')),
+    __param(1, (0, common_1.Query)('sortOrder')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], CompanyController.prototype, "getInactiveCompanies", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),

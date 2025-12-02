@@ -13,7 +13,6 @@ exports.JobService = void 0;
 const common_1 = require("@nestjs/common");
 const database_service_1 = require("../database/database.service");
 const client_1 = require("@prisma/client");
-const client_2 = require("@prisma/client");
 let JobService = class JobService {
     db;
     constructor(db) {
@@ -21,18 +20,31 @@ let JobService = class JobService {
     }
     async getPublishedJobs(query) {
         try {
-            const { search, company, city, type, experience, salary_min, salary_max, skills, remote, page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc', } = query;
+            const { search, company, city, type, experience, salary_min, salary_max, skills, remote, page = 1, limit = 9, sortBy = 'createdAt', sortOrder = 'desc', } = query;
             const skip = (page - 1) * limit;
+            const baseConditions = [
+                { status: 'PUBLISHED' },
+                {
+                    OR: [
+                        { expiresAt: null },
+                        { expiresAt: { gt: new Date() } },
+                    ],
+                },
+            ];
             const where = {
-                status: 'PUBLISHED',
-                publishedAt: { not: null },
+                AND: baseConditions,
             };
             if (search) {
-                where.OR = [
-                    { title: { contains: search, mode: 'insensitive' } },
-                    { description: { contains: search, mode: 'insensitive' } },
-                    { requirements: { contains: search, mode: 'insensitive' } },
-                    { responsibilities: { contains: search, mode: 'insensitive' } },
+                where.AND = [
+                    ...baseConditions,
+                    {
+                        OR: [
+                            { title: { contains: search, mode: 'insensitive' } },
+                            { description: { contains: search, mode: 'insensitive' } },
+                            { requirements: { contains: search, mode: 'insensitive' } },
+                            { responsibilities: { contains: search, mode: 'insensitive' } },
+                        ],
+                    },
                 ];
             }
             if (company) {
@@ -48,41 +60,47 @@ let JobService = class JobService {
                 where.experienceLevel = experience;
             }
             if (salary_min !== undefined || salary_max !== undefined) {
-                where.OR = [
-                    ...(where.OR || []),
-                    {
-                        AND: [
-                            salary_min !== undefined
-                                ? { minSalary: { gte: salary_min } }
-                                : {},
-                            salary_max !== undefined
-                                ? { maxSalary: { lte: salary_max } }
-                                : {},
-                        ],
-                    },
-                ];
+                const salaryConditions = [];
+                if (salary_min !== undefined) {
+                    salaryConditions.push({ minSalary: { gte: salary_min } });
+                }
+                if (salary_max !== undefined) {
+                    salaryConditions.push({ maxSalary: { lte: salary_max } });
+                }
+                if (salaryConditions.length > 0) {
+                    const existingAnd = Array.isArray(where.AND) ? where.AND : (where.AND ? [where.AND] : []);
+                    where.AND = [
+                        ...baseConditions,
+                        ...existingAnd,
+                        {
+                            AND: salaryConditions,
+                        },
+                    ];
+                }
             }
             if (skills && skills.length > 0) {
                 where.skillsRequired = {
-                    hasSome: skills,
+                    hasSome: skills.split(',').map(skill => skill.trim()),
                 };
             }
             if (remote !== undefined) {
                 where.workMode = remote ? 'REMOTE' : 'ONSITE';
             }
             const orderBy = {};
+            const sortOrderEnum = sortOrder === 'desc' ? 'desc' : 'asc';
             if (sortBy === 'title') {
-                orderBy.title = sortOrder;
+                orderBy.title = sortOrderEnum;
             }
             else if (sortBy === 'salaryMin') {
-                orderBy.minSalary = sortOrder;
+                orderBy.minSalary = sortOrderEnum;
             }
             else if (sortBy === 'publishedAt') {
-                orderBy.createdAt = sortOrder;
+                orderBy.createdAt = sortOrderEnum;
             }
             else {
-                orderBy.createdAt = sortOrder;
+                orderBy.createdAt = sortOrderEnum;
             }
+            console.log('🔍 getPublishedJobs - Where clause:', JSON.stringify(where, null, 2));
             const [jobs, total] = await Promise.all([
                 this.db.job.findMany({
                     where,
@@ -90,11 +108,29 @@ let JobService = class JobService {
                         company: {
                             select: {
                                 id: true,
+                                userId: true,
                                 name: true,
+                                slug: true,
+                                uuid: true,
+                                companyId: true,
+                                description: true,
+                                website: true,
                                 logo: true,
                                 industry: true,
+                                foundedYear: true,
                                 employeeCount: true,
-                                website: true,
+                                headquarters: true,
+                                address: true,
+                                linkedinUrl: true,
+                                twitterUrl: true,
+                                facebookUrl: true,
+                                isVerified: true,
+                                isActive: true,
+                                createdAt: true,
+                                updatedAt: true,
+                                country: true,
+                                state: true,
+                                city: true,
                             },
                         },
                         city: {
@@ -113,6 +149,9 @@ let JobService = class JobService {
                 }),
                 this.db.job.count({ where }),
             ]);
+            console.log('📊 getPublishedJobs - Found jobs:', jobs.length);
+            console.log('📊 getPublishedJobs - Total count:', total);
+            console.log('📊 getPublishedJobs - Jobs:', jobs.map(j => ({ id: j.id, title: j.title, status: j.status, publishedAt: j.publishedAt })));
             const totalPages = Math.ceil(total / limit);
             return {
                 jobs: jobs.map((job) => this.mapJobToResponse(job)),
@@ -129,9 +168,142 @@ let JobService = class JobService {
             throw error;
         }
     }
+    async getAllJobsList() {
+        try {
+            const jobs = await this.db.job.findMany({
+                where: {
+                    status: 'PUBLISHED',
+                },
+                include: {
+                    company: {
+                        select: {
+                            id: true,
+                            userId: true,
+                            name: true,
+                            slug: true,
+                            uuid: true,
+                            companyId: true,
+                            description: true,
+                            website: true,
+                            logo: true,
+                            industry: true,
+                            foundedYear: true,
+                            employeeCount: true,
+                            headquarters: true,
+                            address: true,
+                            linkedinUrl: true,
+                            twitterUrl: true,
+                            facebookUrl: true,
+                            isVerified: true,
+                            isActive: true,
+                            createdAt: true,
+                            updatedAt: true,
+                            country: true,
+                            state: true,
+                            city: true,
+                        },
+                    },
+                    postedBy: {
+                        select: {
+                            id: true,
+                            firstName: true,
+                            lastName: true,
+                            designation: true,
+                            department: true,
+                        },
+                    },
+                    city: {
+                        select: {
+                            id: true,
+                            name: true,
+                            isActive: true,
+                            createdAt: true,
+                            updatedAt: true,
+                            country_code: true,
+                            country_id: true,
+                            country_name: true,
+                            latitude: true,
+                            longitude: true,
+                            state_code: true,
+                            state_id: true,
+                            state_name: true,
+                            wikiDataId: true,
+                        },
+                    },
+                },
+                orderBy: { createdAt: 'desc' },
+            });
+            const mapped = jobs.map((job) => ({
+                id: job.id,
+                title: job.title,
+                slug: job.slug,
+                description: job.description,
+                requirements: job.requirements ?? null,
+                responsibilities: job.responsibilities ?? null,
+                benefits: job.benefits ?? null,
+                companyId: job.companyId,
+                postedById: job.postedById ?? null,
+                cityId: job.cityId ?? null,
+                address: job.address ?? null,
+                jobType: job.jobType,
+                workMode: job.workMode,
+                experienceLevel: job.experienceLevel,
+                minExperience: job.minExperience ?? null,
+                maxExperience: job.maxExperience ?? null,
+                minSalary: job.minSalary ?? null,
+                maxSalary: job.maxSalary ?? null,
+                salaryNegotiable: job.salaryNegotiable,
+                skillsRequired: job.skillsRequired ?? [],
+                educationLevel: job.educationLevel ?? null,
+                applicationCount: job.applicationCount,
+                viewCount: job.viewCount,
+                status: job.status,
+                expiresAt: job.expiresAt ?? null,
+                publishedAt: job.publishedAt ?? null,
+                closedAt: job.closedAt ?? null,
+                createdAt: job.createdAt,
+                updatedAt: job.updatedAt,
+                company: job.company
+                    ? {
+                        id: job.company.id,
+                        name: job.company.name,
+                        companyId: job.company.companyId,
+                        logo: job.company.logo ?? null,
+                        industry: job.company.industry ?? null,
+                        employeeCount: job.company.employeeCount ?? null,
+                        website: job.company.website ?? null,
+                    }
+                    : null,
+                postedBy: job.postedBy
+                    ? {
+                        id: job.postedBy.id,
+                        firstName: job.postedBy.firstName,
+                        lastName: job.postedBy.lastName,
+                        designation: job.postedBy.designation ?? null,
+                        department: job.postedBy.department ?? null,
+                    }
+                    : null,
+                location: job.city
+                    ? {
+                        city: {
+                            id: job.city.id,
+                            name: job.city.name,
+                            state_name: job.city.state_name ?? null,
+                            country_name: job.city.country_name ?? null,
+                        },
+                    }
+                    : null,
+            }));
+            return { jobs: mapped };
+        }
+        catch (error) {
+            this.handleException(error);
+            throw error;
+        }
+    }
     async searchJobs(searchQuery) {
         try {
-            const { q, location, type, experience, salary_min, skills, remote, page = 1, limit = 20, } = searchQuery;
+            const { q, location, type, experience, salary_min, skills, remote, page = 1, limit = 9, } = searchQuery;
             const skip = (page - 1) * limit;
             const where = {
                 status: 'PUBLISHED',
@@ -183,7 +355,7 @@ let JobService = class JobService {
             }
             if (skills && skills.length > 0) {
                 where.skillsRequired = {
-                    hasSome: skills,
+                    hasSome: skills.split(',').map(skill => skill.trim()),
                 };
             }
             if (remote !== undefined) {
@@ -196,11 +368,29 @@ let JobService = class JobService {
                         company: {
                             select: {
                                 id: true,
+                                userId: true,
                                 name: true,
+                                slug: true,
+                                uuid: true,
+                                companyId: true,
+                                description: true,
+                                website: true,
                                 logo: true,
                                 industry: true,
+                                foundedYear: true,
                                 employeeCount: true,
-                                website: true,
+                                headquarters: true,
+                                address: true,
+                                linkedinUrl: true,
+                                twitterUrl: true,
+                                facebookUrl: true,
+                                isVerified: true,
+                                isActive: true,
+                                createdAt: true,
+                                updatedAt: true,
+                                country: true,
+                                state: true,
+                                city: true,
                             },
                         },
                         city: {
@@ -247,6 +437,7 @@ let JobService = class JobService {
                         select: {
                             id: true,
                             name: true,
+                            companyId: true,
                             logo: true,
                             industry: true,
                             employeeCount: true,
@@ -273,6 +464,46 @@ let JobService = class JobService {
             throw error;
         }
     }
+    async getJobById(jobId) {
+        try {
+            const job = await this.db.job.findUnique({
+                where: { id: jobId },
+                include: {
+                    company: {
+                        select: {
+                            id: true,
+                            name: true,
+                            companyId: true,
+                            logo: true,
+                            industry: true,
+                            employeeCount: true,
+                            website: true,
+                        },
+                    },
+                    city: {
+                        include: {
+                            state: {
+                                include: {
+                                    country: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+            if (!job) {
+                throw new common_1.NotFoundException('Job not found');
+            }
+            return this.mapJobToResponse(job);
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException) {
+                throw error;
+            }
+            this.handleException(error);
+            throw error;
+        }
+    }
     async getJobBySlug(slug) {
         try {
             const job = await this.db.job.findFirst({
@@ -286,6 +517,7 @@ let JobService = class JobService {
                         select: {
                             id: true,
                             name: true,
+                            companyId: true,
                             logo: true,
                             industry: true,
                             employeeCount: true,
@@ -496,20 +728,8 @@ let JobService = class JobService {
                 updateData.workMode = updateJobDto.workMode;
             if (updateJobDto.experienceLevel !== undefined)
                 updateData.experienceLevel = updateJobDto.experienceLevel;
-            if (updateJobDto.companyName !== undefined) {
-                const company = await this.db.company.findFirst({
-                    where: {
-                        name: {
-                            equals: updateJobDto.companyName,
-                            mode: 'insensitive'
-                        }
-                    }
-                });
-                if (!company) {
-                    throw new common_1.BadRequestException(`Company with name "${updateJobDto.companyName}" not found`);
-                }
-                updateData.companyId = company.id;
-            }
+            if (updateJobDto.companyId !== undefined)
+                updateData.companyId = updateJobDto.companyId;
             if (updateJobDto.cityId !== undefined)
                 updateData.cityId = updateJobDto.cityId;
             if (updateJobDto.skillsRequired !== undefined)
@@ -529,6 +749,7 @@ let JobService = class JobService {
                         select: {
                             id: true,
                             name: true,
+                            companyId: true,
                             logo: true,
                             industry: true,
                             employeeCount: true,
@@ -579,7 +800,59 @@ let JobService = class JobService {
             publishedAt: job.publishedAt,
             createdAt: job.createdAt,
             updatedAt: job.updatedAt,
-            company: job.company,
+            company: job.company
+                ? {
+                    id: job.company.id,
+                    userId: job.company.userId,
+                    name: job.company.name,
+                    slug: job.company.slug,
+                    uuid: job.company.uuid,
+                    companyId: job.company.companyId ?? '',
+                    description: job.company.description,
+                    website: job.company.website,
+                    logo: job.company.logo,
+                    industry: job.company.industry,
+                    foundedYear: job.company.foundedYear,
+                    employeeCount: job.company.employeeCount,
+                    headquarters: job.company.headquarters,
+                    address: job.company.address,
+                    linkedinUrl: job.company.linkedinUrl,
+                    twitterUrl: job.company.twitterUrl,
+                    facebookUrl: job.company.facebookUrl,
+                    isVerified: job.company.isVerified,
+                    isActive: job.company.isActive,
+                    createdAt: job.company.createdAt,
+                    updatedAt: job.company.updatedAt,
+                    country: job.company.country,
+                    state: job.company.state,
+                    city: job.company.city,
+                }
+                : {
+                    id: '',
+                    userId: null,
+                    name: '',
+                    slug: '',
+                    uuid: '',
+                    companyId: '',
+                    description: null,
+                    website: null,
+                    logo: null,
+                    industry: null,
+                    foundedYear: null,
+                    employeeCount: null,
+                    headquarters: null,
+                    address: null,
+                    linkedinUrl: null,
+                    twitterUrl: null,
+                    facebookUrl: null,
+                    isVerified: false,
+                    isActive: false,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    country: null,
+                    state: null,
+                    city: null,
+                },
             location: job.city
                 ? {
                     city: {
@@ -611,7 +884,7 @@ let JobService = class JobService {
                 },
             });
             if (!job) {
-                throw new common_1.NotFoundException('Job not found or not published');
+                throw new common_1.NotFoundException('Job not found or not currently accepting applications');
             }
             const candidate = await this.db.candidate.findFirst({
                 where: { userId },
@@ -644,8 +917,17 @@ let JobService = class JobService {
                     jobId,
                     candidateId: candidate.id,
                     resumeId: applyDto.resumeId,
+                    resumeFilePath: applyDto.resumeFilePath,
                     coverLetter: applyDto.coverLetter,
                     status: 'APPLIED',
+                    fullName: applyDto.fullName,
+                    email: applyDto.email,
+                    phone: applyDto.phone,
+                    location: applyDto.location,
+                    experienceLevel: applyDto.experienceLevel,
+                    noticePeriod: applyDto.noticePeriod,
+                    currentCTC: applyDto.currentCTC,
+                    expectedCTC: applyDto.expectedCTC,
                 },
                 include: {
                     job: {
@@ -654,6 +936,7 @@ let JobService = class JobService {
                                 select: {
                                     id: true,
                                     name: true,
+                                    companyId: true,
                                     logo: true,
                                 },
                             },
@@ -686,18 +969,27 @@ let JobService = class JobService {
                     },
                 },
             });
-            await this.logActivity(userId, client_2.LogAction.APPLY, client_2.LogLevel.INFO, 'JobApplication', application.id, `Applied for job: ${job.title}`);
+            await this.logActivity(userId, client_1.LogAction.APPLY, client_1.LogLevel.INFO, 'JobApplication', application.id, `Applied for job: ${job.title}`);
             return {
                 id: application.id,
                 jobId: application.jobId,
                 candidateId: application.candidateId,
                 resumeId: application.resumeId || undefined,
+                resumeFilePath: application.resumeFilePath || undefined,
                 coverLetter: application.coverLetter || undefined,
                 status: application.status,
                 appliedAt: application.appliedAt,
                 reviewedAt: application.reviewedAt || undefined,
                 reviewedBy: application.reviewedBy || undefined,
                 feedback: application.feedback || undefined,
+                fullName: application.fullName || undefined,
+                email: application.email || undefined,
+                phone: application.phone || undefined,
+                location: application.location || undefined,
+                experienceLevel: application.experienceLevel || undefined,
+                noticePeriod: application.noticePeriod || undefined,
+                currentCTC: application.currentCTC || undefined,
+                expectedCTC: application.expectedCTC || undefined,
                 updatedAt: application.updatedAt,
                 job: {
                     id: application.job.id,
@@ -707,6 +999,7 @@ let JobService = class JobService {
                     company: {
                         id: application.job.company.id,
                         name: application.job.company.name,
+                        companyId: application.job.company.companyId || '',
                         logo: application.job.company.logo || undefined,
                     },
                     location: application.job.city
@@ -809,268 +1102,8 @@ let JobService = class JobService {
         }
     }
     handleException(error) {
+        console.error('Job service error:', error);
         throw new common_1.InternalServerErrorException("Can't process job request");
-    }
-    async createJobAttribute(createJobAttributeDto) {
-        try {
-            const existingAttribute = await this.db.job_attributes.findFirst({
-                where: {
-                    name: createJobAttributeDto.attributeName,
-                    category: createJobAttributeDto.category,
-                },
-            });
-            if (existingAttribute) {
-                throw new common_1.BadRequestException(`Job attribute with name "${createJobAttributeDto.attributeName}" and category "${createJobAttributeDto.category}" already exists`);
-            }
-            const jobAttribute = await this.db.job_attributes.create({
-                data: {
-                    id: `attr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                    name: createJobAttributeDto.attributeName,
-                    category: createJobAttributeDto.category,
-                    description: createJobAttributeDto.description,
-                    sortOrder: createJobAttributeDto.sortOrder ?? 0,
-                    isActive: createJobAttributeDto.isActive ?? true,
-                    updatedAt: new Date(),
-                },
-            });
-            return {
-                id: jobAttribute.id,
-                attributeName: jobAttribute.name,
-                category: jobAttribute.category,
-                description: jobAttribute.description,
-                isActive: jobAttribute.isActive,
-                sortOrder: jobAttribute.sortOrder,
-                createdAt: jobAttribute.createdAt,
-                updatedAt: jobAttribute.updatedAt,
-            };
-        }
-        catch (error) {
-            if (error instanceof common_1.BadRequestException) {
-                throw error;
-            }
-            throw new common_1.InternalServerErrorException('Failed to create job attribute');
-        }
-    }
-    async updateJobAttribute(id, updateJobAttributeDto) {
-        try {
-            const existingAttribute = await this.db.job_attributes.findUnique({
-                where: { id },
-            });
-            if (!existingAttribute) {
-                throw new common_1.NotFoundException('Job attribute not found');
-            }
-            if (updateJobAttributeDto.attributeName && updateJobAttributeDto.attributeName !== existingAttribute.name) {
-                const conflictingAttribute = await this.db.job_attributes.findFirst({
-                    where: {
-                        name: updateJobAttributeDto.attributeName,
-                        id: { not: id },
-                    },
-                });
-                if (conflictingAttribute) {
-                    throw new common_1.BadRequestException(`Job attribute with name "${updateJobAttributeDto.attributeName}" already exists`);
-                }
-            }
-            const updateData = {};
-            if (updateJobAttributeDto.attributeName !== undefined) {
-                updateData.name = updateJobAttributeDto.attributeName;
-            }
-            if (updateJobAttributeDto.isActive !== undefined) {
-                updateData.isActive = updateJobAttributeDto.isActive;
-            }
-            const updatedAttribute = await this.db.job_attributes.update({
-                where: { id },
-                data: updateData,
-            });
-            return {
-                id: updatedAttribute.id,
-                attributeName: updatedAttribute.name,
-                category: updatedAttribute.category,
-                description: updatedAttribute.description,
-                isActive: updatedAttribute.isActive,
-                sortOrder: updatedAttribute.sortOrder,
-                createdAt: updatedAttribute.createdAt,
-                updatedAt: updatedAttribute.updatedAt,
-            };
-        }
-        catch (error) {
-            if (error instanceof common_1.BadRequestException || error instanceof common_1.NotFoundException) {
-                throw error;
-            }
-            throw new common_1.InternalServerErrorException('Failed to update job attribute');
-        }
-    }
-    async deleteJobAttribute(id) {
-        try {
-            const existingAttribute = await this.db.job_attributes.findUnique({
-                where: { id },
-            });
-            if (!existingAttribute) {
-                throw new common_1.NotFoundException('Job attribute not found');
-            }
-            await this.db.job_attributes.delete({
-                where: { id },
-            });
-            return {
-                success: true,
-                message: 'Job attribute deleted successfully',
-            };
-        }
-        catch (error) {
-            if (error instanceof common_1.NotFoundException) {
-                throw error;
-            }
-            throw new common_1.InternalServerErrorException('Failed to delete job attribute');
-        }
-    }
-    async getJobAttribute(id) {
-        try {
-            const jobAttribute = await this.db.job_attributes.findUnique({
-                where: { id },
-            });
-            if (!jobAttribute) {
-                throw new common_1.NotFoundException('Job attribute not found');
-            }
-            return {
-                id: jobAttribute.id,
-                attributeName: jobAttribute.name,
-                category: jobAttribute.category,
-                description: jobAttribute.description,
-                isActive: jobAttribute.isActive,
-                sortOrder: jobAttribute.sortOrder,
-                createdAt: jobAttribute.createdAt,
-                updatedAt: jobAttribute.updatedAt,
-            };
-        }
-        catch (error) {
-            if (error instanceof common_1.NotFoundException) {
-                throw error;
-            }
-            throw new common_1.InternalServerErrorException('Failed to get job attribute');
-        }
-    }
-    async getJobAttributes(query) {
-        try {
-            const { category, isActive, search, page = 1, limit = 20, sortBy = 'sortOrder', sortOrder = 'asc', } = query;
-            const skip = (page - 1) * limit;
-            const where = {};
-            if (category) {
-                where.category = category;
-            }
-            if (isActive !== undefined) {
-                where.isActive = isActive;
-            }
-            if (search) {
-                where.OR = [
-                    { name: { contains: search, mode: 'insensitive' } },
-                    { description: { contains: search, mode: 'insensitive' } },
-                ];
-            }
-            const total = await this.db.job_attributes.count({ where });
-            const attributes = await this.db.job_attributes.findMany({
-                where,
-                skip,
-                take: limit,
-                orderBy: { [sortBy]: sortOrder },
-            });
-            const totalPages = Math.ceil(total / limit);
-            return {
-                success: true,
-                message: 'Job attributes retrieved successfully',
-                data: attributes.map((attr) => ({
-                    id: attr.id,
-                    attributeName: attr.name,
-                    category: attr.category,
-                    description: attr.description,
-                    isActive: attr.isActive,
-                    sortOrder: attr.sortOrder,
-                    createdAt: attr.createdAt,
-                    updatedAt: attr.updatedAt,
-                })),
-                pagination: {
-                    page,
-                    limit,
-                    total,
-                    totalPages,
-                },
-            };
-        }
-        catch (error) {
-            throw new common_1.InternalServerErrorException('Failed to get job attributes');
-        }
-    }
-    async getJobAttributesByCategory() {
-        try {
-            const categories = Object.values(client_1.JobAttributeCategory);
-            const result = [];
-            for (const category of categories) {
-                const attributes = await this.db.job_attributes.findMany({
-                    where: {
-                        category: category,
-                        isActive: true,
-                    },
-                    orderBy: { sortOrder: 'asc' },
-                });
-                result.push({
-                    category: category,
-                    attributes: attributes.map((attr) => ({
-                        id: attr.id,
-                        attributeName: attr.name,
-                        category: attr.category,
-                        description: attr.description,
-                        isActive: attr.isActive,
-                        sortOrder: attr.sortOrder,
-                        createdAt: attr.createdAt,
-                        updatedAt: attr.updatedAt,
-                    })),
-                });
-            }
-            return {
-                success: true,
-                message: 'Job attributes by category retrieved successfully',
-                data: result,
-            };
-        }
-        catch (error) {
-            throw new common_1.InternalServerErrorException('Failed to get job attributes by category');
-        }
-    }
-    async bulkCreateJobAttributes(bulkCreateDto) {
-        try {
-            const { category, attributes } = bulkCreateDto;
-            const existingNames = await this.db.job_attributes.findMany({
-                where: {
-                    category: category,
-                    name: { in: attributes.map((attr) => attr.name) },
-                },
-                select: { name: true },
-            });
-            const existingNamesSet = new Set(existingNames.map((attr) => attr.name));
-            const newAttributes = attributes.filter((attr) => !existingNamesSet.has(attr.name));
-            if (newAttributes.length === 0) {
-                throw new common_1.BadRequestException('All attributes already exist in this category');
-            }
-            const createdAttributes = await this.db.job_attributes.createMany({
-                data: newAttributes.map((attr) => ({
-                    id: `attr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                    name: attr.name,
-                    category: category,
-                    description: attr.description,
-                    sortOrder: attr.sortOrder ?? 0,
-                    updatedAt: new Date(),
-                })),
-            });
-            return {
-                success: true,
-                message: `Successfully created ${createdAttributes.count} job attributes`,
-                created: createdAttributes.count,
-            };
-        }
-        catch (error) {
-            if (error instanceof common_1.BadRequestException) {
-                throw error;
-            }
-            throw new common_1.InternalServerErrorException('Failed to bulk create job attributes');
-        }
     }
 };
 exports.JobService = JobService;

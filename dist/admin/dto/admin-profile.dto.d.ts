@@ -3,31 +3,41 @@ export declare class UpdateAdminProfileDto {
     lastName?: string;
     email?: string;
     phone?: string;
+    bio?: string;
+    profileImage?: string;
     department?: string;
     designation?: string;
+    country?: string;
+    state?: string;
+    city?: string;
+    streetAddress?: string;
+    linkedinUrl?: string;
+    facebookUrl?: string;
+    twitterUrl?: string;
+    instagramUrl?: string;
 }
-export declare class AdminProfileResponseDto {
+export interface AdminProfileResponseDto {
     id: string;
     userId: string;
-    firstName: string;
-    lastName: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string | null;
+    bio?: string;
+    profileImage?: string;
+    role?: string;
     department?: string | null;
     designation?: string | null;
-    permissions?: any;
+    country?: string;
+    state?: string;
+    city?: string;
+    streetAddress?: string;
+    linkedinUrl?: string;
+    facebookUrl?: string;
+    twitterUrl?: string;
+    instagramUrl?: string;
+    permissions: any;
+    user?: any;
     createdAt: Date;
     updatedAt: Date;
-    user: {
-        id: string;
-        email: string;
-        emailVerified: boolean;
-        phone?: string | null;
-        phoneVerified: boolean;
-        role: string;
-        status: string;
-        profileCompleted: boolean;
-        twoFactorEnabled: boolean;
-        lastLoginAt?: Date | null;
-        createdAt: Date;
-        updatedAt: Date;
-    };
 }

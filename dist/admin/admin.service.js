@@ -41,20 +41,26 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var AdminService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminService = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const database_service_1 = require("../database/database.service");
+const pdf_extractor_service_1 = require("./services/pdf-extractor.service");
+const company_uuid_util_1 = require("../company/utils/company-uuid.util");
 const client_1 = require("@prisma/client");
 const bcrypt = __importStar(require("bcryptjs"));
 const uuid_1 = require("uuid");
-let AdminService = class AdminService {
+let AdminService = AdminService_1 = class AdminService {
     prisma;
     jwtService;
-    constructor(prisma, jwtService) {
+    pdfExtractor;
+    logger = new common_1.Logger(AdminService_1.name);
+    constructor(prisma, jwtService, pdfExtractor) {
         this.prisma = prisma;
         this.jwtService = jwtService;
+        this.pdfExtractor = pdfExtractor;
     }
     async adminLogin(adminLoginDto) {
         try {
@@ -166,15 +172,44 @@ let AdminService = class AdminService {
                         twoFactorEnabled: false,
                     },
                 });
+                const adminData = {
+                    userId: user.id,
+                    permissions: [],
+                };
+                if (createAdminDto.firstName !== undefined)
+                    adminData.firstName = createAdminDto.firstName;
+                if (createAdminDto.lastName !== undefined)
+                    adminData.lastName = createAdminDto.lastName;
+                if (createAdminDto.department !== undefined)
+                    adminData.department = createAdminDto.department;
+                if (createAdminDto.designation !== undefined)
+                    adminData.designation = createAdminDto.designation;
+                if (createAdminDto.bio !== undefined)
+                    adminData.bio = createAdminDto.bio;
+                if (createAdminDto.profileImage !== undefined)
+                    adminData.profileImage = createAdminDto.profileImage;
+                if (createAdminDto.email !== undefined)
+                    adminData.email = createAdminDto.email;
+                if (createAdminDto.phone !== undefined)
+                    adminData.phone = createAdminDto.phone;
+                if (createAdminDto.country !== undefined)
+                    adminData.country = createAdminDto.country;
+                if (createAdminDto.state !== undefined)
+                    adminData.state = createAdminDto.state;
+                if (createAdminDto.city !== undefined)
+                    adminData.city = createAdminDto.city;
+                if (createAdminDto.streetAddress !== undefined)
+                    adminData.streetAddress = createAdminDto.streetAddress;
+                if (createAdminDto.linkedinUrl !== undefined)
+                    adminData.linkedinUrl = createAdminDto.linkedinUrl;
+                if (createAdminDto.facebookUrl !== undefined)
+                    adminData.facebookUrl = createAdminDto.facebookUrl;
+                if (createAdminDto.twitterUrl !== undefined)
+                    adminData.twitterUrl = createAdminDto.twitterUrl;
+                if (createAdminDto.instagramUrl !== undefined)
+                    adminData.instagramUrl = createAdminDto.instagramUrl;
                 const admin = await prisma.admin.create({
-                    data: {
-                        userId: user.id,
-                        firstName: createAdminDto.firstName,
-                        lastName: createAdminDto.lastName,
-                        department: createAdminDto.department,
-                        designation: createAdminDto.position,
-                        permissions: [],
-                    },
+                    data: adminData,
                 });
                 return { user, admin };
             });
@@ -221,7 +256,8 @@ let AdminService = class AdminService {
                 error instanceof common_1.ForbiddenException) {
                 throw error;
             }
-            throw new common_1.BadRequestException('Failed to create admin');
+            console.error('Error creating admin:', error);
+            throw new common_1.BadRequestException(error?.message || 'Failed to create admin. Please check all fields and try again.');
         }
     }
     async createCompany(createCompanyDto, currentUser) {
@@ -237,6 +273,13 @@ let AdminService = class AdminService {
                 .replace(/(^-|-$)/g, '') +
                 '-' +
                 Date.now();
+            const existingCompanies = await this.prisma.company.findMany({
+                select: { uuid: true, companyId: true },
+            });
+            const existingUuids = existingCompanies.map(c => c.uuid).filter((uuid) => uuid !== null);
+            const companyUuid = (0, company_uuid_util_1.generateCompanyUuid)(createCompanyDto.name, existingUuids);
+            const existingCompanyIds = existingCompanies.map(c => c.companyId).filter((id) => id !== null);
+            const companyId = (0, company_uuid_util_1.generateCompanyId)(createCompanyDto.name, existingCompanyIds);
             const result = await this.prisma.$transaction(async (prisma) => {
                 const user = await prisma.user.create({
                     data: {
@@ -255,6 +298,8 @@ let AdminService = class AdminService {
                         userId: user.id,
                         name: createCompanyDto.name,
                         slug: slug,
+                        uuid: companyUuid,
+                        companyId: companyId,
                         description: createCompanyDto.description,
                         website: createCompanyDto.website,
                         industry: createCompanyDto.industry,
@@ -402,10 +447,22 @@ let AdminService = class AdminService {
             return {
                 id: admin.id,
                 userId: admin.userId,
-                firstName: admin.firstName || '',
-                lastName: admin.lastName || '',
-                department: admin.department,
-                designation: admin.designation,
+                firstName: admin.firstName || undefined,
+                lastName: admin.lastName || undefined,
+                email: admin.email || admin.user.email,
+                phone: admin.phone || admin.user.phone || undefined,
+                bio: admin.bio || undefined,
+                profileImage: admin.profileImage || undefined,
+                department: admin.department || undefined,
+                designation: admin.designation || undefined,
+                country: admin.country || undefined,
+                state: admin.state || undefined,
+                city: admin.city || undefined,
+                streetAddress: admin.streetAddress || undefined,
+                linkedinUrl: admin.linkedinUrl || undefined,
+                facebookUrl: admin.facebookUrl || undefined,
+                twitterUrl: admin.twitterUrl || undefined,
+                instagramUrl: admin.instagramUrl || undefined,
                 permissions: admin.permissions,
                 createdAt: admin.createdAt,
                 updatedAt: admin.updatedAt,
@@ -478,14 +535,38 @@ let AdminService = class AdminService {
                     });
                 }
                 const adminUpdateData = {};
-                if (updateDto.firstName)
+                if (updateDto.firstName !== undefined)
                     adminUpdateData.firstName = updateDto.firstName;
-                if (updateDto.lastName)
+                if (updateDto.lastName !== undefined)
                     adminUpdateData.lastName = updateDto.lastName;
-                if (updateDto.department)
+                if (updateDto.bio !== undefined)
+                    adminUpdateData.bio = updateDto.bio;
+                if (updateDto.profileImage !== undefined)
+                    adminUpdateData.profileImage = updateDto.profileImage;
+                if (updateDto.email !== undefined)
+                    adminUpdateData.email = updateDto.email;
+                if (updateDto.phone !== undefined)
+                    adminUpdateData.phone = updateDto.phone;
+                if (updateDto.department !== undefined)
                     adminUpdateData.department = updateDto.department;
-                if (updateDto.designation)
+                if (updateDto.designation !== undefined)
                     adminUpdateData.designation = updateDto.designation;
+                if (updateDto.country !== undefined)
+                    adminUpdateData.country = updateDto.country;
+                if (updateDto.state !== undefined)
+                    adminUpdateData.state = updateDto.state;
+                if (updateDto.city !== undefined)
+                    adminUpdateData.city = updateDto.city;
+                if (updateDto.streetAddress !== undefined)
+                    adminUpdateData.streetAddress = updateDto.streetAddress;
+                if (updateDto.linkedinUrl !== undefined)
+                    adminUpdateData.linkedinUrl = updateDto.linkedinUrl;
+                if (updateDto.facebookUrl !== undefined)
+                    adminUpdateData.facebookUrl = updateDto.facebookUrl;
+                if (updateDto.twitterUrl !== undefined)
+                    adminUpdateData.twitterUrl = updateDto.twitterUrl;
+                if (updateDto.instagramUrl !== undefined)
+                    adminUpdateData.instagramUrl = updateDto.instagramUrl;
                 if (Object.keys(adminUpdateData).length > 0) {
                     await prisma.admin.update({
                         where: { id: admin.id },
@@ -522,10 +603,130 @@ let AdminService = class AdminService {
             return {
                 id: result.id,
                 userId: result.userId,
-                firstName: result.firstName || '',
-                lastName: result.lastName || '',
-                department: result.department,
-                designation: result.designation,
+                firstName: result.firstName ?? undefined,
+                lastName: result.lastName ?? undefined,
+                department: result.department ?? undefined,
+                designation: result.designation ?? undefined,
+                permissions: result.permissions,
+                createdAt: result.createdAt,
+                updatedAt: result.updatedAt,
+                user: {
+                    id: result.user.id,
+                    email: result.user.email,
+                    emailVerified: result.user.emailVerified,
+                    phone: result.user.phone,
+                    phoneVerified: result.user.phoneVerified,
+                    role: result.user.role,
+                    status: result.user.status,
+                    profileCompleted: result.user.profileCompleted,
+                    twoFactorEnabled: result.user.twoFactorEnabled,
+                    lastLoginAt: result.user.lastLoginAt,
+                    createdAt: result.user.createdAt,
+                    updatedAt: result.user.updatedAt,
+                },
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.BadRequestException) {
+                throw error;
+            }
+            throw new common_1.BadRequestException('Failed to update admin profile');
+        }
+    }
+    async updateAdminProfileById(adminId, updateDto) {
+        try {
+            const admin = await this.prisma.admin.findUnique({
+                where: { id: adminId },
+                include: { user: true },
+            });
+            if (!admin) {
+                throw new common_1.NotFoundException('Admin not found');
+            }
+            if (updateDto.email && updateDto.email !== admin.user.email) {
+                const existingUser = await this.prisma.user.findUnique({
+                    where: { email: updateDto.email },
+                });
+                if (existingUser) {
+                    throw new common_1.BadRequestException('Email is already in use');
+                }
+            }
+            if (updateDto.phone && updateDto.phone !== admin.user.phone) {
+                const existingUser = await this.prisma.user.findUnique({
+                    where: { phone: updateDto.phone },
+                });
+                if (existingUser) {
+                    throw new common_1.BadRequestException('Phone number is already in use');
+                }
+            }
+            const result = await this.prisma.$transaction(async (prisma) => {
+                const userUpdateData = {};
+                if (updateDto.email)
+                    userUpdateData.email = updateDto.email;
+                if (updateDto.phone)
+                    userUpdateData.phone = updateDto.phone;
+                if (Object.keys(userUpdateData).length > 0) {
+                    await prisma.user.update({
+                        where: { id: admin.userId },
+                        data: {
+                            ...userUpdateData,
+                            emailVerified: updateDto.email && updateDto.email !== admin.user.email
+                                ? false
+                                : admin.user.emailVerified,
+                            phoneVerified: updateDto.phone && updateDto.phone !== admin.user.phone
+                                ? false
+                                : admin.user.phoneVerified,
+                        },
+                    });
+                }
+                const adminUpdateData = {};
+                if (updateDto.firstName)
+                    adminUpdateData.firstName = updateDto.firstName;
+                if (updateDto.lastName)
+                    adminUpdateData.lastName = updateDto.lastName;
+                if (updateDto.department)
+                    adminUpdateData.department = updateDto.department;
+                if (updateDto.designation)
+                    adminUpdateData.designation = updateDto.designation;
+                if (Object.keys(adminUpdateData).length > 0) {
+                    await prisma.admin.update({
+                        where: { id: adminId },
+                        data: adminUpdateData,
+                    });
+                }
+                const updatedAdmin = await prisma.admin.findUnique({
+                    where: { id: adminId },
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                email: true,
+                                emailVerified: true,
+                                phone: true,
+                                phoneVerified: true,
+                                role: true,
+                                status: true,
+                                profileCompleted: true,
+                                twoFactorEnabled: true,
+                                lastLoginAt: true,
+                                createdAt: true,
+                                updatedAt: true,
+                            },
+                        },
+                    },
+                });
+                if (!updatedAdmin) {
+                    throw new common_1.BadRequestException('Failed to retrieve updated admin profile');
+                }
+                return updatedAdmin;
+            });
+            return {
+                id: result.id,
+                userId: result.userId,
+                firstName: result.firstName ?? undefined,
+                lastName: result.lastName ?? undefined,
+                department: result.department ?? undefined,
+                designation: result.designation ?? undefined,
                 permissions: result.permissions,
                 createdAt: result.createdAt,
                 updatedAt: result.updatedAt,
@@ -611,16 +812,17 @@ let AdminService = class AdminService {
                 where.user = { ...where.user, status: status };
             }
             const orderBy = {};
+            const sortDirection = sortOrder === 'asc' ? 'asc' : 'desc';
             if (sortBy === 'firstName' ||
                 sortBy === 'lastName' ||
                 sortBy === 'department' ||
                 sortBy === 'designation') {
                 orderBy[sortBy] =
-                    sortOrder;
+                    sortDirection;
             }
             else {
                 orderBy.user = {
-                    [sortBy]: sortOrder,
+                    [sortBy]: sortDirection,
                 };
             }
             const [admins, total] = await Promise.all([
@@ -655,8 +857,8 @@ let AdminService = class AdminService {
                 admins: admins.map((admin) => ({
                     id: admin.id,
                     userId: admin.userId,
-                    firstName: admin.firstName || '',
-                    lastName: admin.lastName || '',
+                    firstName: admin.firstName,
+                    lastName: admin.lastName,
                     department: admin.department,
                     designation: admin.designation,
                     permissions: admin.permissions,
@@ -716,10 +918,22 @@ let AdminService = class AdminService {
             return {
                 id: admin.id,
                 userId: admin.userId,
-                firstName: admin.firstName || '',
-                lastName: admin.lastName || '',
-                department: admin.department,
-                designation: admin.designation,
+                firstName: admin.firstName || undefined,
+                lastName: admin.lastName || undefined,
+                email: admin.email || admin.user.email,
+                phone: admin.phone || admin.user.phone || undefined,
+                bio: admin.bio || undefined,
+                profileImage: admin.profileImage || undefined,
+                department: admin.department || undefined,
+                designation: admin.designation || undefined,
+                country: admin.country || undefined,
+                state: admin.state || undefined,
+                city: admin.city || undefined,
+                streetAddress: admin.streetAddress || undefined,
+                linkedinUrl: admin.linkedinUrl || undefined,
+                facebookUrl: admin.facebookUrl || undefined,
+                twitterUrl: admin.twitterUrl || undefined,
+                instagramUrl: admin.instagramUrl || undefined,
                 permissions: admin.permissions,
                 createdAt: admin.createdAt,
                 updatedAt: admin.updatedAt,
@@ -782,6 +996,213 @@ let AdminService = class AdminService {
             throw new common_1.BadRequestException('Failed to update admin status');
         }
     }
+    async updateUserProfile(userId, updateDto, currentUserId) {
+        try {
+            const user = await this.prisma.user.findUnique({
+                where: { id: userId },
+                include: {
+                    candidate: {
+                        include: {
+                            city: {
+                                include: {
+                                    state: {
+                                        include: {
+                                            country: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    admin: true,
+                    superAdmin: true,
+                },
+            });
+            if (!user) {
+                throw new common_1.NotFoundException('User not found');
+            }
+            if (updateDto.email && updateDto.email !== user.email) {
+                const existingUser = await this.prisma.user.findUnique({
+                    where: { email: updateDto.email },
+                });
+                if (existingUser) {
+                    throw new common_1.BadRequestException('Email is already in use');
+                }
+            }
+            if (updateDto.phone && updateDto.phone !== user.phone) {
+                const existingUser = await this.prisma.user.findUnique({
+                    where: { phone: updateDto.phone },
+                });
+                if (existingUser) {
+                    throw new common_1.BadRequestException('Phone number is already in use');
+                }
+            }
+            const result = await this.prisma.$transaction(async (prisma) => {
+                const userUpdateData = {};
+                if (updateDto.email !== undefined)
+                    userUpdateData.email = updateDto.email;
+                if (updateDto.phone !== undefined)
+                    userUpdateData.phone = updateDto.phone;
+                if (Object.keys(userUpdateData).length > 0) {
+                    await prisma.user.update({
+                        where: { id: userId },
+                        data: {
+                            ...userUpdateData,
+                            emailVerified: updateDto.email && updateDto.email !== user.email
+                                ? false
+                                : user.emailVerified,
+                            phoneVerified: updateDto.phone && updateDto.phone !== user.phone
+                                ? false
+                                : user.phoneVerified,
+                        },
+                    });
+                }
+                if (user.candidate) {
+                    const candidateUpdateData = {};
+                    if (updateDto.firstName !== undefined && updateDto.firstName !== null)
+                        candidateUpdateData.firstName = updateDto.firstName;
+                    if (updateDto.lastName !== undefined && updateDto.lastName !== null)
+                        candidateUpdateData.lastName = updateDto.lastName;
+                    if (updateDto.bio !== undefined && updateDto.bio !== null)
+                        candidateUpdateData.bio = updateDto.bio;
+                    if (updateDto.profileImage !== undefined && updateDto.profileImage !== null)
+                        candidateUpdateData.profilePicture = updateDto.profileImage;
+                    if (updateDto.linkedinUrl !== undefined && updateDto.linkedinUrl !== null)
+                        candidateUpdateData.linkedinUrl = updateDto.linkedinUrl || null;
+                    if (updateDto.facebookUrl !== undefined && updateDto.facebookUrl !== null)
+                        candidateUpdateData.facebookUrl = updateDto.facebookUrl || null;
+                    if (updateDto.twitterUrl !== undefined && updateDto.twitterUrl !== null)
+                        candidateUpdateData.twitterUrl = updateDto.twitterUrl || null;
+                    if (updateDto.instagramUrl !== undefined && updateDto.instagramUrl !== null)
+                        candidateUpdateData.instagramUrl = updateDto.instagramUrl || null;
+                    if (updateDto.country !== undefined && updateDto.country !== null)
+                        candidateUpdateData.country = updateDto.country || null;
+                    if (updateDto.state !== undefined && updateDto.state !== null)
+                        candidateUpdateData.state = updateDto.state || null;
+                    if (updateDto.cityName !== undefined && updateDto.cityName !== null)
+                        candidateUpdateData.cityName = updateDto.cityName || null;
+                    if (updateDto.address !== undefined && updateDto.address !== null)
+                        candidateUpdateData.address = updateDto.address || null;
+                    if (updateDto.streetAddress !== undefined && updateDto.streetAddress !== null)
+                        candidateUpdateData.streetAddress = updateDto.streetAddress || null;
+                    if (updateDto.cityId !== undefined && updateDto.cityId !== null)
+                        candidateUpdateData.cityId = updateDto.cityId;
+                    if (Object.keys(candidateUpdateData).length > 0) {
+                        await prisma.candidate.update({
+                            where: { id: user.candidate.id },
+                            data: candidateUpdateData,
+                        });
+                    }
+                }
+                if (user.admin) {
+                    const adminUpdateData = {};
+                    if (updateDto.firstName !== undefined)
+                        adminUpdateData.firstName = updateDto.firstName;
+                    if (updateDto.lastName !== undefined)
+                        adminUpdateData.lastName = updateDto.lastName;
+                    if (updateDto.bio !== undefined)
+                        adminUpdateData.bio = updateDto.bio;
+                    if (updateDto.profileImage !== undefined)
+                        adminUpdateData.profileImage = updateDto.profileImage;
+                    if (updateDto.email !== undefined)
+                        adminUpdateData.email = updateDto.email;
+                    if (updateDto.phone !== undefined)
+                        adminUpdateData.phone = updateDto.phone;
+                    if (updateDto.linkedinUrl !== undefined)
+                        adminUpdateData.linkedinUrl = updateDto.linkedinUrl || null;
+                    if (updateDto.facebookUrl !== undefined)
+                        adminUpdateData.facebookUrl = updateDto.facebookUrl || null;
+                    if (updateDto.twitterUrl !== undefined)
+                        adminUpdateData.twitterUrl = updateDto.twitterUrl || null;
+                    if (updateDto.instagramUrl !== undefined)
+                        adminUpdateData.instagramUrl = updateDto.instagramUrl || null;
+                    if (updateDto.country !== undefined)
+                        adminUpdateData.country = updateDto.country || null;
+                    if (updateDto.state !== undefined)
+                        adminUpdateData.state = updateDto.state || null;
+                    if (updateDto.cityName !== undefined)
+                        adminUpdateData.city = updateDto.cityName || null;
+                    if (updateDto.streetAddress !== undefined)
+                        adminUpdateData.streetAddress = updateDto.streetAddress || null;
+                    if (Object.keys(adminUpdateData).length > 0) {
+                        await prisma.admin.update({
+                            where: { id: user.admin.id },
+                            data: adminUpdateData,
+                        });
+                    }
+                }
+                if (user.superAdmin) {
+                    const superAdminUpdateData = {};
+                    if (updateDto.firstName !== undefined)
+                        superAdminUpdateData.firstName = updateDto.firstName;
+                    if (updateDto.lastName !== undefined)
+                        superAdminUpdateData.lastName = updateDto.lastName;
+                    if (updateDto.bio !== undefined)
+                        superAdminUpdateData.bio = updateDto.bio;
+                    if (updateDto.profileImage !== undefined)
+                        superAdminUpdateData.profileImage = updateDto.profileImage;
+                    if (updateDto.email !== undefined)
+                        superAdminUpdateData.email = updateDto.email;
+                    if (updateDto.phone !== undefined)
+                        superAdminUpdateData.phone = updateDto.phone;
+                    if (updateDto.linkedinUrl !== undefined)
+                        superAdminUpdateData.linkedinUrl = updateDto.linkedinUrl || null;
+                    if (updateDto.facebookUrl !== undefined)
+                        superAdminUpdateData.facebookUrl = updateDto.facebookUrl || null;
+                    if (updateDto.twitterUrl !== undefined)
+                        superAdminUpdateData.twitterUrl = updateDto.twitterUrl || null;
+                    if (updateDto.instagramUrl !== undefined)
+                        superAdminUpdateData.instagramUrl = updateDto.instagramUrl || null;
+                    if (updateDto.country !== undefined)
+                        superAdminUpdateData.country = updateDto.country || null;
+                    if (updateDto.state !== undefined)
+                        superAdminUpdateData.state = updateDto.state || null;
+                    if (updateDto.cityName !== undefined)
+                        superAdminUpdateData.city = updateDto.cityName || null;
+                    if (updateDto.streetAddress !== undefined)
+                        superAdminUpdateData.streetAddress = updateDto.streetAddress || null;
+                    if (Object.keys(superAdminUpdateData).length > 0) {
+                        await prisma.superAdmin.update({
+                            where: { id: user.superAdmin.id },
+                            data: superAdminUpdateData,
+                        });
+                    }
+                }
+                return await prisma.user.findUnique({
+                    where: { id: userId },
+                    include: {
+                        candidate: {
+                            include: {
+                                city: {
+                                    include: {
+                                        state: {
+                                            include: {
+                                                country: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        admin: true,
+                        superAdmin: true,
+                    },
+                });
+            });
+            await this.logActivity(currentUserId, client_1.LogAction.UPDATE, client_1.LogLevel.INFO, 'User', userId, `User profile updated: ${user.email}`);
+            return {
+                message: 'User profile updated successfully',
+                user: result,
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.BadRequestException) {
+                throw error;
+            }
+            throw new common_1.BadRequestException('Failed to update user profile');
+        }
+    }
     async getAllJobs(query, currentUser) {
         try {
             if (![client_1.UserRole.ADMIN, client_1.UserRole.SUPER_ADMIN].includes(currentUser.role)) {
@@ -829,6 +1250,9 @@ let AdminService = class AdminService {
                             select: {
                                 id: true,
                                 name: true,
+                                slug: true,
+                                uuid: true,
+                                companyId: true,
                                 logo: true,
                                 industry: true,
                                 employeeCount: true,
@@ -884,22 +1308,34 @@ let AdminService = class AdminService {
                 throw new common_1.ForbiddenException('Only admins can create jobs');
             }
             console.log('createJobDto', createJobDto);
-            const admin = await this.prisma.admin.findUnique({
+            let admin = await this.prisma.admin.findUnique({
                 where: { userId: currentUser.id },
                 select: { id: true, firstName: true, lastName: true }
             });
             if (!admin) {
-                throw new common_1.BadRequestException('Admin profile not found for current user');
+                const user = await this.prisma.user.findUnique({
+                    where: { id: currentUser.id },
+                    select: { email: true, phone: true }
+                });
+                admin = await this.prisma.admin.create({
+                    data: {
+                        userId: currentUser.id,
+                        email: user?.email,
+                        phone: user?.phone,
+                        permissions: [],
+                    },
+                    select: { id: true, firstName: true, lastName: true }
+                });
             }
-            const company = await this.prisma.company.findFirst({
+            const company = await this.prisma.company.findUnique({
                 where: {
-                    name: createJobDto.companyName,
+                    id: createJobDto.companyId,
                     isActive: true
                 },
                 select: { id: true, name: true, isActive: true }
             });
             if (!company) {
-                throw new common_1.BadRequestException(`Company with name "${createJobDto.companyName}" not found or is not active`);
+                throw new common_1.BadRequestException(`Company with ID "${createJobDto.companyId}" not found or is not active`);
             }
             if (createJobDto.cityId) {
                 const city = await this.prisma.city.findUnique({
@@ -951,6 +1387,7 @@ let AdminService = class AdminService {
                         select: {
                             id: true,
                             name: true,
+                            companyId: true,
                             logo: true,
                             industry: true,
                             employeeCount: true,
@@ -1081,20 +1518,8 @@ let AdminService = class AdminService {
                 updateData.responsibilities = updateJobDto.responsibilities;
             if (updateJobDto.benefits !== undefined)
                 updateData.benefits = updateJobDto.benefits;
-            if (updateJobDto.companyName !== undefined) {
-                const company = await this.prisma.company.findFirst({
-                    where: {
-                        name: {
-                            equals: updateJobDto.companyName,
-                            mode: 'insensitive'
-                        }
-                    }
-                });
-                if (!company) {
-                    throw new common_1.BadRequestException(`Company with name "${updateJobDto.companyName}" not found`);
-                }
-                updateData.companyId = company.id;
-            }
+            if (updateJobDto.companyId !== undefined)
+                updateData.companyId = updateJobDto.companyId;
             if (updateJobDto.cityId !== undefined)
                 updateData.cityId = updateJobDto.cityId;
             if (updateJobDto.address !== undefined)
@@ -1307,6 +1732,55 @@ let AdminService = class AdminService {
             throw new common_1.BadRequestException('Failed to archive job');
         }
     }
+    async updateJobStatus(jobId, status, currentUser) {
+        try {
+            if (![client_1.UserRole.ADMIN, client_1.UserRole.SUPER_ADMIN].includes(currentUser.role)) {
+                throw new common_1.ForbiddenException('Only admins can update job status');
+            }
+            const validStatuses = ['DRAFT', 'PUBLISHED', 'CLOSED', 'ARCHIVED'];
+            if (!validStatuses.includes(status)) {
+                throw new common_1.BadRequestException(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+            }
+            const job = await this.prisma.job.findUnique({
+                where: { id: jobId },
+                select: { id: true, title: true, status: true },
+            });
+            if (!job) {
+                throw new common_1.NotFoundException('Job not found');
+            }
+            const updatedJob = await this.prisma.job.update({
+                where: { id: jobId },
+                data: {
+                    status: status,
+                    ...(status === 'PUBLISHED' && !job.status ? { publishedAt: new Date() } : {}),
+                    ...(status === 'CLOSED' ? { closedAt: new Date() } : {}),
+                },
+                include: {
+                    company: {
+                        select: {
+                            id: true,
+                            name: true,
+                            logo: true,
+                        },
+                    },
+                },
+            });
+            await this.logActivity(currentUser.id, client_1.LogAction.UPDATE, client_1.LogLevel.INFO, 'Job', jobId, `Job status updated from ${job.status} to ${status}: ${job.title}`);
+            return {
+                success: true,
+                message: `Job status updated to ${status} successfully`,
+                data: updatedJob,
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.ForbiddenException ||
+                error instanceof common_1.BadRequestException) {
+                throw error;
+            }
+            throw new common_1.BadRequestException('Failed to update job status');
+        }
+    }
     async getJobApplications(jobId, query, currentUser) {
         try {
             if (![client_1.UserRole.ADMIN, client_1.UserRole.SUPER_ADMIN].includes(currentUser.role)) {
@@ -1442,7 +1916,7 @@ let AdminService = class AdminService {
             requirements: job.requirements,
             responsibilities: job.responsibilities,
             benefits: job.benefits,
-            companyId: job.companyId,
+            companyId: job.company?.companyId || job.companyId,
             postedById: job.postedById,
             cityId: job.cityId,
             address: job.address,
@@ -1518,6 +1992,11 @@ let AdminService = class AdminService {
                         {
                             lastName: { contains: query.candidateName, mode: 'insensitive' },
                         },
+                        {
+                            user: {
+                                email: { contains: query.candidateName, mode: 'insensitive' },
+                            },
+                        },
                     ],
                 };
             }
@@ -1540,6 +2019,7 @@ let AdminService = class AdminService {
                                     select: {
                                         id: true,
                                         name: true,
+                                        companyId: true,
                                         logo: true,
                                     },
                                 },
@@ -1558,8 +2038,10 @@ let AdminService = class AdminService {
                             include: {
                                 user: {
                                     select: {
+                                        id: true,
                                         email: true,
                                         phone: true,
+                                        status: true,
                                     },
                                 },
                                 city: {
@@ -1578,6 +2060,7 @@ let AdminService = class AdminService {
                                 id: true,
                                 title: true,
                                 fileName: true,
+                                filePath: true,
                                 uploadedAt: true,
                             },
                         },
@@ -1591,10 +2074,11 @@ let AdminService = class AdminService {
             const totalPages = Math.ceil(total / limit);
             return {
                 applications: applications.map((app) => ({
-                    id: Number(app.id),
-                    jobId: Number(app.jobId),
-                    candidateId: Number(app.candidateId),
-                    resumeId: app.resumeId ? Number(app.resumeId) : undefined,
+                    id: app.id,
+                    jobId: app.jobId,
+                    candidateId: app.candidateId,
+                    resumeId: app.resumeId || undefined,
+                    resumeFilePath: app.resumeFilePath || undefined,
                     coverLetter: app.coverLetter || undefined,
                     status: app.status,
                     appliedAt: app.appliedAt,
@@ -1603,13 +2087,14 @@ let AdminService = class AdminService {
                     feedback: app.feedback || undefined,
                     updatedAt: app.updatedAt,
                     job: {
-                        id: Number(app.job.id),
+                        id: app.job.id,
                         title: app.job.title,
                         slug: app.job.slug,
                         description: app.job.description,
                         company: {
-                            id: Number(app.job.company.id),
+                            id: app.job.company.id,
                             name: app.job.company.name,
+                            companyId: app.job.company.companyId,
                             logo: app.job.company.logo || undefined,
                         },
                         location: app.job.city
@@ -1685,6 +2170,8 @@ let AdminService = class AdminService {
                         profilePicture: app.candidate.profilePicture || undefined,
                         currentTitle: app.candidate.currentTitle || undefined,
                         experienceYears: app.candidate.experienceYears || undefined,
+                        userId: app.candidate.user.id,
+                        status: app.candidate.user.status,
                         city: app.candidate.city
                             ? {
                                 id: app.candidate.city.id,
@@ -1747,12 +2234,21 @@ let AdminService = class AdminService {
                     },
                     resume: app.resume
                         ? {
-                            id: Number(app.resume.id),
+                            id: app.resume.id,
                             title: app.resume.title,
                             fileName: app.resume.fileName,
+                            filePath: app.resume.filePath || undefined,
                             uploadedAt: app.resume.uploadedAt,
                         }
-                        : undefined,
+                        : app.resumeFilePath
+                            ? {
+                                id: null,
+                                title: 'Resume',
+                                fileName: app.resumeFilePath.split('/').pop() || 'resume.pdf',
+                                filePath: app.resumeFilePath,
+                                uploadedAt: app.appliedAt,
+                            }
+                            : undefined,
                 })),
                 total,
                 page,
@@ -1777,6 +2273,7 @@ let AdminService = class AdminService {
                                 select: {
                                     id: true,
                                     name: true,
+                                    companyId: true,
                                     logo: true,
                                 },
                             },
@@ -1824,10 +2321,10 @@ let AdminService = class AdminService {
                 throw new common_1.NotFoundException('Application not found');
             }
             return {
-                id: Number(application.id),
-                jobId: Number(application.jobId),
-                candidateId: Number(application.candidateId),
-                resumeId: application.resumeId ? Number(application.resumeId) : undefined,
+                id: application.id,
+                jobId: application.jobId,
+                candidateId: application.candidateId,
+                resumeId: application.resumeId || undefined,
                 coverLetter: application.coverLetter || undefined,
                 status: application.status,
                 appliedAt: application.appliedAt,
@@ -1836,13 +2333,14 @@ let AdminService = class AdminService {
                 feedback: application.feedback || undefined,
                 updatedAt: application.updatedAt,
                 job: {
-                    id: Number(application.job.id),
+                    id: application.job.id,
                     title: application.job.title,
                     slug: application.job.slug,
                     description: application.job.description,
                     company: {
-                        id: Number(application.job.company.id),
+                        id: application.job.company.id,
                         name: application.job.company.name,
+                        companyId: application.job.company.companyId,
                         logo: application.job.company.logo || undefined,
                     },
                     location: application.job.city
@@ -1978,7 +2476,7 @@ let AdminService = class AdminService {
                 },
                 resume: application.resume
                     ? {
-                        id: Number(application.resume.id),
+                        id: application.resume.id,
                         title: application.resume.title,
                         fileName: application.resume.fileName,
                         uploadedAt: application.resume.uploadedAt,
@@ -2015,6 +2513,7 @@ let AdminService = class AdminService {
                                 select: {
                                     id: true,
                                     name: true,
+                                    companyId: true,
                                     logo: true,
                                 },
                             },
@@ -2060,10 +2559,10 @@ let AdminService = class AdminService {
             });
             await this.logActivity(currentUser.id, client_1.LogAction.UPDATE, client_1.LogLevel.INFO, 'JobApplication', applicationId, `Application status updated to ${updateDto.status}`);
             return {
-                id: Number(updatedApplication.id),
-                jobId: Number(updatedApplication.jobId),
-                candidateId: Number(updatedApplication.candidateId),
-                resumeId: updatedApplication.resumeId ? Number(updatedApplication.resumeId) : undefined,
+                id: updatedApplication.id,
+                jobId: updatedApplication.jobId,
+                candidateId: updatedApplication.candidateId,
+                resumeId: updatedApplication.resumeId || undefined,
                 coverLetter: updatedApplication.coverLetter || undefined,
                 status: updatedApplication.status,
                 appliedAt: updatedApplication.appliedAt,
@@ -2072,13 +2571,14 @@ let AdminService = class AdminService {
                 feedback: updatedApplication.feedback || undefined,
                 updatedAt: updatedApplication.updatedAt,
                 job: {
-                    id: Number(updatedApplication.job.id),
+                    id: updatedApplication.job.id,
                     title: updatedApplication.job.title,
                     slug: updatedApplication.job.slug,
                     description: updatedApplication.job.description,
                     company: {
-                        id: Number(updatedApplication.job.company.id),
+                        id: updatedApplication.job.company.id,
                         name: updatedApplication.job.company.name,
+                        companyId: updatedApplication.job.company.companyId,
                         logo: updatedApplication.job.company.logo || undefined,
                     },
                     location: updatedApplication.job.city
@@ -2214,7 +2714,7 @@ let AdminService = class AdminService {
                 },
                 resume: updatedApplication.resume
                     ? {
-                        id: Number(updatedApplication.resume.id),
+                        id: updatedApplication.resume.id,
                         title: updatedApplication.resume.title,
                         fileName: updatedApplication.resume.fileName,
                         uploadedAt: updatedApplication.resume.uploadedAt,
@@ -2251,6 +2751,7 @@ let AdminService = class AdminService {
                                 select: {
                                     id: true,
                                     name: true,
+                                    companyId: true,
                                     logo: true,
                                 },
                             },
@@ -2296,10 +2797,10 @@ let AdminService = class AdminService {
             });
             await this.logActivity(currentUser.id, client_1.LogAction.UPDATE, client_1.LogLevel.INFO, 'JobApplication', applicationId, 'Feedback added to application');
             return {
-                id: Number(updatedApplication.id),
-                jobId: Number(updatedApplication.jobId),
-                candidateId: Number(updatedApplication.candidateId),
-                resumeId: updatedApplication.resumeId ? Number(updatedApplication.resumeId) : undefined,
+                id: updatedApplication.id,
+                jobId: updatedApplication.jobId,
+                candidateId: updatedApplication.candidateId,
+                resumeId: updatedApplication.resumeId || undefined,
                 coverLetter: updatedApplication.coverLetter || undefined,
                 status: updatedApplication.status,
                 appliedAt: updatedApplication.appliedAt,
@@ -2308,13 +2809,14 @@ let AdminService = class AdminService {
                 feedback: updatedApplication.feedback || undefined,
                 updatedAt: updatedApplication.updatedAt,
                 job: {
-                    id: Number(updatedApplication.job.id),
+                    id: updatedApplication.job.id,
                     title: updatedApplication.job.title,
                     slug: updatedApplication.job.slug,
                     description: updatedApplication.job.description,
                     company: {
-                        id: Number(updatedApplication.job.company.id),
+                        id: updatedApplication.job.company.id,
                         name: updatedApplication.job.company.name,
+                        companyId: updatedApplication.job.company.companyId,
                         logo: updatedApplication.job.company.logo || undefined,
                     },
                     location: updatedApplication.job.city
@@ -2450,7 +2952,7 @@ let AdminService = class AdminService {
                 },
                 resume: updatedApplication.resume
                     ? {
-                        id: Number(updatedApplication.resume.id),
+                        id: updatedApplication.resume.id,
                         title: updatedApplication.resume.title,
                         fileName: updatedApplication.resume.fileName,
                         uploadedAt: updatedApplication.resume.uploadedAt,
@@ -2690,6 +3192,7 @@ let AdminService = class AdminService {
                                 select: {
                                     id: true,
                                     name: true,
+                                    companyId: true,
                                 },
                             },
                             city: {
@@ -2728,7 +3231,7 @@ let AdminService = class AdminService {
             const exportData = applications.map((app) => ({
                 'Application ID': app.id,
                 'Job Title': app.job.title,
-                Company: app.job.company.name,
+                Company: app.job.company.companyId || app.job.company.name,
                 'Candidate Name': `${app.candidate.firstName} ${app.candidate.lastName}`,
                 'Candidate Email': app.candidate.user.email,
                 'Candidate Phone': app.candidate.user.phone || '',
@@ -3293,11 +3796,328 @@ let AdminService = class AdminService {
             throw new common_1.BadRequestException('Failed to create notification template');
         }
     }
+    async advancedCVSearch(query, currentUser) {
+        try {
+            if (currentUser.role !== client_1.UserRole.ADMIN &&
+                currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
+                throw new common_1.ForbiddenException('Only admins can perform advanced searches');
+            }
+            const page = parseInt(query.page || '1');
+            const limit = parseInt(query.limit || '10');
+            const skip = (page - 1) * limit;
+            const resumeWhere = {};
+            if (query.keywords) {
+                const keywords = query.keywords.trim();
+                resumeWhere.AND = [
+                    { extractedText: { not: null } },
+                    {
+                        extractedText: {
+                            contains: keywords,
+                            mode: 'insensitive',
+                        },
+                    },
+                ];
+            }
+            else {
+                resumeWhere.extractedText = { not: null };
+            }
+            const candidateWhere = {};
+            const orConditions = [];
+            if (query.candidateName) {
+                orConditions.push({ firstName: { contains: query.candidateName, mode: 'insensitive' } }, { lastName: { contains: query.candidateName, mode: 'insensitive' } });
+            }
+            if (query.email) {
+                candidateWhere.user = {
+                    email: {
+                        contains: query.email,
+                        mode: 'insensitive',
+                    },
+                };
+            }
+            if (query.skills) {
+                candidateWhere.skills = {
+                    some: {
+                        skillName: {
+                            contains: query.skills,
+                            mode: 'insensitive',
+                        },
+                    },
+                };
+            }
+            if (query.location) {
+                orConditions.push({ currentLocation: { contains: query.location, mode: 'insensitive' } }, {
+                    city: {
+                        name: { contains: query.location, mode: 'insensitive' },
+                    },
+                });
+            }
+            if (orConditions.length > 0) {
+                candidateWhere.OR = orConditions;
+            }
+            if (query.company) {
+                candidateWhere.currentCompany = {
+                    contains: query.company,
+                    mode: 'insensitive',
+                };
+            }
+            if (query.minExperience !== undefined || query.maxExperience !== undefined) {
+                candidateWhere.experienceYears = {};
+                if (query.minExperience !== undefined) {
+                    candidateWhere.experienceYears.gte = query.minExperience;
+                }
+                if (query.maxExperience !== undefined) {
+                    candidateWhere.experienceYears.lte = query.maxExperience;
+                }
+            }
+            if (Object.keys(candidateWhere).length > 0) {
+                resumeWhere.candidate = candidateWhere;
+            }
+            const orderBy = {};
+            if (query.sortBy) {
+                if (query.sortBy.startsWith('candidate.')) {
+                    orderBy.uploadedAt = query.sortOrder || 'desc';
+                }
+                else {
+                    orderBy[query.sortBy] = query.sortOrder || 'desc';
+                }
+            }
+            else {
+                orderBy.uploadedAt = 'desc';
+            }
+            let resumes = [];
+            let total = 0;
+            try {
+                [resumes, total] = await Promise.all([
+                    this.prisma.resume.findMany({
+                        where: resumeWhere,
+                        orderBy,
+                        skip,
+                        take: limit,
+                        select: {
+                            id: true,
+                            candidateId: true,
+                            fileName: true,
+                            uploadedAt: true,
+                            extractedText: true,
+                            candidate: {
+                                select: {
+                                    id: true,
+                                    userId: true,
+                                    firstName: true,
+                                    lastName: true,
+                                    email: true,
+                                    mobileNumber: true,
+                                    currentTitle: true,
+                                    experienceYears: true,
+                                    currentCompany: true,
+                                    currentLocation: true,
+                                    expectedSalary: true,
+                                    skills: {
+                                        select: {
+                                            skillName: true,
+                                        },
+                                    },
+                                    city: {
+                                        select: {
+                                            id: true,
+                                            name: true,
+                                            state_name: true,
+                                            country_name: true,
+                                        },
+                                    },
+                                    user: {
+                                        select: {
+                                            id: true,
+                                            email: true,
+                                            phone: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    }),
+                    this.prisma.resume.count({ where: resumeWhere }),
+                ]);
+            }
+            catch (dbError) {
+                this.logger.error('Database query error in advanced CV search:', dbError);
+                this.logger.error('Query where clause:', JSON.stringify(resumeWhere, null, 2));
+                if (dbError.message?.includes("Can't reach database server") ||
+                    dbError.message?.includes("connection") ||
+                    dbError.code === 'P1001' ||
+                    dbError.code === 'P1017') {
+                    throw new common_1.InternalServerErrorException('Database connection error. Please check your database server connection.');
+                }
+                if (dbError.code?.startsWith('P')) {
+                    throw new common_1.BadRequestException(`Database query error: ${dbError.message || 'Invalid query parameters'}`);
+                }
+                throw new common_1.InternalServerErrorException(`Database error: ${dbError.message || 'Unknown database error'}`);
+            }
+            const results = resumes.map((resume) => {
+                const candidate = resume.candidate;
+                const skills = candidate.skills.map((s) => s.skillName);
+                let matchedSnippets = [];
+                if (query.keywords && resume.extractedText) {
+                    const snippetLength = 150;
+                    const keywords = query.keywords.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+                    keywords.forEach((keyword) => {
+                        const textLower = resume.extractedText.toLowerCase();
+                        let startIndex = 0;
+                        while (startIndex < textLower.length && matchedSnippets.length < 5) {
+                            const index = textLower.indexOf(keyword, startIndex);
+                            if (index === -1)
+                                break;
+                            const snippetStart = Math.max(0, index - snippetLength / 2);
+                            const snippetEnd = Math.min(resume.extractedText.length, index + keyword.length + snippetLength / 2);
+                            let snippet = resume.extractedText.substring(snippetStart, snippetEnd);
+                            if (snippetStart > 0)
+                                snippet = '...' + snippet;
+                            if (snippetEnd < resume.extractedText.length)
+                                snippet = snippet + '...';
+                            matchedSnippets.push(snippet);
+                            startIndex = index + keyword.length;
+                            if (matchedSnippets.filter((s) => s.toLowerCase().includes(keyword)).length >= 2) {
+                                break;
+                            }
+                        }
+                    });
+                }
+                return {
+                    candidateId: candidate.id,
+                    userId: candidate.userId || candidate.user?.id || undefined,
+                    firstName: candidate.firstName,
+                    lastName: candidate.lastName,
+                    email: candidate.email || candidate.user?.email || 'N/A',
+                    phone: candidate.mobileNumber || candidate.user?.phone || undefined,
+                    currentTitle: candidate.currentTitle || undefined,
+                    experienceYears: candidate.experienceYears || undefined,
+                    currentCompany: candidate.currentCompany || undefined,
+                    currentLocation: candidate.currentLocation || candidate.city?.name || undefined,
+                    expectedSalary: candidate.expectedSalary ? Number(candidate.expectedSalary) : undefined,
+                    skills,
+                    resumeId: resume.id,
+                    resumeFileName: resume.fileName,
+                    resumeUploadedAt: resume.uploadedAt,
+                    matchedSnippets: matchedSnippets.length > 0 ? matchedSnippets : undefined,
+                };
+            });
+            const totalPages = Math.ceil(total / limit);
+            return {
+                results,
+                total,
+                page,
+                limit,
+                totalPages,
+                hasNext: page < totalPages,
+                hasPrev: page > 1,
+                searchQuery: {
+                    keywords: query.keywords,
+                    skills: query.skills,
+                    location: query.location,
+                    company: query.company,
+                    minExperience: query.minExperience,
+                    maxExperience: query.maxExperience,
+                },
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.ForbiddenException) {
+                throw error;
+            }
+            this.logger.error('Advanced CV search failed:', error);
+            this.logger.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                query,
+                errorName: error?.constructor?.name,
+            });
+            if (error?.code === 'P2002') {
+                throw new common_1.BadRequestException('Database constraint violation');
+            }
+            else if (error?.code === 'P2025') {
+                throw new common_1.NotFoundException('Record not found');
+            }
+            else if (error?.message?.includes('Invalid')) {
+                throw new common_1.BadRequestException(`Invalid query: ${error.message}`);
+            }
+            throw new common_1.InternalServerErrorException(`Failed to perform advanced CV search: ${error.message || 'Unknown error'}`);
+        }
+    }
+    async extractTextFromAllResumes(currentUser) {
+        try {
+            if (currentUser.role !== client_1.UserRole.ADMIN &&
+                currentUser.role !== client_1.UserRole.SUPER_ADMIN) {
+                throw new common_1.ForbiddenException('Only admins can extract resume text');
+            }
+            const resumes = await this.prisma.resume.findMany({
+                where: {
+                    OR: [
+                        { extractedText: null },
+                        { extractedText: '' },
+                    ],
+                    mimeType: {
+                        contains: 'pdf',
+                        mode: 'insensitive',
+                    },
+                },
+                select: {
+                    id: true,
+                    filePath: true,
+                    fileName: true,
+                    mimeType: true,
+                },
+            });
+            this.logger.log(`Found ${resumes.length} resumes without extracted text`);
+            let successful = 0;
+            let failed = 0;
+            const batchSize = 10;
+            for (let i = 0; i < resumes.length; i += batchSize) {
+                const batch = resumes.slice(i, i + batchSize);
+                await Promise.all(batch.map(async (resume) => {
+                    try {
+                        const fileUrl = resume.filePath.startsWith('http')
+                            ? resume.filePath
+                            : `https://spearwin.sfo3.digitaloceanspaces.com/${resume.filePath}`;
+                        const extractedText = await this.pdfExtractor.extractTextFromPDF(fileUrl);
+                        if (extractedText && extractedText.length > 0) {
+                            const cleanedText = this.pdfExtractor.cleanExtractedText(extractedText);
+                            await this.prisma.resume.update({
+                                where: { id: resume.id },
+                                data: { extractedText: cleanedText },
+                            });
+                            successful++;
+                            this.logger.log(`Successfully extracted ${cleanedText.length} characters from ${resume.fileName}`);
+                        }
+                        else {
+                            this.logger.warn(`No text extracted from ${resume.fileName}`);
+                            failed++;
+                        }
+                    }
+                    catch (error) {
+                        this.logger.error(`Failed to extract text from resume ${resume.id}: ${error.message}`);
+                        failed++;
+                    }
+                }));
+            }
+            return {
+                message: `Text extraction completed. ${successful} successful, ${failed} failed.`,
+                total: resumes.length,
+                processed: successful + failed,
+                successful,
+                failed,
+            };
+        }
+        catch (error) {
+            this.logger.error('Error extracting text from resumes:', error);
+            throw new common_1.InternalServerErrorException(`Failed to extract text from resumes: ${error.message}`);
+        }
+    }
 };
 exports.AdminService = AdminService;
-exports.AdminService = AdminService = __decorate([
+exports.AdminService = AdminService = AdminService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [database_service_1.DatabaseService,
-        jwt_1.JwtService])
+        jwt_1.JwtService,
+        pdf_extractor_service_1.PdfExtractorService])
 ], AdminService);
 //# sourceMappingURL=admin.service.js.map

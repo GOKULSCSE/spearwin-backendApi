@@ -12,11 +12,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.VerifyCompanyDto = void 0;
 const class_validator_1 = require("class-validator");
 class VerifyCompanyDto {
+    companyId;
     isVerified;
 }
 exports.VerifyCompanyDto = VerifyCompanyDto;
 __decorate([
-    (0, class_validator_1.IsBoolean)({ message: 'Is verified must be a boolean value' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], VerifyCompanyDto.prototype, "companyId", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], VerifyCompanyDto.prototype, "isVerified", void 0);
 //# sourceMappingURL=verify-company.dto.js.map

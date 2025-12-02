@@ -10,7 +10,7 @@ export declare class UpdateJobDto {
     jobType?: string;
     workMode?: string;
     experienceLevel?: string;
-    companyName?: string;
+    companyId?: string;
     cityId?: string;
     skillsRequired?: string[];
     tags?: string[];

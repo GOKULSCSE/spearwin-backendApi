@@ -13,10 +13,16 @@ exports.UpdateCompanyStatusDto = void 0;
 const class_validator_1 = require("class-validator");
 class UpdateCompanyStatusDto {
     isActive;
+    reason;
 }
 exports.UpdateCompanyStatusDto = UpdateCompanyStatusDto;
 __decorate([
-    (0, class_validator_1.IsBoolean)({ message: 'Is active must be a boolean value' }),
+    (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], UpdateCompanyStatusDto.prototype, "isActive", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCompanyStatusDto.prototype, "reason", void 0);
 //# sourceMappingURL=update-company-status.dto.js.map

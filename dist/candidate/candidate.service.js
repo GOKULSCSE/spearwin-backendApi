@@ -1,22 +1,61 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var CandidateService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CandidateService = void 0;
 const common_1 = require("@nestjs/common");
+const bcrypt = __importStar(require("bcryptjs"));
 const database_service_1 = require("../database/database.service");
 const client_1 = require("@prisma/client");
-let CandidateService = class CandidateService {
+const pdf_extractor_service_1 = require("../admin/services/pdf-extractor.service");
+let CandidateService = CandidateService_1 = class CandidateService {
     db;
-    constructor(db) {
+    pdfExtractor;
+    logger = new common_1.Logger(CandidateService_1.name);
+    constructor(db, pdfExtractor) {
         this.db = db;
+        this.pdfExtractor = pdfExtractor;
     }
     async createCandidate(userId, createDto) {
         try {
@@ -1116,18 +1155,590 @@ let CandidateService = class CandidateService {
             throw error;
         }
     }
+    async upsertFullProfile(userId, body) {
+        try {
+            let resumeIdsToExtract = [];
+            const resultCandidate = await this.db.$transaction(async (tx) => {
+                console.log('Transaction started for user:', userId);
+                let ensured = await tx.candidate.findFirst({ where: { userId } });
+                if (!ensured) {
+                    console.log('Creating new candidate for user:', userId);
+                    ensured = await tx.candidate.create({
+                        data: {
+                            userId,
+                            firstName: '',
+                            lastName: '',
+                            isAvailable: true,
+                        },
+                    });
+                }
+                console.log('Candidate found/created:', ensured.id);
+                const p = body.profile || {};
+                const cityIdParsed = p.cityId && p.cityId.trim() ? parseInt(p.cityId.trim(), 10) : undefined;
+                const updateData = {
+                    firstName: p.firstName,
+                    lastName: p.lastName,
+                    fatherName: p.fatherName || undefined,
+                    dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth) : undefined,
+                    gender: p.gender || undefined,
+                    maritalStatus: p.maritalStatus || undefined,
+                    bio: (p.bio ?? p.profileSummary) || undefined,
+                    currentTitle: p.currentTitle || undefined,
+                    currentCompany: p.currentCompany || undefined,
+                    currentLocation: p.currentLocation || undefined,
+                    preferredLocation: p.preferredLocation || undefined,
+                    noticePeriod: p.noticePeriod || undefined,
+                    currentSalary: p.currentSalary != null ? p.currentSalary : undefined,
+                    expectedSalary: p.expectedSalary != null ? p.expectedSalary : undefined,
+                    profileType: p.profileType || undefined,
+                    experienceYears: p.experienceYears != null ? parseInt(String(p.experienceYears), 10) : undefined,
+                    cityId: typeof cityIdParsed === 'number' && !Number.isNaN(cityIdParsed) ? cityIdParsed : undefined,
+                    address: (p.address ?? p.streetAddress) || undefined,
+                    linkedinUrl: p.linkedinUrl || undefined,
+                    githubUrl: p.githubUrl || undefined,
+                    portfolioUrl: p.portfolioUrl || undefined,
+                    email: p.email || undefined,
+                    mobileNumber: p.mobileNumber || undefined,
+                    jobExperience: p.jobExperience || undefined,
+                    country: p.country || undefined,
+                    state: p.state || undefined,
+                    cityName: p.cityName || undefined,
+                    streetAddress: p.streetAddress || undefined,
+                    profileSummary: (p.profileSummary ?? p.bio) || undefined,
+                    profilePicture: body.profilePictureKey || undefined,
+                };
+                const cleanedData = Object.fromEntries(Object.entries(updateData).filter(([k, v]) => {
+                    if (v === undefined || v === null)
+                        return false;
+                    if (typeof v === 'string' && v.trim() === '')
+                        return false;
+                    return true;
+                }));
+                await tx.candidate.update({
+                    where: { id: ensured.id },
+                    data: cleanedData,
+                });
+                if (body.skills) {
+                    const { upsert, delete: del } = body.skills;
+                    if (Array.isArray(upsert)) {
+                        const skillIdsToUpdate = upsert.filter(s => s.id).map(s => s.id).filter((id) => id !== undefined);
+                        if (skillIdsToUpdate.length > 0) {
+                            const existingSkills = await tx.candidateSkill.findMany({
+                                where: {
+                                    id: { in: skillIdsToUpdate },
+                                    candidateId: ensured.id,
+                                },
+                            });
+                            const existingIds = new Set(existingSkills.map(r => r.id));
+                            for (const id of skillIdsToUpdate) {
+                                if (!existingIds.has(id)) {
+                                    throw new common_1.BadRequestException(`Skill with id ${id} not found or does not belong to candidate`);
+                                }
+                            }
+                        }
+                        for (const s of upsert) {
+                            if (s.id) {
+                                await tx.candidateSkill.update({
+                                    where: { id: s.id },
+                                    data: Object.fromEntries(Object.entries({
+                                        skillName: s.skillName,
+                                        level: s.level,
+                                        yearsUsed: s.yearsUsed,
+                                    }).filter(([, v]) => v !== undefined)),
+                                });
+                            }
+                            else {
+                                await tx.candidateSkill.upsert({
+                                    where: {
+                                        candidateId_skillName: {
+                                            candidateId: ensured.id,
+                                            skillName: s.skillName,
+                                        },
+                                    },
+                                    create: {
+                                        candidateId: ensured.id,
+                                        skillName: s.skillName,
+                                        level: s.level,
+                                        yearsUsed: s.yearsUsed,
+                                    },
+                                    update: {
+                                        level: s.level,
+                                        yearsUsed: s.yearsUsed,
+                                    },
+                                });
+                            }
+                        }
+                    }
+                    if (Array.isArray(del) && del.length) {
+                        await tx.candidateSkill.deleteMany({
+                            where: { id: { in: del }, candidateId: ensured.id },
+                        });
+                    }
+                }
+                if (body.education) {
+                    console.log('Processing education section');
+                    const { upsert, delete: del } = body.education;
+                    if (Array.isArray(upsert) && upsert.length > 0) {
+                        console.log(`Education upsert array length: ${upsert.length}`);
+                        const updates = upsert.filter(e => e.id);
+                        const creates = upsert.filter(e => !e.id);
+                        console.log(`Education updates: ${updates.length}, creates: ${creates.length}`);
+                        if (updates.length > 0) {
+                            const educationIdsToUpdate = updates.map(e => e.id).filter((id) => id !== undefined);
+                            console.log(`Verifying ${educationIdsToUpdate.length} education records...`);
+                            const existingEducationRecords = await tx.candidateEducation.findMany({
+                                where: {
+                                    id: { in: educationIdsToUpdate },
+                                    candidateId: ensured.id,
+                                },
+                            });
+                            console.log(`Found ${existingEducationRecords.length} existing education records`);
+                            const existingIds = new Set(existingEducationRecords.map(r => r.id));
+                            for (const id of educationIdsToUpdate) {
+                                if (!existingIds.has(id)) {
+                                    console.error(`Education ${id} not found for candidate ${ensured.id}`);
+                                    throw new common_1.BadRequestException(`Education with id ${id} not found or does not belong to candidate`);
+                                }
+                            }
+                            console.log('All education IDs verified. Starting updates...');
+                            for (let i = 0; i < updates.length; i++) {
+                                const e = updates[i];
+                                console.log(`[${i + 1}/${updates.length}] Updating education ${e.id}...`);
+                                if (!e.id)
+                                    continue;
+                                try {
+                                    const data = Object.fromEntries(Object.entries({
+                                        institution: e.institution,
+                                        degree: e.degree,
+                                        fieldOfStudy: e.fieldOfStudy,
+                                        level: e.level,
+                                        startDate: e.startDate ? new Date(e.startDate) : undefined,
+                                        endDate: e.endDate ? new Date(e.endDate) : undefined,
+                                        isCompleted: e.isCompleted,
+                                        grade: e.grade,
+                                        description: e.description,
+                                    }).filter(([, v]) => v !== undefined));
+                                    if (Object.keys(data).length > 0) {
+                                        const record = await tx.candidateEducation.findUnique({
+                                            where: { id: e.id },
+                                        });
+                                        if (!record || record.candidateId !== ensured.id) {
+                                            throw new common_1.BadRequestException(`Education record ${e.id} not found or does not belong to candidate`);
+                                        }
+                                        await tx.candidateEducation.update({
+                                            where: { id: e.id },
+                                            data,
+                                        });
+                                        console.log(`[${i + 1}/${updates.length}] Education ${e.id} updated successfully`);
+                                    }
+                                    else {
+                                        console.log(`[${i + 1}/${updates.length}] Education ${e.id} - no data to update`);
+                                    }
+                                }
+                                catch (updateError) {
+                                    console.error(`[${i + 1}/${updates.length}] Error updating education ${e.id}:`, updateError);
+                                    if (updateError instanceof common_1.BadRequestException) {
+                                        throw updateError;
+                                    }
+                                    throw new common_1.BadRequestException(`Failed to update education record ${e.id}: ${updateError.message || 'Unknown error'}`);
+                                }
+                            }
+                            console.log(`All ${updates.length} education updates completed`);
+                        }
+                        if (creates.length > 0) {
+                            for (const e of creates) {
+                                await tx.candidateEducation.create({
+                                    data: {
+                                        candidateId: ensured.id,
+                                        institution: e.institution,
+                                        degree: e.degree,
+                                        fieldOfStudy: e.fieldOfStudy,
+                                        level: e.level,
+                                        startDate: new Date(e.startDate),
+                                        endDate: e.endDate ? new Date(e.endDate) : undefined,
+                                        isCompleted: !!e.isCompleted,
+                                        grade: e.grade,
+                                        description: e.description,
+                                    },
+                                });
+                            }
+                        }
+                    }
+                    if (Array.isArray(del) && del.length) {
+                        await tx.candidateEducation.deleteMany({
+                            where: { id: { in: del }, candidateId: ensured.id },
+                        });
+                    }
+                }
+                if (body.experience) {
+                    const { upsert, delete: del } = body.experience;
+                    if (Array.isArray(upsert)) {
+                        const experienceIdsToUpdate = upsert.filter(ex => ex.id).map(ex => ex.id).filter((id) => id !== undefined);
+                        if (experienceIdsToUpdate.length > 0) {
+                            const existingExperiences = await tx.candidateExperience.findMany({
+                                where: {
+                                    id: { in: experienceIdsToUpdate },
+                                    candidateId: ensured.id,
+                                },
+                            });
+                            const existingIds = new Set(existingExperiences.map(r => r.id));
+                            for (const id of experienceIdsToUpdate) {
+                                if (!existingIds.has(id)) {
+                                    throw new common_1.BadRequestException(`Experience with id ${id} not found or does not belong to candidate`);
+                                }
+                            }
+                        }
+                        for (const ex of upsert) {
+                            if (ex.id) {
+                                const data = Object.fromEntries(Object.entries({
+                                    company: ex.company,
+                                    position: ex.position,
+                                    description: ex.description,
+                                    startDate: ex.startDate ? new Date(ex.startDate) : undefined,
+                                    endDate: ex.endDate ? new Date(ex.endDate) : undefined,
+                                    isCurrent: ex.isCurrent,
+                                    location: ex.location,
+                                    achievements: ex.achievements,
+                                }).filter(([, v]) => v !== undefined));
+                                await tx.candidateExperience.update({
+                                    where: { id: ex.id },
+                                    data,
+                                });
+                            }
+                            else {
+                                await tx.candidateExperience.create({
+                                    data: {
+                                        candidateId: ensured.id,
+                                        company: ex.company,
+                                        position: ex.position,
+                                        description: ex.description,
+                                        startDate: new Date(ex.startDate),
+                                        endDate: ex.endDate ? new Date(ex.endDate) : undefined,
+                                        isCurrent: !!ex.isCurrent,
+                                        location: ex.location,
+                                        achievements: ex.achievements,
+                                    },
+                                });
+                            }
+                        }
+                    }
+                    if (Array.isArray(del) && del.length) {
+                        await tx.candidateExperience.deleteMany({
+                            where: { id: { in: del }, candidateId: ensured.id },
+                        });
+                    }
+                }
+                if (body.resumes) {
+                    const { upsert, delete: del } = body.resumes;
+                    if (Array.isArray(upsert)) {
+                        const resumeIdsToUpdate = upsert.filter(r => r.id).map(r => r.id).filter((id) => id !== undefined);
+                        let existingResumeMap = new Map();
+                        if (resumeIdsToUpdate.length > 0) {
+                            const existingResumes = await tx.resume.findMany({
+                                where: {
+                                    id: { in: resumeIdsToUpdate },
+                                    candidateId: ensured.id,
+                                },
+                            });
+                            for (const resume of existingResumes) {
+                                existingResumeMap.set(resume.id, resume);
+                            }
+                            for (const id of resumeIdsToUpdate) {
+                                if (!existingResumeMap.has(id)) {
+                                    throw new common_1.BadRequestException(`Resume with id ${id} not found or does not belong to candidate`);
+                                }
+                            }
+                        }
+                        for (const r of upsert) {
+                            let resumeId;
+                            if (r.id) {
+                                const existingResume = existingResumeMap.get(r.id);
+                                resumeId = r.id;
+                                const updateData = Object.fromEntries(Object.entries({
+                                    title: r.title,
+                                    fileName: r.fileName,
+                                    fileSize: r.fileSize,
+                                    mimeType: r.mimeType,
+                                    isDefault: r.isDefault,
+                                    filePath: r.documentKey,
+                                }).filter(([, v]) => v !== undefined));
+                                await tx.resume.update({
+                                    where: { id: r.id },
+                                    data: updateData,
+                                });
+                            }
+                            else {
+                                if (!r.documentKey) {
+                                    throw new common_1.BadRequestException('documentKey is required for new resumes');
+                                }
+                                const newResume = await tx.resume.create({
+                                    data: {
+                                        candidateId: ensured.id,
+                                        title: r.title || 'Resume',
+                                        fileName: r.fileName || 'document',
+                                        filePath: r.documentKey,
+                                        fileSize: r.fileSize || 0,
+                                        mimeType: r.mimeType || 'application/octet-stream',
+                                        isDefault: !!r.isDefault,
+                                    },
+                                });
+                                resumeId = newResume.id;
+                                if (!resumeIdsToExtract) {
+                                    resumeIdsToExtract = [];
+                                }
+                                resumeIdsToExtract.push(resumeId);
+                            }
+                            if (r.isDefault) {
+                                await tx.resume.updateMany({
+                                    where: {
+                                        candidateId: ensured.id,
+                                        id: { not: resumeId },
+                                    },
+                                    data: { isDefault: false },
+                                });
+                            }
+                        }
+                    }
+                    if (Array.isArray(del) && del.length) {
+                        await tx.resume.deleteMany({
+                            where: { id: { in: del }, candidateId: ensured.id },
+                        });
+                    }
+                }
+                console.log('Transaction completed successfully');
+                return ensured;
+            }, {
+                maxWait: 10000,
+                timeout: 60000,
+            });
+            console.log('Transaction successful, fetching updated profile...');
+            const updatedCandidate = await this.db.candidate.findFirst({
+                where: { userId },
+                include: {
+                    city: {
+                        include: {
+                            state: {
+                                include: {
+                                    country: true,
+                                },
+                            },
+                        },
+                    },
+                    user: {
+                        select: {
+                            email: true,
+                            phone: true,
+                        },
+                    },
+                },
+            });
+            if (!updatedCandidate) {
+                console.error('Candidate not found after transaction');
+                throw new common_1.NotFoundException('Candidate profile not found');
+            }
+            console.log('Profile fetched, building response...');
+            const response = {
+                id: updatedCandidate.id,
+                userId: updatedCandidate.userId,
+                firstName: updatedCandidate.firstName,
+                lastName: updatedCandidate.lastName,
+                fatherName: updatedCandidate.fatherName || undefined,
+                dateOfBirth: updatedCandidate.dateOfBirth || undefined,
+                gender: updatedCandidate.gender || undefined,
+                maritalStatus: updatedCandidate.maritalStatus || undefined,
+                profilePicture: updatedCandidate.profilePicture || undefined,
+                bio: updatedCandidate.bio || undefined,
+                currentTitle: updatedCandidate.currentTitle || undefined,
+                currentCompany: updatedCandidate.currentCompany || undefined,
+                currentLocation: updatedCandidate.currentLocation || undefined,
+                preferredLocation: updatedCandidate.preferredLocation || undefined,
+                noticePeriod: updatedCandidate.noticePeriod || undefined,
+                currentSalary: updatedCandidate.currentSalary
+                    ? Number(updatedCandidate.currentSalary)
+                    : undefined,
+                expectedSalary: updatedCandidate.expectedSalary
+                    ? Number(updatedCandidate.expectedSalary)
+                    : undefined,
+                profileType: updatedCandidate.profileType || undefined,
+                experienceYears: updatedCandidate.experienceYears || undefined,
+                address: updatedCandidate.address || undefined,
+                linkedinUrl: updatedCandidate.linkedinUrl || undefined,
+                githubUrl: updatedCandidate.githubUrl || undefined,
+                portfolioUrl: updatedCandidate.portfolioUrl || undefined,
+                isAvailable: updatedCandidate.isAvailable,
+                createdAt: updatedCandidate.createdAt,
+                updatedAt: updatedCandidate.updatedAt,
+                user: updatedCandidate.user,
+                city: updatedCandidate.city,
+            };
+            console.log('Response ready');
+            if (resumeIdsToExtract.length > 0) {
+                this.logger.log(`Extracting PDF text from ${resumeIdsToExtract.length} resume(s)`);
+                this.extractResumeTextInBackground(resumeIdsToExtract).catch((error) => {
+                    this.logger.error('Failed to extract PDF text:', error);
+                });
+            }
+            return response;
+        }
+        catch (error) {
+            console.error('Error in upsertFullProfile:', error);
+            console.error('Error stack:', error.stack);
+            console.error('Error message:', error.message);
+            if (error instanceof common_1.BadRequestException) {
+                throw error;
+            }
+            this.handleException(error);
+            throw new common_1.InternalServerErrorException(`Failed to update candidate profile: ${error.message || 'Unknown error'}`);
+        }
+    }
+    async extractResumeTextInBackground(resumeIds) {
+        for (const resumeId of resumeIds) {
+            try {
+                const resume = await this.db.resume.findUnique({
+                    where: { id: resumeId },
+                    select: {
+                        id: true,
+                        filePath: true,
+                        fileName: true,
+                        mimeType: true,
+                    },
+                });
+                if (!resume) {
+                    this.logger.warn(`Resume ${resumeId} not found for text extraction`);
+                    continue;
+                }
+                if (!resume.mimeType || !resume.mimeType.includes('pdf')) {
+                    this.logger.log(`Skipping non-PDF file: ${resume.fileName} (${resume.mimeType})`);
+                    continue;
+                }
+                this.logger.log(`Extracting text from PDF: ${resume.fileName}`);
+                const fileUrl = resume.filePath.startsWith('http')
+                    ? resume.filePath
+                    : `https://spearwin.sfo3.digitaloceanspaces.com/${resume.filePath}`;
+                const extractedText = await this.pdfExtractor.extractTextFromPDF(fileUrl);
+                if (extractedText && extractedText.length > 0) {
+                    const cleanedText = this.pdfExtractor.cleanExtractedText(extractedText);
+                    await this.db.resume.update({
+                        where: { id: resume.id },
+                        data: { extractedText: cleanedText },
+                    });
+                    this.logger.log(`Successfully extracted ${cleanedText.length} characters from ${resume.fileName}`);
+                }
+                else {
+                    this.logger.warn(`No text extracted from ${resume.fileName}`);
+                }
+            }
+            catch (error) {
+                this.logger.error(`Failed to extract text from resume ${resumeId}:`, error);
+            }
+        }
+    }
+    async getCompleteProfile(userId) {
+        try {
+            const candidate = await this.db.candidate.findFirst({
+                where: { userId },
+                include: {
+                    city: {
+                        include: {
+                            state: { include: { country: true } },
+                        },
+                    },
+                    user: { select: { email: true, phone: true } },
+                    skills: true,
+                    education: true,
+                    experience: true,
+                    resumes: true,
+                },
+            });
+            if (!candidate) {
+                throw new common_1.NotFoundException('Candidate profile not found');
+            }
+            return {
+                id: candidate.id,
+                userId: candidate.userId,
+                firstName: candidate.firstName,
+                lastName: candidate.lastName,
+                fatherName: candidate.fatherName || undefined,
+                dateOfBirth: candidate.dateOfBirth || undefined,
+                gender: candidate.gender || undefined,
+                maritalStatus: candidate.maritalStatus || undefined,
+                profilePicture: candidate.profilePicture || undefined,
+                bio: candidate.bio || undefined,
+                currentTitle: candidate.currentTitle || undefined,
+                currentCompany: candidate.currentCompany || undefined,
+                currentLocation: candidate.currentLocation || undefined,
+                preferredLocation: candidate.preferredLocation || undefined,
+                noticePeriod: candidate.noticePeriod || undefined,
+                currentSalary: candidate.currentSalary ? Number(candidate.currentSalary) : undefined,
+                expectedSalary: candidate.expectedSalary ? Number(candidate.expectedSalary) : undefined,
+                profileType: candidate.profileType || undefined,
+                experienceYears: candidate.experienceYears || undefined,
+                address: candidate.address || undefined,
+                linkedinUrl: candidate.linkedinUrl || undefined,
+                githubUrl: candidate.githubUrl || undefined,
+                portfolioUrl: candidate.portfolioUrl || undefined,
+                isAvailable: candidate.isAvailable,
+                createdAt: candidate.createdAt,
+                updatedAt: candidate.updatedAt,
+                user: candidate.user,
+                city: candidate.city,
+                skills: candidate.skills?.map(s => ({
+                    id: s.id,
+                    skillName: s.skillName,
+                    level: s.level || undefined,
+                    yearsUsed: s.yearsUsed || undefined,
+                })),
+                education: candidate.education?.map(e => ({
+                    id: e.id,
+                    institution: e.institution,
+                    degree: e.degree,
+                    fieldOfStudy: e.fieldOfStudy || undefined,
+                    level: e.level,
+                    startDate: e.startDate,
+                    endDate: e.endDate || undefined,
+                    isCompleted: e.isCompleted,
+                    grade: e.grade || undefined,
+                    description: e.description || undefined,
+                })),
+                experience: candidate.experience?.map(ex => ({
+                    id: ex.id,
+                    company: ex.company,
+                    position: ex.position,
+                    description: ex.description || undefined,
+                    startDate: ex.startDate,
+                    endDate: ex.endDate || undefined,
+                    isCurrent: ex.isCurrent,
+                    location: ex.location || undefined,
+                    achievements: ex.achievements || undefined,
+                })),
+                resumes: candidate.resumes?.map(r => ({
+                    id: r.id,
+                    title: r.title,
+                    fileName: r.fileName,
+                    filePath: r.filePath,
+                    fileSize: r.fileSize,
+                    mimeType: r.mimeType,
+                    isDefault: r.isDefault,
+                    uploadedAt: r.uploadedAt,
+                })),
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException)
+                throw error;
+            this.handleException(error);
+            throw error;
+        }
+    }
     async uploadProfilePicture(userId, file) {
         try {
-            if (!file) {
-                throw new common_1.BadRequestException('No file provided');
-            }
             const candidate = await this.db.candidate.findFirst({
                 where: { userId },
             });
             if (!candidate) {
                 throw new common_1.NotFoundException('Candidate profile not found');
             }
-            const profilePicture = `/uploads/profile-pictures/${file.originalname}`;
+            const profilePicture = `/uploads/profile-pictures/${file.filename}`;
             await this.db.candidate.update({
                 where: { id: candidate.id },
                 data: { profilePicture },
@@ -1186,6 +1797,35 @@ let CandidateService = class CandidateService {
         }
         catch (error) {
             if (error instanceof common_1.NotFoundException) {
+                throw error;
+            }
+            this.handleException(error);
+            throw error;
+        }
+    }
+    async changePassword(userId, changePasswordDto) {
+        try {
+            const user = await this.db.user.findUnique({
+                where: { id: userId },
+            });
+            if (!user) {
+                throw new common_1.NotFoundException('User not found');
+            }
+            const isCurrentPasswordValid = await bcrypt.compare(changePasswordDto.currentPassword, user.password);
+            if (!isCurrentPasswordValid) {
+                throw new common_1.UnauthorizedException('Current password is incorrect');
+            }
+            const hashedNewPassword = await bcrypt.hash(changePasswordDto.newPassword, 12);
+            await this.db.user.update({
+                where: { id: userId },
+                data: { password: hashedNewPassword },
+            });
+            await this.logActivity(userId, client_1.LogAction.UPDATE, client_1.LogLevel.INFO, 'User', userId, 'Password changed');
+            return { message: 'Password changed successfully' };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException ||
+                error instanceof common_1.UnauthorizedException) {
                 throw error;
             }
             this.handleException(error);
@@ -1727,6 +2367,7 @@ let CandidateService = class CandidateService {
                             select: {
                                 id: true,
                                 name: true,
+                                companyId: true,
                                 logo: true,
                                 industry: true,
                                 employeeCount: true,
@@ -1984,6 +2625,7 @@ let CandidateService = class CandidateService {
                                     select: {
                                         id: true,
                                         name: true,
+                                        companyId: true,
                                         logo: true,
                                     },
                                 },
@@ -2032,9 +2674,12 @@ let CandidateService = class CandidateService {
                         title: app.job.title,
                         slug: app.job.slug,
                         description: app.job.description,
+                        jobType: app.job.jobType,
+                        workMode: app.job.workMode,
                         company: {
                             id: app.job.company.id,
                             name: app.job.company.name,
+                            companyId: app.job.company.companyId || '',
                             logo: app.job.company.logo || undefined,
                         },
                         location: app.job.city
@@ -2170,6 +2815,7 @@ let CandidateService = class CandidateService {
                                     select: {
                                         id: true,
                                         name: true,
+                                        companyId: true,
                                         logo: true,
                                     },
                                 },
@@ -2218,9 +2864,12 @@ let CandidateService = class CandidateService {
                         title: app.job.title,
                         slug: app.job.slug,
                         description: app.job.description,
+                        jobType: app.job.jobType,
+                        workMode: app.job.workMode,
                         company: {
                             id: app.job.company.id,
                             name: app.job.company.name,
+                            companyId: app.job.company.companyId || '',
                             logo: app.job.company.logo || undefined,
                         },
                         location: app.job.city
@@ -2328,6 +2977,7 @@ let CandidateService = class CandidateService {
                                 select: {
                                     id: true,
                                     name: true,
+                                    companyId: true,
                                     logo: true,
                                 },
                             },
@@ -2372,9 +3022,12 @@ let CandidateService = class CandidateService {
                     title: application.job.title,
                     slug: application.job.slug,
                     description: application.job.description,
+                    jobType: application.job.jobType,
+                    workMode: application.job.workMode,
                     company: {
                         id: application.job.company.id,
                         name: application.job.company.name,
+                        companyId: application.job.company.companyId || '',
                         logo: application.job.company.logo || undefined,
                     },
                     location: application.job.city
@@ -2493,6 +3146,7 @@ let CandidateService = class CandidateService {
                                 select: {
                                     id: true,
                                     name: true,
+                                    companyId: true,
                                     logo: true,
                                 },
                             },
@@ -2535,9 +3189,12 @@ let CandidateService = class CandidateService {
                     title: updatedApplication.job.title,
                     slug: updatedApplication.job.slug,
                     description: updatedApplication.job.description,
+                    jobType: updatedApplication.job.jobType,
+                    workMode: updatedApplication.job.workMode,
                     company: {
                         id: updatedApplication.job.company.id,
                         name: updatedApplication.job.company.name,
+                        companyId: updatedApplication.job.company.companyId || '',
                         logo: updatedApplication.job.company.logo || undefined,
                     },
                     location: updatedApplication.job.city
@@ -2622,13 +3279,389 @@ let CandidateService = class CandidateService {
             throw error;
         }
     }
+    async getDashboardStats(userId) {
+        try {
+            const candidate = await this.db.candidate.findFirst({
+                where: { userId },
+            });
+            if (!candidate) {
+                throw new common_1.NotFoundException('Candidate profile not found');
+            }
+            const profileViews = await this.db.activityLog.count({
+                where: {
+                    entity: 'Candidate',
+                    entityId: candidate.id,
+                    action: 'VIEW',
+                },
+            });
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            yesterday.setHours(0, 0, 0, 0);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const yesterdayViews = await this.db.activityLog.count({
+                where: {
+                    entity: 'Candidate',
+                    entityId: candidate.id,
+                    action: 'VIEW',
+                    createdAt: {
+                        gte: yesterday,
+                        lt: today,
+                    },
+                },
+            });
+            const todayViews = await this.db.activityLog.count({
+                where: {
+                    entity: 'Candidate',
+                    entityId: candidate.id,
+                    action: 'VIEW',
+                    createdAt: {
+                        gte: today,
+                    },
+                },
+            });
+            let viewsChange = 0;
+            let viewsPercentage = 0;
+            if (yesterdayViews > 0) {
+                viewsChange = todayViews - yesterdayViews;
+                viewsPercentage = ((todayViews - yesterdayViews) / yesterdayViews) * 100;
+            }
+            else if (todayViews > 0) {
+                viewsChange = todayViews;
+                viewsPercentage = 100;
+            }
+            const totalApplications = await this.db.jobApplication.count({
+                where: { candidateId: candidate.id },
+            });
+            return {
+                profileViews,
+                totalApplications,
+                profileViewsChange: {
+                    value: viewsChange,
+                    percentage: Math.round(viewsPercentage * 10) / 10,
+                    period: 'day',
+                },
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException) {
+                throw error;
+            }
+            this.handleException(error);
+            throw error;
+        }
+    }
+    async applyForJob(userId, jobId, applyDto) {
+        try {
+            const candidate = await this.getOrCreateCandidate(userId);
+            const job = await this.db.job.findUnique({
+                where: { id: jobId },
+                include: { company: true, city: true },
+            });
+            if (!job) {
+                throw new common_1.NotFoundException('Job not found');
+            }
+            const existingApplication = await this.db.jobApplication.findFirst({
+                where: {
+                    jobId,
+                    candidateId: candidate.id,
+                },
+            });
+            if (existingApplication) {
+                throw new common_1.BadRequestException('You have already applied for this job');
+            }
+            const application = await this.db.jobApplication.create({
+                data: {
+                    jobId,
+                    candidateId: candidate.id,
+                    resumeId: applyDto.resumeId,
+                    resumeFilePath: applyDto.resumeFilePath,
+                    coverLetter: applyDto.coverLetter,
+                    fullName: applyDto.fullName,
+                    email: applyDto.email,
+                    phone: applyDto.phone,
+                    location: applyDto.location,
+                    experienceLevel: applyDto.experienceLevel,
+                    noticePeriod: applyDto.noticePeriod,
+                    currentCTC: applyDto.currentCTC,
+                    expectedCTC: applyDto.expectedCTC,
+                    status: 'APPLIED',
+                },
+                include: {
+                    job: {
+                        include: {
+                            company: true,
+                            city: {
+                                include: {
+                                    state: {
+                                        include: {
+                                            country: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    resume: true,
+                },
+            });
+            await this.db.job.update({
+                where: { id: jobId },
+                data: {
+                    applicationCount: {
+                        increment: 1,
+                    },
+                },
+            });
+            await this.logActivity(userId, client_1.LogAction.APPLY, client_1.LogLevel.INFO, 'JobApplication', application.id, `Applied for job: ${job.title}`);
+            return {
+                id: application.id,
+                jobId: application.jobId,
+                candidateId: application.candidateId,
+                resumeId: application.resumeId || undefined,
+                resumeFilePath: application.resumeFilePath || undefined,
+                coverLetter: application.coverLetter || undefined,
+                status: application.status,
+                appliedAt: application.appliedAt,
+                reviewedAt: application.reviewedAt || undefined,
+                reviewedBy: application.reviewedBy || undefined,
+                feedback: application.feedback || undefined,
+                fullName: application.fullName || undefined,
+                email: application.email || undefined,
+                phone: application.phone || undefined,
+                location: application.location || undefined,
+                experienceLevel: application.experienceLevel || undefined,
+                noticePeriod: application.noticePeriod || undefined,
+                currentCTC: application.currentCTC || undefined,
+                expectedCTC: application.expectedCTC || undefined,
+                updatedAt: application.updatedAt,
+                job: {
+                    id: application.job.id,
+                    title: application.job.title,
+                    slug: application.job.slug,
+                    description: application.job.description,
+                    jobType: application.job.jobType,
+                    workMode: application.job.workMode,
+                    company: {
+                        id: application.job.company.id,
+                        name: application.job.company.name,
+                        companyId: application.job.company.companyId || '',
+                        logo: application.job.company.logo || undefined,
+                    },
+                    location: application.job.city && application.job.city.state ? {
+                        city: {
+                            id: application.job.city.id,
+                            name: application.job.city.name,
+                            state_id: application.job.city.state_id,
+                            state_code: application.job.city.state_code ?? null,
+                            state_name: application.job.city.state_name ?? null,
+                            country_id: application.job.city.country_id ?? null,
+                            country_code: application.job.city.country_code ?? null,
+                            country_name: application.job.city.country_name ?? null,
+                            latitude: application.job.city.latitude ?? null,
+                            longitude: application.job.city.longitude ?? null,
+                            wikiDataId: application.job.city.wikiDataId ?? null,
+                            isActive: application.job.city.isActive,
+                            createdAt: application.job.city.createdAt,
+                            updatedAt: application.job.city.updatedAt,
+                            state: {
+                                id: application.job.city.state.id,
+                                name: application.job.city.state.name,
+                                country_id: application.job.city.state.country_id ?? null,
+                                country_code: application.job.city.state.country_code ?? null,
+                                country_name: application.job.city.state.country_name ?? null,
+                                iso2: application.job.city.state.iso2 ?? null,
+                                fips_code: application.job.city.state.fips_code ?? null,
+                                type: application.job.city.state.type ?? null,
+                                level: application.job.city.state.level ?? null,
+                                parent_id: application.job.city.state.parent_id ?? null,
+                                latitude: application.job.city.state.latitude ?? null,
+                                longitude: application.job.city.state.longitude ?? null,
+                                isActive: application.job.city.state.isActive,
+                                createdAt: application.job.city.state.createdAt,
+                                updatedAt: application.job.city.state.updatedAt,
+                                country: application.job.city.state.country ? {
+                                    id: application.job.city.state.country.id,
+                                    name: application.job.city.state.country.name,
+                                    iso3: application.job.city.state.country.iso3 ?? null,
+                                    iso2: application.job.city.state.country.iso2 ?? null,
+                                    numeric_code: application.job.city.state.country.numeric_code ?? null,
+                                    phonecode: application.job.city.state.country.phonecode ?? null,
+                                    capital: application.job.city.state.country.capital ?? null,
+                                    currency: application.job.city.state.country.currency ?? null,
+                                    currency_name: application.job.city.state.country.currency_name ?? null,
+                                    currency_symbol: application.job.city.state.country.currency_symbol ?? null,
+                                    tld: application.job.city.state.country.tld ?? null,
+                                    native: application.job.city.state.country.native ?? null,
+                                    region: application.job.city.state.country.region ?? null,
+                                    region_id: application.job.city.state.country.region_id ?? null,
+                                    subregion: application.job.city.state.country.subregion ?? null,
+                                    subregion_id: application.job.city.state.country.subregion_id ?? null,
+                                    nationality: application.job.city.state.country.nationality ?? null,
+                                    latitude: application.job.city.state.country.latitude ?? null,
+                                    longitude: application.job.city.state.country.longitude ?? null,
+                                    isActive: application.job.city.state.country.isActive,
+                                    createdAt: application.job.city.state.country.createdAt,
+                                    updatedAt: application.job.city.state.country.updatedAt,
+                                } : undefined,
+                            },
+                        },
+                    } : undefined,
+                },
+                resume: application.resume ? {
+                    id: application.resume.id,
+                    title: application.resume.title,
+                    fileName: application.resume.fileName,
+                    uploadedAt: application.resume.uploadedAt,
+                } : undefined,
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
+                throw error;
+            }
+            this.handleException(error);
+            throw error;
+        }
+    }
+    async getFavoriteJobs(userId) {
+        try {
+            const candidate = await this.getOrCreateCandidate(userId);
+            const favoriteJobs = await this.db.favoriteJob.findMany({
+                where: { candidateId: candidate.id },
+                include: {
+                    job: {
+                        include: {
+                            company: true,
+                            city: {
+                                include: {
+                                    state: {
+                                        include: {
+                                            country: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                orderBy: { createdAt: 'desc' },
+            });
+            return {
+                favoriteJobs: favoriteJobs.map((fav) => ({
+                    id: fav.id,
+                    jobId: fav.jobId,
+                    createdAt: fav.createdAt,
+                    job: fav.job,
+                })),
+                total: favoriteJobs.length,
+            };
+        }
+        catch (error) {
+            this.handleException(error);
+            throw error;
+        }
+    }
+    async checkFavoriteJob(userId, jobId) {
+        try {
+            const candidate = await this.getOrCreateCandidate(userId);
+            const favoriteJob = await this.db.favoriteJob.findFirst({
+                where: {
+                    candidateId: candidate.id,
+                    jobId,
+                },
+            });
+            return {
+                isFavorite: !!favoriteJob,
+            };
+        }
+        catch (error) {
+            this.handleException(error);
+            throw error;
+        }
+    }
+    async addFavoriteJob(userId, jobId) {
+        try {
+            const candidate = await this.getOrCreateCandidate(userId);
+            const job = await this.db.job.findUnique({
+                where: { id: jobId },
+            });
+            if (!job) {
+                throw new common_1.NotFoundException('Job not found');
+            }
+            const existing = await this.db.favoriteJob.findFirst({
+                where: {
+                    candidateId: candidate.id,
+                    jobId,
+                },
+            });
+            if (existing) {
+                throw new common_1.BadRequestException('Job is already in your favorites');
+            }
+            const favoriteJob = await this.db.favoriteJob.create({
+                data: {
+                    candidateId: candidate.id,
+                    jobId,
+                },
+                include: {
+                    job: {
+                        include: {
+                            company: true,
+                            city: true,
+                        },
+                    },
+                },
+            });
+            await this.logActivity(userId, client_1.LogAction.CREATE, client_1.LogLevel.INFO, 'FavoriteJob', favoriteJob.id, `Added job to favorites: ${job.title}`);
+            return {
+                message: 'Job added to favorites successfully',
+                favoriteJob,
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException || error instanceof common_1.BadRequestException) {
+                throw error;
+            }
+            this.handleException(error);
+            throw error;
+        }
+    }
+    async removeFavoriteJob(userId, jobId) {
+        try {
+            const candidate = await this.getOrCreateCandidate(userId);
+            const favoriteJob = await this.db.favoriteJob.findFirst({
+                where: {
+                    candidateId: candidate.id,
+                    jobId,
+                },
+            });
+            if (!favoriteJob) {
+                throw new common_1.NotFoundException('Favorite job not found');
+            }
+            await this.db.favoriteJob.delete({
+                where: { id: favoriteJob.id },
+            });
+            await this.logActivity(userId, client_1.LogAction.DELETE, client_1.LogLevel.INFO, 'FavoriteJob', favoriteJob.id, 'Removed job from favorites');
+            return {
+                message: 'Job removed from favorites successfully',
+            };
+        }
+        catch (error) {
+            if (error instanceof common_1.NotFoundException) {
+                throw error;
+            }
+            this.handleException(error);
+            throw error;
+        }
+    }
     handleException(error) {
         throw new common_1.InternalServerErrorException("Can't process candidate request");
     }
 };
 exports.CandidateService = CandidateService;
-exports.CandidateService = CandidateService = __decorate([
+exports.CandidateService = CandidateService = CandidateService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService])
+    __metadata("design:paramtypes", [database_service_1.DatabaseService,
+        pdf_extractor_service_1.PdfExtractorService])
 ], CandidateService);
 //# sourceMappingURL=candidate.service.js.map

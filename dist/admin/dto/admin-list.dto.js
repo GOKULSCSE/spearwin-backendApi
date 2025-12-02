@@ -9,85 +9,63 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AdminProfileResponseDto = exports.AdminListResponseDto = exports.AdminListQueryDto = void 0;
+exports.AdminListQueryDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
-const client_1 = require("@prisma/client");
 class AdminListQueryDto {
     search;
-    department;
     role;
+    department;
     status;
+    sortBy;
+    sortOrder;
     page = 1;
     limit = 10;
-    sortBy = 'createdAt';
-    sortOrder = 'desc';
 }
 exports.AdminListQueryDto = AdminListQueryDto;
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Search must be a string' }),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], AdminListQueryDto.prototype, "search", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Department must be a string' }),
-    __metadata("design:type", String)
-], AdminListQueryDto.prototype, "department", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsEnum)(client_1.UserRole, { message: 'Invalid role filter' }),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], AdminListQueryDto.prototype, "role", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsEnum)(client_1.UserStatus, { message: 'Invalid status filter' }),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], AdminListQueryDto.prototype, "department", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], AdminListQueryDto.prototype, "status", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_transformer_1.Type)(() => Number),
-    (0, class_validator_1.IsNumber)({}, { message: 'Page must be a number' }),
-    (0, class_validator_1.Min)(1, { message: 'Page must be at least 1' }),
-    __metadata("design:type", Number)
-], AdminListQueryDto.prototype, "page", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_transformer_1.Type)(() => Number),
-    (0, class_validator_1.IsNumber)({}, { message: 'Limit must be a number' }),
-    (0, class_validator_1.Min)(1, { message: 'Limit must be at least 1' }),
-    (0, class_validator_1.Max)(100, { message: 'Limit must not exceed 100' }),
-    __metadata("design:type", Number)
-], AdminListQueryDto.prototype, "limit", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Sort by must be a string' }),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], AdminListQueryDto.prototype, "sortBy", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Sort order must be a string' }),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], AdminListQueryDto.prototype, "sortOrder", void 0);
-class AdminListResponseDto {
-    admins;
-    total;
-    page;
-    limit;
-    totalPages;
-}
-exports.AdminListResponseDto = AdminListResponseDto;
-class AdminProfileResponseDto {
-    id;
-    userId;
-    firstName;
-    lastName;
-    department;
-    designation;
-    permissions;
-    createdAt;
-    updatedAt;
-    user;
-}
-exports.AdminProfileResponseDto = AdminProfileResponseDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => parseInt(value)),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], AdminListQueryDto.prototype, "page", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => parseInt(value)),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(1),
+    (0, class_validator_1.Max)(100),
+    __metadata("design:type", Number)
+], AdminListQueryDto.prototype, "limit", void 0);
 //# sourceMappingURL=admin-list.dto.js.map

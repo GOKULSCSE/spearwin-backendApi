@@ -8,18 +8,18 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CandidateModule = void 0;
 const common_1 = require("@nestjs/common");
-const candidate_service_1 = require("./candidate.service");
 const candidate_controller_1 = require("./candidate.controller");
+const candidate_service_1 = require("./candidate.service");
 const database_module_1 = require("../database/database.module");
-const auth_module_1 = require("../auth/auth.module");
+const pdf_extractor_service_1 = require("../admin/services/pdf-extractor.service");
 let CandidateModule = class CandidateModule {
 };
 exports.CandidateModule = CandidateModule;
 exports.CandidateModule = CandidateModule = __decorate([
     (0, common_1.Module)({
-        imports: [database_module_1.DatabaseModule, auth_module_1.AuthModule],
+        imports: [database_module_1.DatabaseModule],
         controllers: [candidate_controller_1.CandidateController],
-        providers: [candidate_service_1.CandidateService],
+        providers: [candidate_service_1.CandidateService, pdf_extractor_service_1.PdfExtractorService],
         exports: [candidate_service_1.CandidateService],
     })
 ], CandidateModule);

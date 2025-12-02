@@ -9,62 +9,72 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CandidateSkillResponseDto = exports.UpdateCandidateSkillDto = exports.CreateCandidateSkillDto = void 0;
+exports.UpdateCandidateSkillDto = exports.CreateCandidateSkillDto = void 0;
 const class_validator_1 = require("class-validator");
-const class_transformer_1 = require("class-transformer");
 class CreateCandidateSkillDto {
     skillName;
     level;
     yearsUsed;
+    proficiencyLevel;
+    description;
 }
 exports.CreateCandidateSkillDto = CreateCandidateSkillDto;
 __decorate([
-    (0, class_validator_1.IsString)({ message: 'Skill name must be a string' }),
-    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateCandidateSkillDto.prototype, "skillName", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Level must be a string' }),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateCandidateSkillDto.prototype, "level", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)({}, { message: 'Years used must be a number' }),
-    (0, class_validator_1.Min)(0, { message: 'Years used must be at least 0' }),
-    (0, class_validator_1.Max)(50, { message: 'Years used must not exceed 50' }),
+    (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], CreateCandidateSkillDto.prototype, "yearsUsed", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], CreateCandidateSkillDto.prototype, "proficiencyLevel", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCandidateSkillDto.prototype, "description", void 0);
 class UpdateCandidateSkillDto {
     skillName;
     level;
     yearsUsed;
+    proficiencyLevel;
+    description;
 }
 exports.UpdateCandidateSkillDto = UpdateCandidateSkillDto;
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Skill name must be a string' }),
-    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateCandidateSkillDto.prototype, "skillName", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Level must be a string' }),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateCandidateSkillDto.prototype, "level", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)({}, { message: 'Years used must be a number' }),
-    (0, class_validator_1.Min)(0, { message: 'Years used must be at least 0' }),
-    (0, class_validator_1.Max)(50, { message: 'Years used must not exceed 50' }),
+    (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], UpdateCandidateSkillDto.prototype, "yearsUsed", void 0);
-class CandidateSkillResponseDto {
-    id;
-    candidateId;
-    skillName;
-    level;
-    yearsUsed;
-}
-exports.CandidateSkillResponseDto = CandidateSkillResponseDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], UpdateCandidateSkillDto.prototype, "proficiencyLevel", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCandidateSkillDto.prototype, "description", void 0);
 //# sourceMappingURL=candidate-skill.dto.js.map

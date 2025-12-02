@@ -17,13 +17,13 @@ class GenerateBackupCodesDto {
 }
 exports.GenerateBackupCodesDto = GenerateBackupCodesDto;
 __decorate([
-    (0, class_validator_1.IsUUID)('4', { message: 'User ID must be a valid UUID' }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'User ID is required' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], GenerateBackupCodesDto.prototype, "userId", void 0);
 __decorate([
-    (0, class_validator_1.IsString)({ message: 'Password must be a string' }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'Password is required' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], GenerateBackupCodesDto.prototype, "password", void 0);
 //# sourceMappingURL=backup-codes.dto.js.map

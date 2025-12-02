@@ -4,11 +4,16 @@ import { CreateCandidateSkillDto, UpdateCandidateSkillDto, CandidateSkillRespons
 import { CreateCandidateEducationDto, UpdateCandidateEducationDto, CandidateEducationResponseDto } from './dto/candidate-education.dto';
 import { CreateCandidateExperienceDto, UpdateCandidateExperienceDto, CandidateExperienceResponseDto } from './dto/candidate-experience.dto';
 import { CreateJobAlertDto, UpdateJobAlertDto, JobAlertResponseDto, RecommendedJobsResponseDto, JobAlertsResponseDto } from './dto/job-alert.dto';
-import { UpdateApplicationDto, ApplicationResponseDto, ApplicationsResponseDto, ApplicationHistoryQueryDto } from './dto/job-application.dto';
+import { ApplyForJobDto, UpdateApplicationDto, ApplicationResponseDto, ApplicationsResponseDto, ApplicationHistoryQueryDto } from './dto/job-application.dto';
 import { ResumeParseRequestDto, ResumeParseResponseDto, ResumeAnalysisResponseDto, ResumeOptimizationResponseDto } from './dto/resume-analysis.dto';
+import { UpsertFullProfileDto } from './dto/upsert-full-profile.dto';
+import { CandidateCompleteProfileResponseDto } from './dto/candidate-complete-profile.dto';
+import { PdfExtractorService } from '../admin/services/pdf-extractor.service';
 export declare class CandidateService {
     private readonly db;
-    constructor(db: DatabaseService);
+    private readonly pdfExtractor;
+    private readonly logger;
+    constructor(db: DatabaseService, pdfExtractor: PdfExtractorService);
     createCandidate(userId: string, createDto: any): Promise<CandidateProfileResponseDto>;
     getCandidateProfile(userId: string): Promise<CandidateProfileResponseDto>;
     updateCandidate(userId: string, updateDto: any): Promise<CandidateProfileResponseDto>;
@@ -47,17 +52,10 @@ export declare class CandidateService {
     private logActivity;
     private getOrCreateCandidate;
     updateCandidateProfile(userId: string, updateDto: UpdateCandidateProfileDto): Promise<CandidateProfileResponseDto>;
-    uploadProfilePicture(userId: string, file: {
-        fieldname: string;
-        originalname: string;
-        encoding: string;
-        mimetype: string;
-        size: number;
-        buffer: Buffer;
-        destination?: string;
-        filename?: string;
-        path?: string;
-    } | undefined): Promise<{
+    upsertFullProfile(userId: string, body: UpsertFullProfileDto): Promise<CandidateProfileResponseDto>;
+    private extractResumeTextInBackground;
+    getCompleteProfile(userId: string): Promise<CandidateCompleteProfileResponseDto>;
+    uploadProfilePicture(userId: string, file: Express.Multer.File): Promise<{
         message: string;
         profilePicture: string;
     }>;
@@ -65,6 +63,12 @@ export declare class CandidateService {
         message: string;
     }>;
     updateAvailability(userId: string, updateDto: UpdateAvailabilityDto): Promise<{
+        message: string;
+    }>;
+    changePassword(userId: string, changePasswordDto: {
+        currentPassword: string;
+        newPassword: string;
+    }): Promise<{
         message: string;
     }>;
     getCandidateSkills(userId: string): Promise<CandidateSkillResponseDto[]>;
@@ -93,5 +97,18 @@ export declare class CandidateService {
     getApplicationHistory(userId: string, query: ApplicationHistoryQueryDto): Promise<ApplicationsResponseDto>;
     getApplicationDetails(userId: string, applicationId: string): Promise<ApplicationResponseDto>;
     updateApplication(userId: string, applicationId: string, updateDto: UpdateApplicationDto): Promise<ApplicationResponseDto>;
+    getDashboardStats(userId: string): Promise<any>;
+    applyForJob(userId: string, jobId: string, applyDto: ApplyForJobDto): Promise<ApplicationResponseDto>;
+    getFavoriteJobs(userId: string): Promise<any>;
+    checkFavoriteJob(userId: string, jobId: string): Promise<{
+        isFavorite: boolean;
+    }>;
+    addFavoriteJob(userId: string, jobId: string): Promise<{
+        message: string;
+        favoriteJob: any;
+    }>;
+    removeFavoriteJob(userId: string, jobId: string): Promise<{
+        message: string;
+    }>;
     private handleException;
 }

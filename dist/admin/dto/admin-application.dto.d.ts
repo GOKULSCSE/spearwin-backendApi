@@ -16,10 +16,11 @@ export declare class ApplicationQueryDto {
     limit?: string;
 }
 export declare class AdminApplicationResponseDto {
-    id: number;
-    jobId: number;
-    candidateId: number;
-    resumeId?: number;
+    id: string;
+    jobId: string;
+    candidateId: string;
+    resumeId?: string;
+    resumeFilePath?: string;
     coverLetter?: string;
     status: ApplicationStatus;
     appliedAt: Date;
@@ -28,13 +29,14 @@ export declare class AdminApplicationResponseDto {
     feedback?: string;
     updatedAt: Date;
     job: {
-        id: number;
+        id: string;
         title: string;
         slug: string;
         description: string;
         company: {
-            id: number;
+            id: string;
             name: string;
+            companyId: string;
             logo?: string;
         };
         location?: {
@@ -166,9 +168,10 @@ export declare class AdminApplicationResponseDto {
         };
     };
     resume?: {
-        id: number;
+        id: string | null;
         title: string;
         fileName: string;
+        filePath?: string;
         uploadedAt: Date;
     };
 }

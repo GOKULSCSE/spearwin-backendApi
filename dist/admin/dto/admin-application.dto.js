@@ -86,6 +86,7 @@ class AdminApplicationResponseDto {
     jobId;
     candidateId;
     resumeId;
+    resumeFilePath;
     coverLetter;
     status;
     appliedAt;

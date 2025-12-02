@@ -1,3 +1,4 @@
+import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -8,11 +9,13 @@ import { CandidateSimpleRegisterDto } from './dto/candidate-simple-register.dto'
 import { CompanyRegisterDto } from './dto/company-register.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { VerifyPhoneDto } from './dto/verify-phone.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 import { Enable2FaDto } from './dto/2fa-enable.dto';
 import { Disable2FaDto } from './dto/2fa-disable.dto';
 import { Verify2FaDto } from './dto/2fa-verify.dto';
 import { GenerateBackupCodesDto } from './dto/backup-codes.dto';
+import { GoogleAuthDto } from './dto/google-auth.dto';
 import type { CurrentUser } from './decorators/current-user.decorator';
 export declare class AuthController {
     private readonly authService;
@@ -28,10 +31,17 @@ export declare class AuthController {
     verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<{
         success: boolean;
         message: string;
+        userId?: string;
     }>;
+    verifyEmailGet(token: string, userId: string, res: Response): Promise<void>;
     verifyPhone(verifyPhoneDto: VerifyPhoneDto): Promise<{
         success: boolean;
         message: string;
+    }>;
+    verifyOtp(verifyOtpDto: VerifyOtpDto): Promise<{
+        success: boolean;
+        message: string;
+        verified: boolean;
     }>;
     resendOtp(resendOtpDto: ResendOtpDto): Promise<{
         success: boolean;
@@ -61,4 +71,5 @@ export declare class AuthController {
             backupCodes: string[];
         };
     }>;
+    googleAuth(googleAuthDto: GoogleAuthDto): Promise<import("./dto/auth-response.dto").LoginResponseDto>;
 }

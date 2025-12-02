@@ -1,6 +1,7 @@
 export declare class CreateCompanyDto {
     name: string;
-    slug: string;
+    slug?: string;
+    uuid?: string;
     description?: string;
     website?: string;
     logo?: string;

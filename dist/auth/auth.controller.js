@@ -24,11 +24,13 @@ const candidate_simple_register_dto_1 = require("./dto/candidate-simple-register
 const company_register_dto_1 = require("./dto/company-register.dto");
 const verify_email_dto_1 = require("./dto/verify-email.dto");
 const verify_phone_dto_1 = require("./dto/verify-phone.dto");
+const verify_otp_dto_1 = require("./dto/verify-otp.dto");
 const resend_otp_dto_1 = require("./dto/resend-otp.dto");
 const _2fa_enable_dto_1 = require("./dto/2fa-enable.dto");
 const _2fa_disable_dto_1 = require("./dto/2fa-disable.dto");
 const _2fa_verify_dto_1 = require("./dto/2fa-verify.dto");
 const backup_codes_dto_1 = require("./dto/backup-codes.dto");
+const google_auth_dto_1 = require("./dto/google-auth.dto");
 const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
 const current_user_decorator_1 = require("./decorators/current-user.decorator");
 let AuthController = class AuthController {
@@ -63,8 +65,36 @@ let AuthController = class AuthController {
     async verifyEmail(verifyEmailDto) {
         return this.authService.verifyEmail(verifyEmailDto);
     }
+    async verifyEmailGet(token, userId, res) {
+        if (!token || !userId) {
+            const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000';
+            return res.redirect(`${frontendUrl}/verify-email?error=Invalid verification link`);
+        }
+        try {
+            const result = await this.authService.verifyEmail({ userId, code: token });
+            if (result.success && result.userId) {
+                const loginResult = await this.authService.autoLoginAfterVerification(result.userId);
+                if (loginResult.success && loginResult.data && 'accessToken' in loginResult.data) {
+                    const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000';
+                    const accessToken = encodeURIComponent(loginResult.data.accessToken);
+                    const refreshToken = encodeURIComponent(loginResult.data.refreshToken);
+                    return res.redirect(`${frontendUrl}/auto-login?accessToken=${accessToken}&refreshToken=${refreshToken}`);
+                }
+            }
+            const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000';
+            return res.redirect(`${frontendUrl}/login?verified=true`);
+        }
+        catch (error) {
+            const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000';
+            const errorMessage = error.message || 'Verification failed';
+            return res.redirect(`${frontendUrl}/verify-email?error=${encodeURIComponent(errorMessage)}`);
+        }
+    }
     async verifyPhone(verifyPhoneDto) {
         return this.authService.verifyPhone(verifyPhoneDto);
+    }
+    async verifyOtp(verifyOtpDto) {
+        return this.authService.verifyOtp(verifyOtpDto);
     }
     async resendOtp(resendOtpDto) {
         return this.authService.resendOtp(resendOtpDto);
@@ -80,6 +110,9 @@ let AuthController = class AuthController {
     }
     async generateBackupCodes(user, generateBackupCodesDto) {
         return this.authService.generateBackupCodes(generateBackupCodesDto);
+    }
+    async googleAuth(googleAuthDto) {
+        return this.authService.googleAuth(googleAuthDto);
     }
 };
 exports.AuthController = AuthController;
@@ -157,6 +190,15 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "verifyEmail", null);
 __decorate([
+    (0, common_1.Get)('verify-email'),
+    __param(0, (0, common_1.Query)('token')),
+    __param(1, (0, common_1.Query)('userId')),
+    __param(2, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "verifyEmailGet", null);
+__decorate([
     (0, common_1.Post)('verify-phone'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
@@ -164,6 +206,14 @@ __decorate([
     __metadata("design:paramtypes", [verify_phone_dto_1.VerifyPhoneDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "verifyPhone", null);
+__decorate([
+    (0, common_1.Post)('verify-otp'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [verify_otp_dto_1.VerifyOtpDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "verifyOtp", null);
 __decorate([
     (0, common_1.Post)('resend-otp'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
@@ -210,6 +260,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, backup_codes_dto_1.GenerateBackupCodesDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "generateBackupCodes", null);
+__decorate([
+    (0, common_1.Post)('google'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [google_auth_dto_1.GoogleAuthDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "googleAuth", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('api/auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const admin_controller_1 = require("./admin.controller");
 const admin_service_1 = require("./admin.service");
+const pdf_extractor_service_1 = require("./services/pdf-extractor.service");
 const database_module_1 = require("../database/database.module");
 const faq_module_1 = require("../faq/faq.module");
 let AdminModule = class AdminModule {
@@ -27,8 +28,8 @@ exports.AdminModule = AdminModule = __decorate([
             }),
         ],
         controllers: [admin_controller_1.AdminController],
-        providers: [admin_service_1.AdminService],
-        exports: [admin_service_1.AdminService],
+        providers: [admin_service_1.AdminService, pdf_extractor_service_1.PdfExtractorService],
+        exports: [admin_service_1.AdminService, pdf_extractor_service_1.PdfExtractorService],
     })
 ], AdminModule);
 //# sourceMappingURL=admin.module.js.map

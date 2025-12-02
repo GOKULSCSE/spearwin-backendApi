@@ -1,5 +1,6 @@
 import { JwtService } from '@nestjs/jwt';
 import { DatabaseService } from '../database/database.service';
+import { EmailService } from '../email/email.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -7,8 +8,10 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { CandidateRegisterDto } from './dto/candidate-register.dto';
 import { CandidateSimpleRegisterDto } from './dto/candidate-simple-register.dto';
 import { CompanyRegisterDto } from './dto/company-register.dto';
+import { GoogleAuthDto } from './dto/google-auth.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { VerifyPhoneDto } from './dto/verify-phone.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 import { Enable2FaDto } from './dto/2fa-enable.dto';
 import { Disable2FaDto } from './dto/2fa-disable.dto';
@@ -18,7 +21,9 @@ import { LoginResponseDto, RefreshResponseDto, ForgotPasswordResponseDto, ResetP
 export declare class AuthService {
     private prisma;
     private jwtService;
-    constructor(prisma: DatabaseService, jwtService: JwtService);
+    private emailService;
+    private readonly logger;
+    constructor(prisma: DatabaseService, jwtService: JwtService, emailService: EmailService);
     login(loginDto: LoginDto): Promise<LoginResponseDto>;
     logout(userId: string): Promise<LogoutResponseDto>;
     refreshToken(refreshTokenDto: RefreshTokenDto): Promise<RefreshResponseDto>;
@@ -31,6 +36,13 @@ export declare class AuthService {
     verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<{
         success: boolean;
         message: string;
+        userId?: string;
+    }>;
+    autoLoginAfterVerification(userId: string): Promise<LoginResponseDto>;
+    verifyOtp(verifyOtpDto: VerifyOtpDto): Promise<{
+        success: boolean;
+        message: string;
+        verified: boolean;
     }>;
     verifyPhone(verifyPhoneDto: VerifyPhoneDto): Promise<{
         success: boolean;
@@ -64,4 +76,5 @@ export declare class AuthService {
             backupCodes: string[];
         };
     }>;
+    googleAuth(googleAuthDto: GoogleAuthDto): Promise<LoginResponseDto>;
 }

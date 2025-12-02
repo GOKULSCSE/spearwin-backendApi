@@ -9,68 +9,105 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AdminProfileResponseDto = exports.UpdateAdminProfileDto = void 0;
+exports.UpdateAdminProfileDto = void 0;
 const class_validator_1 = require("class-validator");
-const class_transformer_1 = require("class-transformer");
 class UpdateAdminProfileDto {
     firstName;
     lastName;
     email;
     phone;
+    bio;
+    profileImage;
     department;
     designation;
+    country;
+    state;
+    city;
+    streetAddress;
+    linkedinUrl;
+    facebookUrl;
+    twitterUrl;
+    instagramUrl;
 }
 exports.UpdateAdminProfileDto = UpdateAdminProfileDto;
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'First name must be a string' }),
-    (0, class_validator_1.MinLength)(2, { message: 'First name must be at least 2 characters long' }),
-    (0, class_validator_1.MaxLength)(50, { message: 'First name must not exceed 50 characters' }),
-    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateAdminProfileDto.prototype, "firstName", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Last name must be a string' }),
-    (0, class_validator_1.MinLength)(2, { message: 'Last name must be at least 2 characters long' }),
-    (0, class_validator_1.MaxLength)(50, { message: 'Last name must not exceed 50 characters' }),
-    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateAdminProfileDto.prototype, "lastName", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsEmail)({}, { message: 'Please provide a valid email address' }),
-    (0, class_transformer_1.Transform)(({ value }) => value?.toLowerCase()?.trim()),
+    (0, class_validator_1.IsEmail)(),
     __metadata("design:type", String)
 ], UpdateAdminProfileDto.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsPhoneNumber)('IN', { message: 'Please provide a valid phone number' }),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateAdminProfileDto.prototype, "phone", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Department must be a string' }),
-    (0, class_validator_1.MaxLength)(100, { message: 'Department must not exceed 100 characters' }),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateAdminProfileDto.prototype, "bio", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateAdminProfileDto.prototype, "profileImage", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateAdminProfileDto.prototype, "department", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Designation must be a string' }),
-    (0, class_validator_1.MaxLength)(100, { message: 'Designation must not exceed 100 characters' }),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateAdminProfileDto.prototype, "designation", void 0);
-class AdminProfileResponseDto {
-    id;
-    userId;
-    firstName;
-    lastName;
-    department;
-    designation;
-    permissions;
-    createdAt;
-    updatedAt;
-    user;
-}
-exports.AdminProfileResponseDto = AdminProfileResponseDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateAdminProfileDto.prototype, "country", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateAdminProfileDto.prototype, "state", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateAdminProfileDto.prototype, "city", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateAdminProfileDto.prototype, "streetAddress", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateAdminProfileDto.prototype, "linkedinUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateAdminProfileDto.prototype, "facebookUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateAdminProfileDto.prototype, "twitterUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateAdminProfileDto.prototype, "instagramUrl", void 0);
 //# sourceMappingURL=admin-profile.dto.js.map

@@ -4,7 +4,7 @@ export declare class CreateJobDto {
     requirements?: string;
     responsibilities?: string;
     benefits?: string;
-    companyName: string;
+    companyId: string;
     cityId?: string;
     address?: string;
     jobType: string;
@@ -26,7 +26,7 @@ export declare class UpdateJobDto {
     requirements?: string;
     responsibilities?: string;
     benefits?: string;
-    companyName?: string;
+    companyId?: string;
     cityId?: string;
     address?: string;
     jobType?: string;

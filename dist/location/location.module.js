@@ -8,16 +8,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LocationModule = void 0;
 const common_1 = require("@nestjs/common");
-const location_service_1 = require("./location.service");
 const location_controller_1 = require("./location.controller");
+const location_service_1 = require("./location.service");
 const database_module_1 = require("../database/database.module");
-const auth_module_1 = require("../auth/auth.module");
 let LocationModule = class LocationModule {
 };
 exports.LocationModule = LocationModule;
 exports.LocationModule = LocationModule = __decorate([
     (0, common_1.Module)({
-        imports: [database_module_1.DatabaseModule, auth_module_1.AuthModule],
+        imports: [database_module_1.DatabaseModule],
         controllers: [location_controller_1.LocationController],
         providers: [location_service_1.LocationService],
         exports: [location_service_1.LocationService],

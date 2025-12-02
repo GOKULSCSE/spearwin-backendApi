@@ -14,7 +14,16 @@ const class_validator_1 = require("class-validator");
 const client_1 = require("@prisma/client");
 class ApplyForJobDto {
     resumeId;
+    resumeFilePath;
     coverLetter;
+    fullName;
+    email;
+    phone;
+    location;
+    experienceLevel;
+    noticePeriod;
+    currentCTC;
+    expectedCTC;
 }
 exports.ApplyForJobDto = ApplyForJobDto;
 __decorate([
@@ -24,9 +33,54 @@ __decorate([
 ], ApplyForJobDto.prototype, "resumeId", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Resume file path must be a string' }),
+    __metadata("design:type", String)
+], ApplyForJobDto.prototype, "resumeFilePath", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Cover letter must be a string' }),
     __metadata("design:type", String)
 ], ApplyForJobDto.prototype, "coverLetter", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Full name must be a string' }),
+    __metadata("design:type", String)
+], ApplyForJobDto.prototype, "fullName", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Email must be a string' }),
+    __metadata("design:type", String)
+], ApplyForJobDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Phone must be a string' }),
+    __metadata("design:type", String)
+], ApplyForJobDto.prototype, "phone", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Location must be a string' }),
+    __metadata("design:type", String)
+], ApplyForJobDto.prototype, "location", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Experience level must be a string' }),
+    __metadata("design:type", String)
+], ApplyForJobDto.prototype, "experienceLevel", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Notice period must be a string' }),
+    __metadata("design:type", String)
+], ApplyForJobDto.prototype, "noticePeriod", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Current CTC must be a string' }),
+    __metadata("design:type", String)
+], ApplyForJobDto.prototype, "currentCTC", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)({ message: 'Expected CTC must be a string' }),
+    __metadata("design:type", String)
+], ApplyForJobDto.prototype, "expectedCTC", void 0);
 class UpdateApplicationDto {
     coverLetter;
     status;
@@ -47,12 +101,21 @@ class ApplicationResponseDto {
     jobId;
     candidateId;
     resumeId;
+    resumeFilePath;
     coverLetter;
     status;
     appliedAt;
     reviewedAt;
     reviewedBy;
     feedback;
+    fullName;
+    email;
+    phone;
+    location;
+    experienceLevel;
+    noticePeriod;
+    currentCTC;
+    expectedCTC;
     updatedAt;
     job;
     resume;
