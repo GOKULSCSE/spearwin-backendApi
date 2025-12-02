@@ -16,6 +16,7 @@ import { JobModule } from './job/job.module';
 import { NotificationModule } from './notification/notification.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { CandidateUpdateModule } from './candidate/candidate-update.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { CandidateUpdateModule } from './candidate/candidate-update.module';
     NotificationModule,
     DashboardModule,
     CandidateUpdateModule,
+    MailModule,
     ThrottlerModule.forRoot([
       {
         name: 'short',
