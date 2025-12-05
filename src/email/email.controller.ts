@@ -49,19 +49,35 @@ export class EmailController {
     const { email, phone, service, message, remarks } = contactDto;
 
     // ============================================================
-    // SEND EMAIL TO COMPANY (info@spearwin.com)
+    // SEND EMAIL TO COMPANY (noreply@spearwin.com with CC to info@spearwin.com)
     // ============================================================
-    const companyEmail = 'info@spearwin.com'; // Company receives contact form submissions
+    const companyEmail = 'noreply@spearwin.com'; // Primary recipient
+    const ccEmail = 'info@spearwin.com'; // CC recipient
     
     const companyEmailHtml = this.buildCompanyNotificationEmail(email, phone, service, message, remarks);
     const companyEmailText = this.buildCompanyNotificationText(email, phone, service, message, remarks);
+    
+    // Log email details before sending
+    console.log('📧 Sending contact form email:');
+    console.log(`   To: ${companyEmail}`);
+    console.log(`   CC: ${ccEmail}`);
+    console.log(`   From: ${process.env.GRAPH_USER_EMAIL || process.env.MS_GRAPH_USER_EMAIL || 'SMTP'}`);
     
     const companyResult = await this.emailService.sendMail(
       companyEmail,
       `New Contact Form Submission - ${service}`,
       companyEmailText,
       companyEmailHtml,
+      ccEmail, // Add CC
     );
+    
+    // Log result
+    if (companyResult.success) {
+      console.log('✅ Contact email sent successfully');
+      console.log(`   Message ID: ${companyResult.messageId || 'N/A'}`);
+    } else {
+      console.error('❌ Failed to send contact email:', companyResult.error);
+    }
 
     // ============================================================
     // SEND CONFIRMATION EMAIL TO USER

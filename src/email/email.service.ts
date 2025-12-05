@@ -277,6 +277,7 @@ export class EmailService {
     subject: string,
     htmlContent: string,
     textContent?: string,
+    cc?: string | string[],
   ): Promise<boolean> {
     try {
       // Ensure we have a valid access token
@@ -292,6 +293,13 @@ export class EmailService {
       // Get from name from environment or use default
       const fromName = process.env.GRAPH_FROM_NAME || process.env.MS_GRAPH_FROM_NAME || process.env.SMTP_FROM_NAME || process.env.MAIL_FROM_NAME || 'Spearwin';
 
+      // Build CC recipients array
+      const ccRecipients = cc 
+        ? (Array.isArray(cc) ? cc : [cc]).map(email => ({
+            emailAddress: { address: email }
+          }))
+        : [];
+
       const emailPayload = {
         message: {
           subject: subject,
@@ -306,9 +314,19 @@ export class EmailService {
               },
             },
           ],
+          ...(ccRecipients.length > 0 && { ccRecipients }),
+          // Add importance and other headers to help with delivery
+          importance: 'normal',
         },
         saveToSentItems: true, // Save a copy to sent items
       };
+      
+      // Log warning if sending to the same account
+      if (to === userEmail) {
+        this.logger.warn(`⚠️  WARNING: Sending email TO the same address as GRAPH_USER_EMAIL (${userEmail})`);
+        this.logger.warn(`   Self-sent emails may appear in Sent Items instead of Inbox.`);
+        this.logger.warn(`   Please check the Sent Items folder in Outlook.`);
+      }
 
       const response = await this.axiosInstance.post(graphUrl, emailPayload, {
         headers: {
@@ -317,7 +335,21 @@ export class EmailService {
         },
       });
 
-      this.logger.log(`✅ Email sent successfully via Microsoft Graph API to ${to}`);
+      // Log detailed information about the email
+      const ccInfo = ccRecipients.length > 0 ? ` (CC: ${ccRecipients.map(r => r.emailAddress.address).join(', ')})` : '';
+      this.logger.log(`✅ Email sent successfully via Microsoft Graph API`);
+      this.logger.log(`   From: ${userEmail}`);
+      this.logger.log(`   To: ${to}${ccInfo}`);
+      this.logger.log(`   Subject: ${subject}`);
+      this.logger.log(`   Response Status: ${response.status}`);
+      
+      // Warning if sending to the same address as GRAPH_USER_EMAIL
+      if (to === userEmail) {
+        this.logger.warn(`⚠️  WARNING: Sending email TO the same address as GRAPH_USER_EMAIL (${userEmail})`);
+        this.logger.warn(`   The email may appear in Sent Items instead of Inbox.`);
+        this.logger.warn(`   Check Sent Items folder in Outlook.`);
+      }
+      
       return true;
     } catch (error: any) {
       this.logger.error(`❌ Failed to send email via Microsoft Graph API to ${to}`);
@@ -971,6 +1003,7 @@ Spearwin Team
     subject: string,
     text?: string,
     html?: string,
+    cc?: string | string[],
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     // Validate that at least text or html is provided
     if (!text && !html) {
@@ -983,7 +1016,7 @@ Spearwin Team
     if (this.useGraphAPI) {
       try {
         const htmlContent = html || (text ? `<pre>${text}</pre>` : '');
-        const success = await this.sendEmailViaGraphAPI(to, subject, htmlContent, text);
+        const success = await this.sendEmailViaGraphAPI(to, subject, htmlContent, text, cc);
         return {
           success,
           messageId: success ? 'graph-api' : undefined,
@@ -1025,7 +1058,7 @@ Spearwin Team
       // Always use "Spearwin" as the sender name
       const mailFromName = 'Spearwin';
 
-      const mailOptions = {
+      const mailOptions: any = {
         from: `"${mailFromName}" <${mailFrom}>`,
         to,
         subject,
@@ -1033,8 +1066,14 @@ Spearwin Team
         ...(html && { html }),
       };
 
+      // Add CC if provided
+      if (cc) {
+        mailOptions.cc = Array.isArray(cc) ? cc.join(', ') : cc;
+      }
+
       const info = await this.transporter.sendMail(mailOptions);
-      this.logger.log(`Email sent successfully to ${to}. Message ID: ${info.messageId}`);
+      const ccInfo = cc ? ` (CC: ${Array.isArray(cc) ? cc.join(', ') : cc})` : '';
+      this.logger.log(`Email sent successfully to ${to}${ccInfo}. Message ID: ${info.messageId}`);
       
       return {
         success: true,
