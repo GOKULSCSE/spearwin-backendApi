@@ -2875,67 +2875,17 @@ export class CandidateService {
     query: any,
   ): Promise<RecommendedJobsResponseDto> {
     try {
-      const candidate = await this.db.candidate.findFirst({
-        where: { userId },
-        include: {
-          skills: true,
-          education: true,
-          experience: true,
-        },
-      });
-
-      if (!candidate) {
-        throw new NotFoundException('Candidate profile not found');
-      }
-
+      // Get limit from query, default to 3
+      const limit = parseInt(query.limit) || 3;
       const page = parseInt(query.page) || 1;
-      const limit = parseInt(query.limit) || 10;
       const skip = (page - 1) * limit;
 
-      // Build recommendation criteria based on candidate profile
+      // Simple query: Get first 3 published jobs, ordered by creation date (newest first)
       const whereClause: any = {
         status: 'PUBLISHED',
       };
 
-      // Filter by skills if candidate has skills
-      if (candidate.skills && candidate.skills.length > 0) {
-        const candidateSkills = candidate.skills.map(
-          (skill) => skill.skillName,
-        );
-        whereClause.skillsRequired = {
-          hasSome: candidateSkills,
-        };
-      }
-
-      // Filter by experience level
-      if (candidate.experience && candidate.experience.length > 0) {
-        // Determine experience level based on years of experience
-        const totalExperience = candidate.experience.reduce((total, exp) => {
-          const startDate = new Date(exp.startDate);
-          const endDate = exp.isCurrent
-            ? new Date()
-            : exp.endDate
-              ? new Date(exp.endDate)
-              : new Date();
-          const years =
-            (endDate.getTime() - startDate.getTime()) /
-            (1000 * 60 * 60 * 24 * 365);
-          return total + years;
-        }, 0);
-
-        if (totalExperience >= 5) {
-          whereClause.experienceLevel = { in: ['SENIOR_LEVEL', 'EXECUTIVE'] };
-        } else if (totalExperience >= 2) {
-          whereClause.experienceLevel = { in: ['MID_LEVEL', 'SENIOR_LEVEL'] };
-        } else {
-          whereClause.experienceLevel = { in: ['ENTRY_LEVEL', 'MID_LEVEL'] };
-        }
-      }
-
-      // Filter by location if candidate has location preference
-      if (candidate.cityId) {
-        whereClause.cityId = candidate.cityId;
-      }
+      this.logger.log('🔍 Fetching recommended jobs:', { limit, page, skip });
 
       const [jobs, total] = await Promise.all([
         this.db.job.findMany({
@@ -2969,8 +2919,11 @@ export class CandidateService {
         this.db.job.count({ where: whereClause }),
       ]);
 
+      this.logger.log(`✅ Found ${jobs.length} jobs out of ${total} total published jobs`);
+
       const totalPages = Math.ceil(total / limit);
 
+      // Return empty array if no jobs found (no error thrown)
       return {
         jobs: jobs.map((job) => ({
           id: job.id,
@@ -3005,16 +2958,20 @@ export class CandidateService {
                 city: {
                   id: job.city.id,
                   name: job.city.name,
-                  state: {
-                    id: job.city.state.id,
-                    name: job.city.state.name,
-                    iso2: job.city.state.iso2,
-                    country: job.city.state.country ? {
-                      id: job.city.state.country.id,
-                      name: job.city.state.country.name,
-                      iso2: job.city.state.country.iso2,
-                    } : undefined,
-                  },
+                  state: job.city.state
+                    ? {
+                        id: job.city.state.id,
+                        name: job.city.state.name,
+                        iso2: job.city.state.iso2,
+                        country: job.city.state.country
+                          ? {
+                              id: job.city.state.country.id,
+                              name: job.city.state.country.name,
+                              iso2: job.city.state.country.iso2,
+                            }
+                          : undefined,
+                      }
+                    : undefined,
                 },
               }
             : null,
@@ -3027,11 +2984,24 @@ export class CandidateService {
         hasPrev: page > 1,
       };
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      this.handleException(error);
-      throw error;
+      this.logger.error('Error in getRecommendedJobs:', error);
+      this.logger.error('Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        userId,
+        query,
+      });
+      
+      // Return empty result instead of throwing error
+      return {
+        jobs: [],
+        total: 0,
+        page: parseInt(query.page) || 1,
+        limit: parseInt(query.limit) || 3,
+        totalPages: 0,
+        hasNext: false,
+        hasPrev: false,
+      };
     }
   }
 
@@ -4408,6 +4378,11 @@ export class CandidateService {
   }
 
   private handleException(error: any): void {
-    throw new InternalServerErrorException("Can't process candidate request");
+    this.logger.error('Candidate service error:', error);
+    this.logger.error('Error message:', error?.message);
+    this.logger.error('Error stack:', error?.stack);
+    throw new InternalServerErrorException(
+      error?.message || "Can't process candidate request"
+    );
   }
 }
